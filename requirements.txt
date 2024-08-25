@@ -1,0 +1,4 @@
+python-telegram-bot==21.4
+python-telegram-bot[job-queue]
+shortuuid==1.0.11
+mysql-connector-python==9.0.0
