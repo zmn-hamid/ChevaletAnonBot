@@ -9,9 +9,12 @@ from modules.Global.user_init import init_user
 
 # global imports
 from functools import wraps
+from typing import Callable
 
 
-def verify_user(initialize_user: bool = False):
+def verify_user(initialize_user: bool = False) -> Callable:
+    """decorator for checking whether user is banned or initialized"""
+
     def decorator(func):
         @wraps(func)
         async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -35,11 +38,14 @@ def verify_user(initialize_user: bool = False):
     return decorator
 
 
-def handle_errors(func):
+def handle_errors(func) -> Callable:
+    """to handle if the user blocked the bot"""
+
     async def wrapper(*args, **kwargs):
         try:
             return await func(*args, **kwargs)
         except Forbidden:
             # bot is blocked by the user
             return ConversationHandler.END
+
     return wrapper

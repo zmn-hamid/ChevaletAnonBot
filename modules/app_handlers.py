@@ -15,12 +15,12 @@ import json
 
 
 async def job_set_commands(context: CallbackContext):
+    """updates the bot's command menu"""
     await context.application.bot.set_my_commands(
         [
-            ("start", "start"),
-            ("mylinks", "mylinks"),
-            ("settings", "settings"),
-            ("unblock", "unblock"),
+            ("start", "🆘 کمک!"),
+            ("my_links", "🔗 لینک های من"),
+            ("settings", "⚙️ تنظیمات پیام ناشناس"),
         ]
     )
     logger.info("successfully set the commands")

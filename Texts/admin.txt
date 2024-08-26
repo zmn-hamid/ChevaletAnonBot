@@ -1,0 +1,6 @@
+<code>/admin help</code>: to get help
+<code>/admin stats UID</code>: to get the status of the user
+   -> ban status, max number of cid's allowed
+<code>/admin ban UID</code>: to ban a user
+<code>/admin unban UID</code>: to unban a user
+<code>/admin link UID</code>: to get the user in a hyperlinked format

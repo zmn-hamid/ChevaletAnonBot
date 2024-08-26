@@ -7,6 +7,7 @@ from telegram.constants import ParseMode as PM
 from modules.Global.database import dbh
 from modules.Global.get_user import href_user
 from modules.Global.decorators import verify_user, handle_errors
+from modules.Global.fetch_texts import fetch_text
 from modules.Global.exceptions import WrongSyntaxErr
 from config import ADMINS
 
@@ -19,7 +20,8 @@ async def admin_cmd(
     message: Message,
     userid: str,
     bot: Bot,
-) -> None:
+) -> None | Message:
+    """for admins to handle the bot"""
     # check if it's admin
     if userid not in ADMINS:
         return await message.reply_text("lol")
@@ -30,14 +32,15 @@ async def admin_cmd(
     try:
         arg1 = text[0]
         if arg1 == "help":
-            # TODO correct admin help text
-            await message.reply_text("this is admin help text")
+            await message.reply_text(fetch_text("admin"), parse_mode=PM.HTML)
         elif arg1 == "stats":
             try:
                 stats = dbh.user_status(text[1])
             except IndexError:
                 return await message.reply_text("user has not started the bot yet?")
-            return await message.reply_text(f"is_banned={stats[0][0]}")
+            return await message.reply_text(
+                f"is_banned={stats[0]}\ncid_limit={stats[1]}"
+            )
         elif arg1 in ["ban", "unban"]:
             dbh.ban_action(text[1], True if arg1 == "ban" else False)
             return await message.reply_text("done.")
@@ -58,6 +61,11 @@ async def admin_cmd(
         return await message.reply_text(
             "wrong syntax. use <code>/admin help</code>", parse_mode=PM.HTML
         )
+    except Exception as e:
+        try:
+            await message.reply_text(f"error: {e.__class__} | {e}")
+        except:
+            pass
 
 
 admin_handler = CommandHandler("admin", admin_cmd)

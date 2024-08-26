@@ -7,9 +7,9 @@ from telegram.warnings import PTBUserWarning
 # project imports
 from config import REPORT_CHAT_ID
 from modules.Global.database import dbh
-from modules.Global.user_init import init_user
 from modules.Global.get_user import href_user
 from modules.Global.decorators import verify_user, handle_errors
+from modules.Global.fetch_texts import fetch_text
 
 # global imports
 from warnings import filterwarnings
@@ -20,6 +20,8 @@ from shortuuid import uuid
 filterwarnings(
     action="ignore", message=r".*CallbackQueryHandler", category=PTBUserWarning
 )
+# end conversation
+END = ConversationHandler.END
 
 
 @handle_errors
@@ -30,27 +32,61 @@ async def start_cmd(
     message: Message,
     userid: str,
     bot: Bot,
-):
-    # input texts:
-    # /start
-    # /start USER_CID
+) -> None | int:
+    """
+    # Start command
+    handles:\n
+    - /start   -> sends start text
+    - /start [CID]   -> connects to target for sending message
+    - /start UNBLOCK-[UID]   -> unblocks the UID for the current user
+
+
+    CID: Custom ID\n
+    UID: User ID
+    """
     split_text = message.text.split()
 
     if len(split_text) == 1:
         # send start/help text
-        await message.reply_text("This is the start text")
+        await message.reply_text(fetch_text("start_help"), parse_mode=PM.HTML)
 
     else:
-        target_cid = split_text[1]
+        if split_text[1].startswith("UNBLOCK-"):
+            # unblocking user
+            try:
+                target_uid = split_text[1].split("-", 1)[-1]
+                int(target_uid)
+            except:
+                await message.reply_text(
+                    "wrong link?", reply_to_message_id=message.message_id
+                )
+                return
+            dbh.remove_block(blocker_uid=userid, blocked_uid=target_uid)
+            await message.reply_text(
+                "unblocked.", reply_to_message_id=message.message_id
+            )
+            return END
+        else:
+            # sending message
+            target_cid = split_text[1]
 
-        # save target to context
-        context.user_data["target_cid"] = target_cid
+            # check is blocked by user
+            if dbh.is_blocked(blocker_uid=dbh.get_uid(target_cid), blocked_uid=userid):
+                await message.reply_text(
+                    "you're blocked by this user",
+                    reply_to_message_id=message.message_id,
+                )
+                return END
 
-        await message.reply_text(
-            f"sending message to {dbh.get_name(dbh.get_uid(target_cid))}" " | /cancel",
-            reply_to_message_id=message.message_id,
-        )
-        return 0  # state 0
+            # save target to context
+            context.user_data["target_cid"] = target_cid
+
+            await message.reply_text(
+                f"sending message to {dbh.get_name(dbh.get_uid(target_cid))}"
+                " -- /cancel",
+                reply_to_message_id=message.message_id,
+            )
+            return 0  # state 0
 
 
 @handle_errors
@@ -61,21 +97,36 @@ async def send_msg(
     message: Message,
     userid: str,
     bot: Bot,
-):
+) -> int:
+    """
+    # message sending fallback
+    forwards the given message to the user (without sender)
+    """
     target_cid = context.user_data.get("target_cid")
     target_mid = context.user_data.get("reply_to")
 
     # get uid from cid for target
     target_uid = dbh.get_uid(target_cid)
     if target_uid == None:
-        await message.reply_text("target user has not started the bot yet")
-        return ConversationHandler.END
+        await message.reply_text("target user has not started the bot yet?")
+        return END
+
+    # check is blocked by user
+    if dbh.is_blocked(blocker_uid=target_uid, blocked_uid=userid):
+        await message.reply_text(
+            "you're blocked by this user", reply_to_message_id=message.message_id
+        )
+        return END
 
     # get cid from uid for sender
     # so the reply markup won't have the uid inside it, for extra privacy
     sender_cid = dbh.get_cids(userid)[0]
 
-    # send message to target
+    # sending message to target
+    ## notify target
+    if dbh.get_notify_cid(target_uid):
+        await bot.send_message(target_uid, f"new message ({target_cid}):")
+    ## send the message
     await message.copy(
         target_uid,
         parse_mode=PM.HTML,
@@ -103,7 +154,7 @@ async def send_msg(
         reply_to_message_id=message.message_id,
     )
     context.user_data.clear()
-    return ConversationHandler.END
+    return END
 
 
 @handle_errors
@@ -114,15 +165,26 @@ async def answer(
     message: Message,
     userid: str,
     bot: Bot,
-):
+) -> int:
+    """
+    # asnwer callback
+    callback for the answer button under each message
+    """
     if (clbk := update.callback_query) and (data := clbk.data):
         _, target_cid, target_mid = data.split("|")
+
+        # check is blocked by user
+        if dbh.is_blocked(blocker_uid=dbh.get_uid(target_cid), blocked_uid=userid):
+            await message.reply_text(
+                "you're blocked by this user", reply_to_message_id=message.message_id
+            )
+            return END
 
         context.user_data["target_cid"] = target_cid
         context.user_data["reply_to"] = target_mid
 
         await message.reply_text(
-            f"sending your answer | /cancel", reply_to_message_id=message.message_id
+            f"sending your answer -- /cancel", reply_to_message_id=message.message_id
         )
         return 0  # state 0
 
@@ -135,7 +197,10 @@ async def block(
     message: Message,
     userid: str,
     bot: Bot,
-):
+) -> int:
+    """
+    # block using message button
+    """
     if (clbk := update.callback_query) and (data := clbk.data):
         _, target_cid = data.split("|")
 
@@ -163,11 +228,11 @@ async def block(
                 )
             )
             await clbk.answer("blocked successfully.")
-            return ConversationHandler.END
+            return END
 
         else:
             await clbk.answer("failed to block.")
-            return ConversationHandler.END
+            return END
 
 
 @handle_errors
@@ -178,7 +243,10 @@ async def unblock(
     message: Message,
     userid: str,
     bot: Bot,
-):
+) -> int:
+    """
+    # unblock using message button
+    """
     if (clbk := update.callback_query) and (data := clbk.data):
         _, target_cid = data.split("|")
 
@@ -206,11 +274,11 @@ async def unblock(
                 )
             )
             await clbk.answer("unblocked successfully.")
-            return ConversationHandler.END
+            return END
 
         else:
             await clbk.answer("failed to unblock.")
-            return ConversationHandler.END
+            return END
 
 
 @handle_errors
@@ -221,7 +289,10 @@ async def report(
     message: Message,
     userid: str,
     bot: Bot,
-):
+) -> int:
+    """
+    # reports the message to report channel
+    """
     if (clbk := update.callback_query) and (data := clbk.data):
         _, target_cid, target_mid = data.split("|")
 
@@ -252,7 +323,7 @@ async def report(
             parse_mode=PM.HTML,
         )
 
-    return ConversationHandler.END
+    return END
 
 
 @handle_errors
@@ -263,10 +334,11 @@ async def cancel(
     message: Message,
     userid: str,
     bot: Bot,
-):
+) -> int:
+    """# cancel"""
     context.user_data.clear()
     await message.reply_text("canceled.")
-    return ConversationHandler.END
+    return END
 
 
 start_cmd_handler = ConversationHandler(

@@ -1,3 +1,5 @@
+"""logger"""
+
 import logging
 
 from config import LOG_LEVEL

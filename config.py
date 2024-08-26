@@ -8,3 +8,5 @@ DB_NAME = os.environ.get("db_name")
 DB_USER = os.environ.get("db_user")
 DB_PASS = os.environ.get("db_pass")
 LOG_LEVEL = logging._nameToLevel[os.environ.get("log_level").upper()]
+
+VALIDATION_TEXT = "YES I AM SURE"

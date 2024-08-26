@@ -6,6 +6,9 @@ from telegram.ext import *
 from modules.Global.database import dbh
 from modules.Global.decorators import verify_user, handle_errors
 
+# end conversation
+END = ConversationHandler.END
+
 
 @handle_errors
 @verify_user()
@@ -16,6 +19,7 @@ async def myuid_cmd(
     userid: str,
     bot: Bot,
 ) -> None:
+    """returns user id | is gonna be used for education"""
     await message.reply_text(update.effective_user.id)
 
 
