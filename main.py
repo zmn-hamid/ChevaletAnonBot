@@ -16,11 +16,12 @@ from modules.settings import (
     settings_name_handler,
     unblock_all_handler,
     unblock_me_handler,
-    notify_link_handler,
-    notify_link_enable_handler,
-    notify_link_disable_handler,
+    notify_src_handler,
+    notify_src_enable_handler,
+    notify_src_disable_handler,
 )
 from modules.privacy import privacy_handler
+from modules.help import help_handler, more_links_help_handler
 from modules.other_msgs import other_messages_handler, other_cancels_handler
 from modules.app_handlers import error_handler, job_set_commands
 
@@ -32,8 +33,10 @@ if __name__ == "__main__":
 
     # adding handlers
     for handler in [
-        # start
+        # start help
         start_cmd_handler,
+        help_handler,
+        more_links_help_handler,
         # mylinks
         my_cids_handler,
         rm_cid_handler,
@@ -43,9 +46,9 @@ if __name__ == "__main__":
         settings_name_handler,
         unblock_all_handler,
         unblock_me_handler,
-        notify_link_handler,
-        notify_link_enable_handler,
-        notify_link_disable_handler,
+        notify_src_handler,
+        notify_src_enable_handler,
+        notify_src_disable_handler,
         # privacy
         privacy_handler,
         # admin

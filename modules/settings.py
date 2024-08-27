@@ -38,7 +38,9 @@ async def change_name_cmd(
 ) -> int:
     """sends changing name help text"""
     await message.reply_text(
-        f"your name is {dbh.get_name(uid=userid)}\n" "send the updated name or /cancel:"
+        f"اسم نمایشی‌ات:\n{dbh.get_name(uid=userid)}\n"
+        f"این اسمیه که بقیه موقع فرستادن پیام بهت میبینن.\n"
+        "اسم جدید رو بفرست یا کنسل کن: /cancel:"
     )
     return 0
 
@@ -57,7 +59,7 @@ async def update_name(
         f'UPDATE {dbh.users_table} SET name="{message.text}" ' f'WHERE uid="{userid}"'
     )
     dbh.db.commit()
-    await message.reply_text(f"done. current name: {dbh.get_name(userid)}")
+    await message.reply_text(f"انجام شد. اسم جدیدت:\n{dbh.get_name(userid)}")
 
     return ConversationHandler.END
 
@@ -75,15 +77,15 @@ async def unblock_all_cmd(
     if message.text == f"/unblock_all {VALIDATION_TEXT}":
         dbh.cur.execute(f'DELETE FROM {dbh.blocks_table} WHERE blocker_uid="{userid}"')
         dbh.db.commit()
-        await message.reply_text("unblocked everyone.")
+        await message.reply_text("همه با موفقیت آنبلاک شدن.")
     else:
         await message.reply_text(
-            "if youre sure, you gotta send "
+            "اگه مطمئنی این متن رو بفرس: "
             f"<code>/unblock_all {VALIDATION_TEXT}</code>",
             parse_mode=PM.HTML,
         )
 
-
+ 
 @handle_errors
 @verify_user()
 async def unblock_me_cmd(
@@ -94,7 +96,9 @@ async def unblock_me_cmd(
     bot: Bot,
 ) -> None:
     """sends unblock link of the user"""
-    await message.reply_text("send this to someone who has to unblock you:")
+    await message.reply_text(
+        "این پیام رو بفرس به یکی که میخوای آنبلاکت کنه و ازش بخواه تا کلیکش کنه:"
+    )
     await message.reply_text(f"t.me/{bot.username}?start=UNBLOCK-{userid}")
 
 
@@ -113,7 +117,9 @@ async def notify_src_cmd(
     or diable. it shows user where did that message come from (link-wise)
     """
     await message.reply_text(
-        "/notify_link_enable\n/notify_link_disable",
+        "این تنظیمات برای این هست که بات بهت خبر بده هر پیام ناشناس از طریق کودوم لینک ارسال شده.\n"
+        "فعال سازی خبردهی: /notify_src_enable\n"
+        "غیرفعال سازی خبردهی: /notify_src_disable\n",
         parse_mode=PM.HTML,
     )
 
@@ -130,7 +136,7 @@ async def notify_src_enable_cmd(
     """enable notify source"""
     dbh.notify_cid_action(userid, True)
     await message.reply_text(
-        "enabled notification.",
+        "خبردهی فعال شد. غیرفعال سازی: /notify_src_disable",
         parse_mode=PM.HTML,
     )
 
@@ -147,7 +153,7 @@ async def notify_src_disable_cmd(
     """disable notify source"""
     dbh.notify_cid_action(userid, False)
     await message.reply_text(
-        "disabled notification.",
+        "خبردهی غیرفعال شد. فعال سازی: /notify_src_enable",
         parse_mode=PM.HTML,
     )
 
@@ -162,7 +168,7 @@ async def cancel(
     bot: Bot,
 ) -> int:
     """cancel"""
-    await message.reply_text("canceled.")
+    await message.reply_text("کنسل شد.")
     return ConversationHandler.END
 
 
@@ -181,9 +187,9 @@ settings_name_handler = ConversationHandler(
     ],
     per_user=True,
 )
-notify_link_handler = CommandHandler("notify_src", notify_src_cmd)
-notify_link_enable_handler = CommandHandler("notify_src_enable", notify_src_enable_cmd)
-notify_link_disable_handler = CommandHandler(
+notify_src_handler = CommandHandler("notify_src", notify_src_cmd)
+notify_src_enable_handler = CommandHandler("notify_src_enable", notify_src_enable_cmd)
+notify_src_disable_handler = CommandHandler(
     "notify_src_disable", notify_src_disable_cmd
 )
 unblock_all_handler = CommandHandler("unblock_all", unblock_all_cmd)

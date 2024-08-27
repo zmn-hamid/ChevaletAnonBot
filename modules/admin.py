@@ -31,8 +31,11 @@ async def admin_cmd(
     text = message.text.split()[1:]
     try:
         arg1 = text[0]
+        # help text
         if arg1 == "help":
             await message.reply_text(fetch_text("admin"), parse_mode=PM.HTML)
+        
+        # user status -> banned cid limit stats
         elif arg1 == "stats":
             try:
                 stats = dbh.user_status(text[1])
@@ -41,9 +44,13 @@ async def admin_cmd(
             return await message.reply_text(
                 f"is_banned={stats[0]}\ncid_limit={stats[1]}"
             )
+        
+        # ban and unban option
         elif arg1 in ["ban", "unban"]:
             dbh.ban_action(text[1], True if arg1 == "ban" else False)
             return await message.reply_text("done.")
+        
+        # link option
         elif arg1 == "link":
             uid = text[1]
             try:
@@ -55,6 +62,7 @@ async def admin_cmd(
                 f'{href_user(uid)}{uname_part if uname_part else ""}',
                 parse_mode=PM.HTML,
             )
+        
         else:
             raise WrongSyntaxErr
     except (IndexError, WrongSyntaxErr):

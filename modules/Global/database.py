@@ -82,7 +82,7 @@ class DBHandler:
         try:
             self.cur.execute(
                 f"""INSERT INTO {self.blocks_table}
-                                VALUES ("{str(blocker_uid)}", "{str(blocked_uid)}")"""
+                    VALUES ("{str(blocker_uid)}", "{str(blocked_uid)}")"""
             )
             self.db.commit()
             return True

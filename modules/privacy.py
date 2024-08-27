@@ -22,7 +22,8 @@ async def privacy_cmd(
     bot: Bot,
 ) -> None:
     """sends priacy and security help text"""
-    await message.reply_text(fetch_text("privacy_safety"), parse_mode=PM.HTML)
+    await message.reply_text(fetch_text("privacy_safety"),
+                             parse_mode=PM.HTML)
 
 
 privacy_handler = CommandHandler("privacy", privacy_cmd)

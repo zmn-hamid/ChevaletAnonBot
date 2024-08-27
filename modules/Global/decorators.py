@@ -26,7 +26,7 @@ def verify_user(initialize_user: bool = False) -> Callable:
 
             if dbh.user_is_banned(userid):
                 await message.reply_text(
-                    "you're banned bro. " "contact the admins if that's a mistake"
+                    "از بات بن شدی. " "اگه فک میکنی این یه اشتباهه با ادمین صحبت کن"
                 )
                 context.user_data.clear()
                 return ConversationHandler.END

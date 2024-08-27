@@ -1,24 +1,24 @@
 # telegram imports
 from telegram import *
 from telegram.ext import *
-from telegram.error import Forbidden
 from telegram.constants import ParseMode as PM
 
 # project imports
-from modules.Global.log import logger
 from config import ERROR_CHAT_ID
+from modules.Global.log import logger
 
 # global imports
-import traceback
 import html
 import json
+import traceback
+from shortuuid import uuid
 
 
 async def job_set_commands(context: CallbackContext):
     """updates the bot's command menu"""
     await context.application.bot.set_my_commands(
         [
-            ("start", "🆘 کمک!"),
+            ("help", "🆘 کمک!"),
             ("my_links", "🔗 لینک های من"),
             ("settings", "⚙️ تنظیمات پیام ناشناس"),
         ]
@@ -31,6 +31,9 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
     async def inner():
         try:
+            # error code
+            code = uuid()
+
             # Log the error before we do anything else, so we can see it even if something breaks.
             logger.error("Exception while handling an update:", exc_info=context.error)
 
@@ -44,8 +47,9 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             # Build the message with some markup and additional information about what happened.
             # You might need to add some logic to deal with messages longer than the 4096 character limit.
             update_str = update.to_dict() if isinstance(update, Update) else str(update)
-            message = (
+            text = (
                 "An exception was raised while handling an update\n"
+                f"Error code: <code>{code}</code>"
                 f"<pre>update = {html.escape(json.dumps(update_str, indent=2, ensure_ascii=False))}"
                 "</pre>\n\n"
                 f"<pre>context.chat_data = {html.escape(str(context.chat_data))}</pre>\n\n"
@@ -53,10 +57,16 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
                 f"<pre>{html.escape(tb_string)}</pre>"
             )
 
-            # Finally, send the message
+            # send the message to devs
             await context.bot.send_message(
-                chat_id=ERROR_CHAT_ID, text=message, parse_mode=PM.HTML
+                chat_id=ERROR_CHAT_ID, text=text, parse_mode=PM.HTML
             )
+
+            # send report back to user
+            try:
+                update.effective_message.reply_text(f"خطایی رخ داد. کد پیگیری: {code}")
+            except:
+                pass
         except Exception as e:
             logger.error(f"error handler error lol: {e}")
         return

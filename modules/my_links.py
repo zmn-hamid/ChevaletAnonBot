@@ -4,7 +4,7 @@ from telegram.ext import *
 from telegram.constants import ParseMode as PM
 
 # project imports
-from config import VALIDATION_TEXT
+from config import VALIDATION_TEXT, SELLER_ADMIN
 from modules.Global.database import dbh
 from modules.Global.decorators import verify_user, handle_errors
 from modules.Global.get_user import get_user_links
@@ -21,7 +21,7 @@ async def my_cids_cmd(
     bot: Bot,
 ) -> None:
     """returns users cids"""
-    await message.reply_text(get_user_links(userid, bot))
+    await message.reply_text(get_user_links(userid, bot.username), parse_mode=PM.HTML)
 
 
 @handle_errors
@@ -39,19 +39,19 @@ async def rm_cmd(
     if text_split[-1] == VALIDATION_TEXT:
         dbh.cur.execute(f'DELETE FROM {dbh.cids_table} WHERE cid="{cid}"')
         dbh.db.commit()
-        await message.reply_text(get_user_links(userid, bot))
+        if len(dbh.get_cids(userid)) == 0:
+            dbh.add_cid(userid, generate_cid())
+            await message.reply_text(
+                "چون لینک دیگه‌ای نداشتی، یک لینک جدید تولید و لینک قبلی حذف شد"
+            )
+        await message.reply_text(
+            get_user_links(userid, bot.username), parse_mode=PM.HTML
+        )
     else:
-        # check if there's only one left
-        if len(dbh.get_cids(userid)) == 1:
-            await message.reply_text(
-                "only one link is left. make a new one "
-                "if you want to delete this one."
-            )
-        else:
-            await message.reply_text(
-                f"if you're sure, send: <code>{text_split[0]} {VALIDATION_TEXT}</code>",
-                parse_mode=PM.HTML,
-            )
+        await message.reply_text(
+            f"اگه مطمئنی اینو بفرس: <code>{text_split[0]} {VALIDATION_TEXT}</code>",
+            parse_mode=PM.HTML,
+        )
 
 
 @handle_errors
@@ -68,11 +68,13 @@ async def add_link_cmd(
     limit = dbh.get_cid_limit(userid)
     current_cid_count = len(dbh.get_cids(userid))
     if current_cid_count >= limit:
-        return await message.reply_text("you have reached the limit.")
+        return await message.reply_text(
+            f"به حد مجازت رسیدی. برای لینکهای بیشتر به ادمین پیام بده: @{SELLER_ADMIN}"
+        )
 
     # add cid and return links
     dbh.add_cid(userid, generate_cid())
-    await message.reply_text(get_user_links(userid, bot))
+    await message.reply_text(get_user_links(userid, bot.username), parse_mode=PM.HTML)
 
 
 @handle_errors
@@ -86,7 +88,7 @@ async def cancel(
 ):
     """cancel"""
     context.user_data.clear()
-    await message.reply_text("canceled.")
+    await message.reply_text("کنسل شد.")
     return ConversationHandler.END
 
 

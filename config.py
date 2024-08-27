@@ -4,9 +4,11 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN")
 REPORT_CHAT_ID = os.environ.get("REPORT_CHAT_ID")
 ERROR_CHAT_ID = os.environ.get("ERROR_CHAT_ID")
 ADMINS = os.environ.get("ADMINS").split("|")
-DB_NAME = os.environ.get("db_name")
-DB_USER = os.environ.get("db_user")
-DB_PASS = os.environ.get("db_pass")
-LOG_LEVEL = logging._nameToLevel[os.environ.get("log_level").upper()]
+SELLER_ADMIN = os.environ.get("SELLER_ADMIN")  # username
+SUPPORT_ADMIN = os.environ.get("SUPPORT_ADMIN")  # username
+DB_NAME = os.environ.get("DB_NAME")
+DB_USER = os.environ.get("DB_USER")
+DB_PASS = os.environ.get("DB_PASS")
+LOG_LEVEL = logging._nameToLevel[os.environ.get("LOG_LEVEL").upper()]
 
-VALIDATION_TEXT = "YES I AM SURE"
+VALIDATION_TEXT = "بله مطمئن هستم"

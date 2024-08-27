@@ -5,7 +5,7 @@ from telegram.constants import ParseMode as PM
 from telegram.warnings import PTBUserWarning
 
 # project imports
-from config import REPORT_CHAT_ID
+from config import REPORT_CHAT_ID, SUPPORT_ADMIN
 from modules.Global.database import dbh
 from modules.Global.get_user import href_user
 from modules.Global.decorators import verify_user, handle_errors
@@ -48,7 +48,9 @@ async def start_cmd(
 
     if len(split_text) == 1:
         # send start/help text
-        await message.reply_text(fetch_text("start_help"), parse_mode=PM.HTML)
+        await message.reply_text(fetch_text("start_help") % (SUPPORT_ADMIN),
+                                 parse_mode=PM.HTML,
+                                 disable_web_page_preview=True)
 
     else:
         if split_text[1].startswith("UNBLOCK-"):
@@ -58,12 +60,12 @@ async def start_cmd(
                 int(target_uid)
             except:
                 await message.reply_text(
-                    "wrong link?", reply_to_message_id=message.message_id
+                    "لینکت اشتباهه?", reply_to_message_id=message.message_id
                 )
                 return
             dbh.remove_block(blocker_uid=userid, blocked_uid=target_uid)
             await message.reply_text(
-                "unblocked.", reply_to_message_id=message.message_id
+                "آنبلاک شد.", reply_to_message_id=message.message_id
             )
             return END
         else:
@@ -73,7 +75,7 @@ async def start_cmd(
             # check is blocked by user
             if dbh.is_blocked(blocker_uid=dbh.get_uid(target_cid), blocked_uid=userid):
                 await message.reply_text(
-                    "you're blocked by this user",
+                    "این کاربر بلاکت کرده خخ",
                     reply_to_message_id=message.message_id,
                 )
                 return END
@@ -82,8 +84,8 @@ async def start_cmd(
             context.user_data["target_cid"] = target_cid
 
             await message.reply_text(
-                f"sending message to {dbh.get_name(dbh.get_uid(target_cid))}"
-                " -- /cancel",
+                f"در حال ارسال پیام به {dbh.get_name(dbh.get_uid(target_cid))} هستی.\n"
+                "کنسل کردن: /cancel",
                 reply_to_message_id=message.message_id,
             )
             return 0  # state 0
@@ -108,13 +110,13 @@ async def send_msg(
     # get uid from cid for target
     target_uid = dbh.get_uid(target_cid)
     if target_uid == None:
-        await message.reply_text("target user has not started the bot yet?")
+        await message.reply_text("مخاطبت هنوز بات رو استارت نزده?")
         return END
 
     # check is blocked by user
     if dbh.is_blocked(blocker_uid=target_uid, blocked_uid=userid):
         await message.reply_text(
-            "you're blocked by this user", reply_to_message_id=message.message_id
+            "این کاربر بلاکت کرده خخ", reply_to_message_id=message.message_id
         )
         return END
 
@@ -125,7 +127,7 @@ async def send_msg(
     # sending message to target
     ## notify target
     if dbh.get_notify_cid(target_uid):
-        await bot.send_message(target_uid, f"new message ({target_cid}):")
+        await bot.send_message(target_uid, f"پیام جدید ({target_cid}):")
     ## send the message
     await message.copy(
         target_uid,
@@ -176,7 +178,7 @@ async def answer(
         # check is blocked by user
         if dbh.is_blocked(blocker_uid=dbh.get_uid(target_cid), blocked_uid=userid):
             await message.reply_text(
-                "you're blocked by this user", reply_to_message_id=message.message_id
+                "این کاربر بلاکت کرده خخ", reply_to_message_id=message.message_id
             )
             return END
 
@@ -184,7 +186,8 @@ async def answer(
         context.user_data["reply_to"] = target_mid
 
         await message.reply_text(
-            f"sending your answer -- /cancel", reply_to_message_id=message.message_id
+            f"در حال ارسال جواب هستی. کنسل کردن: /cancel",
+            reply_to_message_id=message.message_id,
         )
         return 0  # state 0
 
@@ -227,11 +230,11 @@ async def block(
                     ]
                 )
             )
-            await clbk.answer("blocked successfully.")
+            await clbk.answer("با موفقیت بلاک شد.")
             return END
 
         else:
-            await clbk.answer("failed to block.")
+            await clbk.answer("بلاک هستش.")
             return END
 
 
@@ -273,11 +276,11 @@ async def unblock(
                     ]
                 )
             )
-            await clbk.answer("unblocked successfully.")
+            await clbk.answer("با موفقیت آنبلاک شد.")
             return END
 
         else:
-            await clbk.answer("failed to unblock.")
+            await clbk.answer("آنبلاک هستش.")
             return END
 
 
@@ -318,7 +321,7 @@ async def report(
             reply_to_message_id=first_message.message_id,
         )
         await message.reply_text(
-            f"done.\nreport id: <code>{report_id}</code>",
+            f"ریپورت شد.\nکد پیگیری: <code>{report_id}</code>",
             reply_to_message_id=message.message_id,
             parse_mode=PM.HTML,
         )
@@ -337,7 +340,7 @@ async def cancel(
 ) -> int:
     """# cancel"""
     context.user_data.clear()
-    await message.reply_text("canceled.")
+    await message.reply_text("کنسل شد.")
     return END
 
 

@@ -19,7 +19,7 @@ async def other_messages(
     bot: Bot,
 ) -> None:
     """other messages that are sent"""
-    await message.reply_text("what?")
+    await message.reply_text("متوجه نشدم. اگه کمک میخوای از /help استفاده کن")
 
 
 @handle_errors
@@ -32,7 +32,7 @@ async def other_cancels(
     bot: Bot,
 ) -> None:
     """in case a random /cancel is called"""
-    await message.reply_text("nothing to cancel.")
+    await message.reply_text("چیزی واسه کنسل کردن وجود نداره")
 
 
 other_cancels_handler = CommandHandler(f"cancel", other_cancels)
