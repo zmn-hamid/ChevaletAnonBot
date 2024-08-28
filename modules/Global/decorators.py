@@ -10,6 +10,7 @@ from modules.Global.user_init import init_user
 # global imports
 from functools import wraps
 from typing import Callable
+import html, json
 
 
 def verify_user(initialize_user: bool = False) -> Callable:
@@ -18,6 +19,10 @@ def verify_user(initialize_user: bool = False) -> Callable:
     def decorator(func):
         @wraps(func)
         async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
+            # only handle updates from private chats
+            if update.effective_chat.type in ['channel', 'group']:
+                return ConversationHandler.END
+
             message: Message = update.effective_message
             userid = str(update.effective_user.id)
             bot = update.get_bot()
