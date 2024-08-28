@@ -39,7 +39,7 @@ async def rm_cmd(
     if text_split[-1] == VALIDATION_TEXT:
         dbh.cur.execute(f'DELETE FROM {dbh.cids_table} WHERE cid="{cid}"')
         dbh.db.commit()
-        if len(dbh.get_cids(userid)) == 0:
+        if len(dbh.get_cids(userid)) < 1: # in case cid limit is set to negative
             dbh.add_cid(userid, generate_cid())
             await message.reply_text(
                 "چون لینک دیگه‌ای نداشتی، یک لینک جدید تولید و لینک قبلی حذف شد"

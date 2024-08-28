@@ -4,12 +4,15 @@ from telegram.ext import *
 from telegram.constants import ParseMode as PM
 
 # project imports
+from config import ADMINS
 from modules.Global.database import dbh
 from modules.Global.get_user import href_user
 from modules.Global.decorators import verify_user, handle_errors
 from modules.Global.fetch_texts import fetch_text
 from modules.Global.exceptions import WrongSyntaxErr
-from config import ADMINS
+
+# global imports
+from mysql.connector.errors import IntegrityError
 
 
 @handle_errors
@@ -24,7 +27,7 @@ async def admin_cmd(
     """for admins to handle the bot"""
     # check if it's admin
     if userid not in ADMINS:
-        return await message.reply_text("lol")
+        return await message.reply_text("خخ")
     await message.reply_text("<i>*admin detected*</i>", parse_mode=PM.HTML)
 
     # check what's the request
@@ -50,28 +53,43 @@ async def admin_cmd(
             dbh.ban_action(text[1], True if arg1 == "ban" else False)
             return await message.reply_text("done.")
         
-        # link option
+        # get/change cid limit for a user
+        elif arg1 == 'cid':
+            if text[1] == 'get':
+                return await message.reply_text(f'limit: {dbh.get_cid_limit(text[2])}')
+            elif text[1] == 'set':
+                uid = text[2]
+                limit = int(text[3])
+                dbh.cur.execute(f'UPDATE {dbh.users_table} SET cid_limit={limit} '
+                                f'WHERE uid="{uid}"')
+                dbh.db.commit()
+            return await message.reply_text("done.")
+        
+        # user hyperlink option
         elif arg1 == "link":
             uid = text[1]
             try:
-                c = await bot.get_chat(uid)
-                uname_part = f" | @{c.username}"
+                uname_part = f" | @{(await bot.get_chat(uid)).username}"
             except:
-                uname_part = None
+                uname_part = ''
             return await message.reply_text(
-                f'{href_user(uid)}{uname_part if uname_part else ""}',
+                f'{href_user(uid)}{uname_part}',
                 parse_mode=PM.HTML,
             )
         
         else:
             raise WrongSyntaxErr
-    except (IndexError, WrongSyntaxErr):
+    except (IndexError, ValueError, WrongSyntaxErr):
         return await message.reply_text(
             "wrong syntax. use <code>/admin help</code>", parse_mode=PM.HTML
         )
+    except IntegrityError:
+        return await message.reply_text(
+            "wrong value (uid or whatever). use <code>/admin help</code>", parse_mode=PM.HTML
+        )
     except Exception as e:
         try:
-            await message.reply_text(f"error: {e.__class__} | {e}")
+            return await message.reply_text(f"error: {e.__class__} | {e}")
         except:
             pass
 
