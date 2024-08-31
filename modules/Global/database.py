@@ -54,7 +54,7 @@ class DBHandler:
 
     def calc_cid_count(self) -> None:
         """caculates the initial cid_count based on number of users"""
-        self.cur.execute(f"SELECT uid FROM {self.users_table}")
+        self.cur.execute(f"SELECT uid FROM {self.cids_table}")
         self.cid_count = len(self.cur.fetchall())
 
     def add_user(self, uid: str, name) -> bool:
