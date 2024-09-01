@@ -11,7 +11,7 @@ from modules.Global.fetch_texts import fetch_text
 
 
 @handle_errors
-@verify_user()
+@verify_user(initialize_user=True)
 async def help_cmd(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
