@@ -1,3 +1,7 @@
+# project imports
+from config import DB_USER, DB_PASS, DB_NAME
+
+# global imports
 import mysql.connector
 from mysql.connector.errors import IntegrityError
 from typing import List
@@ -23,7 +27,7 @@ class DBHandler:
     def connect_db(self) -> None:
         """connects to database"""
         self.db = mysql.connector.connect(
-            host="localhost", user="root", password="hamid1780", database="mydatabase"
+            host="localhost", user=DB_USER, password=DB_PASS, database=DB_NAME
         )
         self.cur = self.db.cursor()
 
