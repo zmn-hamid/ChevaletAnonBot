@@ -36,7 +36,7 @@ async def admin_cmd(
     text = message.text.split()[1:]
     try:
         arg1 = text[0]
-        
+
         # help text
         if arg1 == "help":
             await message.reply_text(fetch_text("admin"), parse_mode=PM.HTML)
@@ -46,7 +46,7 @@ async def admin_cmd(
             if not (len(text) > 1 and text[1] == "YES"):
                 return await message.reply_text(
                     "send <code>/admin send-mass-msg YES</code> if you're sure",
-                    parse_mode=PM.HTML
+                    parse_mode=PM.HTML,
                 )
             sent_to = []
 
@@ -65,8 +65,7 @@ async def admin_cmd(
             with open(logfile, "w") as f:
                 f.writelines(
                     [
-                        f"{href_user(uid)} | "
-                        f"{'success' if item['sent'] else f'fail | {item.get('reason')}'}"
+                        f"{uid} | {'success' if item['sent'] else f'fail | {item.get('reason')}'}"
                         for item in sent_to
                     ]
                 )

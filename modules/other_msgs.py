@@ -12,6 +12,7 @@ END = ConversationHandler.END
 async def other_messages_template(message: Message):
     return await message.reply_text("متوجه نشدم. اگه کمک میخوای از /help استفاده کن")
 
+
 @handle_errors
 @verify_user()
 async def other_messages(
