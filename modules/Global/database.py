@@ -1,5 +1,5 @@
 # project imports
-from config import DB_USER, DB_PASS, DB_NAME
+from config import DB_USER, DB_PASS, DB_NAME, MAX_TRY_ADD_CID
 
 # global imports
 import mysql.connector
@@ -16,13 +16,9 @@ class DBHandler:
         self.blocks_table = "blocks"
         self.cids_table = "cids"
 
-        # custom id counter (for generator)
-        self.cid_count = 0
-
         # init runs
         self.connect_db()
         self.make_tables()
-        self.calc_cid_count()
 
     def connect_db(self) -> None:
         """connects to database"""
@@ -55,11 +51,6 @@ class DBHandler:
                 cid VARCHAR(255) NOT NULL UNIQUE);
             """
         )
-
-    def calc_cid_count(self) -> None:
-        """caculates the initial cid_count based on number of users"""
-        self.cur.execute(f"SELECT uid FROM {self.cids_table}")
-        self.cid_count = len(self.cur.fetchall())
 
     def add_user(self, uid: str, name) -> bool:
         """
@@ -150,17 +141,20 @@ class DBHandler:
         )
         self.db.commit()
 
-    def add_cid(self, uid, cid) -> bool:
+    def add_cid(self, uid: int, cid: int, try_counter: int = 0) -> bool:
         """add cid for user"""
+        if try_counter >= MAX_TRY_ADD_CID:
+            return False
         try:
             self.cur.execute(
                 f"""INSERT INTO {self.cids_table}
-                                VALUES ("{str(uid)}", "{str(cid)}")"""
+                    VALUES ("{str(uid)}", "{str(cid)}")"""
             )
             self.db.commit()
             return True
         except IntegrityError:
-            return False
+            try_counter += 1
+            return self.add_cid(uid, cid, try_counter)
 
     def get_cids(self, uid) -> List[str]:
         """get all the cids of a user"""

@@ -20,14 +20,16 @@ def verify_user(initialize_user: bool = False) -> Callable:
         @wraps(func)
         async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # only handle updates from private chats
-            if update.effective_chat.type in ['channel', 'group']:
+            if update.effective_chat.type in ["channel", "group"]:
                 return ConversationHandler.END
 
             message: Message = update.effective_message
             userid = str(update.effective_user.id)
             bot = update.get_bot()
             if initialize_user:
-                await init_user(userid, bot)
+                output = await init_user(userid, bot)
+                if output == False:
+                    await message.reply_text('مشکلی در ساخت لینک ناشناس بوجود اومد. دوباره تلاش کن و اگه موفق نشدی، قبل از استفاده از بات با پشتیبانی تماس بگیر')
 
             if dbh.user_is_banned(userid):
                 await message.reply_text(

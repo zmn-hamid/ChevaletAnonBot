@@ -85,7 +85,7 @@ async def unblock_all_cmd(
             parse_mode=PM.HTML,
         )
 
- 
+
 @handle_errors
 @verify_user()
 async def unblock_me_cmd(

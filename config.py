@@ -12,3 +12,4 @@ DB_PASS = os.environ.get("DB_PASS")
 LOG_LEVEL = logging._nameToLevel[os.environ.get("LOG_LEVEL").upper()]
 
 VALIDATION_TEXT = "بله مطمئن هستم"
+MAX_TRY_ADD_CID = 5

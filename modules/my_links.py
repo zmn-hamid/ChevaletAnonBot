@@ -39,8 +39,10 @@ async def rm_cmd(
     if text_split[-1] == VALIDATION_TEXT:
         dbh.cur.execute(f'DELETE FROM {dbh.cids_table} WHERE cid="{cid}"')
         dbh.db.commit()
-        if len(dbh.get_cids(userid)) < 1: # in case cid limit is set to negative
-            dbh.add_cid(userid, generate_cid())
+        if len(dbh.get_cids(userid)) < 1:  # in case cid limit is set to negative
+            output = dbh.add_cid(userid, generate_cid())
+            if output == False:
+                return await message.reply_text('مشکلی در ساخت لینک ناشناس بوجود اومد. قبل از استفاده از بات، با پشتیبانی تماس بگیر')
             await message.reply_text(
                 "چون لینک دیگه‌ای نداشتی، یک لینک جدید تولید و لینک قبلی حذف شد"
             )
@@ -73,7 +75,9 @@ async def add_link_cmd(
         )
 
     # add cid and return links
-    dbh.add_cid(userid, generate_cid())
+    output = dbh.add_cid(userid, generate_cid())
+    if output == False:
+        return await message.reply_text('مشکلی در ساخت لینک ناشناس بوجود اومد. دوباره تلاش کن و اگه موفق نشدی، قبل از استفاده از بات با پشتیبانی تماس بگیر')
     await message.reply_text(get_user_links(userid, bot.username), parse_mode=PM.HTML)
 
 

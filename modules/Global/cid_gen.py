@@ -10,13 +10,10 @@ def generate_cid() -> str:
     """
     # generates custom id
     method:
-        short uuid (10 chars) +
-        1 rand letter +
-        last digit from time() +
-        the current cid counter
+        short uuid (12 chars) +
+        2 random letter
     """
-    element1 = random.choice(list(string.ascii_lowercase))
-    element2 = str(time.time())[-1]
     generated_id = suid().random(length=10)
-    dbh.cid_count += 1
-    return f"{generated_id}{element1}{element2}{dbh.cid_count}"
+    element1 = random.choice(list(string.ascii_lowercase))
+    element2 = random.choice(list(string.ascii_lowercase))
+    return f"{generated_id}{element1}{element2}"

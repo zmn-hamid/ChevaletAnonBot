@@ -48,9 +48,11 @@ async def start_cmd(
 
     if len(split_text) == 1:
         # send start/help text
-        await message.reply_text(fetch_text("start_help") % (SUPPORT_ADMIN),
-                                 parse_mode=PM.HTML,
-                                 disable_web_page_preview=True)
+        await message.reply_text(
+            fetch_text("start_help") % (SUPPORT_ADMIN),
+            parse_mode=PM.HTML,
+            disable_web_page_preview=True,
+        )
 
     else:
         if split_text[1].startswith("UNBLOCK-"):
@@ -152,7 +154,7 @@ async def send_msg(
         reply_to_message_id=target_mid if target_mid else None,
     )
     await message.reply_text(
-        "sent",
+        "فرستادم بهش",
         reply_to_message_id=message.message_id,
     )
     context.user_data.clear()

@@ -20,9 +20,11 @@ async def help_cmd(
     bot: Bot,
 ) -> None:
     """sends priacy and security help text"""
-    await message.reply_text(fetch_text("start_help") % (SUPPORT_ADMIN),
-                             parse_mode=PM.HTML,
-                             disable_web_page_preview=True)
+    await message.reply_text(
+        fetch_text("start_help") % (SUPPORT_ADMIN),
+        parse_mode=PM.HTML,
+        disable_web_page_preview=True,
+    )
 
 
 @handle_errors

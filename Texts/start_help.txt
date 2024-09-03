@@ -12,5 +12,5 @@
 
 ----------------------------
 پشتیبانی: @%s
-مدیریت: <a href="t.me/Chevalet_Studio">استودیو چِوَلِت</a>
-طراح بات: <a href="t.me/zmn_hamid">حمیدرضا زمانیان</a>
+مدیریت: <a href="t.me/Chevalet_Studio">Chevalet Studio</a>
+طراح بات: <a href="t.me/zmn_hamid">Hamidreza Zamanian</a>

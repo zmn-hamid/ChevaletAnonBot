@@ -64,7 +64,9 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
             # send report back to user
             try:
-                update.effective_message.reply_text(f"خطایی رخ داد. کد پیگیری: {code}")
+                await update.effective_message.reply_text(
+                    f"خطایی رخ داد. کد پیگیری: <code>{code}</code>",
+                    parse_mode=PM.HTML)
             except:
                 pass
         except Exception as e:
