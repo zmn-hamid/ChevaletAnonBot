@@ -1,5 +1,5 @@
 # telegram imports
-from telegram import Message
+from telegram import Message, Bot
 
 # project imports
 from config import SELLER_ADMIN
@@ -17,13 +17,21 @@ def get_user_links(userid, bot_username) -> str:
     text = []
     for idx, cid in enumerate(cids):
         text.append(
-            f"<b>{idx+1}. t.me/{bot_username}?start={cid}</b>\nحذف کردن لینک: /rm_{cid}\n"
+            f"<b>({idx+1})</b> <code>t.me/{bot_username}?start={cid}</code>\nحذف کردن لینک: /rm_{cid}\n"
         )
     cid_limit = dbh.get_cid_limit(userid)
     return "------\n".join(text) + (
         "\n\n"
         "<b>اضافه کردن لینک جدید</b>: /add_link\n"
         f"{len(cids)} از {cid_limit} لینک مجاز استفاده شده.\n"
-        f"برای لینک های بیشتر به ادمین پیام بدید: @{SELLER_ADMIN}\n"
+        f"برای دریافت لینک های بیشتر به این آیدی پیام بدید: @{SELLER_ADMIN}\n"
         f"توضیحات قابلیت لینک های بیشتر: /more_links"
     )
+
+
+async def get_link_username(userid: str, bot: Bot) -> str:
+    try:
+        uname_part = f" | @{(await bot.get_chat(userid)).username}"
+    except:
+        uname_part = ""
+    return f"{href_user(userid)}{uname_part}"

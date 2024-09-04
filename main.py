@@ -16,9 +16,6 @@ from modules.settings import (
     settings_name_handler,
     unblock_all_handler,
     unblock_me_handler,
-    notify_src_handler,
-    notify_src_enable_handler,
-    notify_src_disable_handler,
 )
 from modules.privacy import privacy_handler
 from modules.help import help_handler, more_links_help_handler
@@ -46,9 +43,6 @@ if __name__ == "__main__":
         settings_name_handler,
         unblock_all_handler,
         unblock_me_handler,
-        notify_src_handler,
-        notify_src_enable_handler,
-        notify_src_disable_handler,
         # privacy
         privacy_handler,
         # admin
@@ -68,5 +62,5 @@ if __name__ == "__main__":
     job_queue.run_once(job_set_commands, 3)
 
     # starting the bot
-    logger.info("starting the bot...")
+    logger.info(f"starting bot...")
     application.run_polling()

@@ -7,7 +7,7 @@ from telegram.warnings import PTBUserWarning
 # project imports
 from config import REPORT_CHAT_ID, SUPPORT_ADMIN
 from modules.Global.database import dbh
-from modules.Global.get_user import href_user
+from modules.Global.get_user import get_link_username
 from modules.Global.decorators import verify_user, handle_errors
 from modules.Global.fetch_texts import fetch_text
 
@@ -73,9 +73,15 @@ async def start_cmd(
         else:
             # sending message
             target_cid = split_text[1]
+            target_uid = dbh.get_uid(target_cid)
+
+            # check if target_cid exists
+            if target_uid == None:
+                await message.reply_text("این لینک اشتباهه و کار نمیکنه")
+                return END
 
             # check is blocked by user
-            if dbh.is_blocked(blocker_uid=dbh.get_uid(target_cid), blocked_uid=userid):
+            if dbh.is_blocked(blocker_uid=target_uid, blocked_uid=userid):
                 await message.reply_text(
                     "این کاربر بلاکت کرده خخ",
                     reply_to_message_id=message.message_id,
@@ -84,9 +90,14 @@ async def start_cmd(
 
             # save target to context
             context.user_data["target_cid"] = target_cid
+            context.user_data["is_answer"] = False
 
+            if target_uid == userid:
+                await message.reply_text(
+                    "میخوای با خودت صحبت کنی؟ :) عب نداره راحت باش"
+                )
             await message.reply_text(
-                f"در حال ارسال پیام به {dbh.get_name(dbh.get_uid(target_cid))} هستی.\n"
+                f"در حال ارسال پیام به {dbh.get_name(target_uid)} هستی.\n"
                 "کنسل کردن: /cancel",
                 reply_to_message_id=message.message_id,
             )
@@ -108,12 +119,10 @@ async def send_msg(
     """
     target_cid = context.user_data.get("target_cid")
     target_mid = context.user_data.get("reply_to")
+    is_answer = context.user_data.get("is_answer")
 
     # get uid from cid for target
     target_uid = dbh.get_uid(target_cid)
-    if target_uid == None:
-        await message.reply_text("مخاطبت هنوز بات رو استارت نزده?")
-        return END
 
     # check is blocked by user
     if dbh.is_blocked(blocker_uid=target_uid, blocked_uid=userid):
@@ -128,7 +137,7 @@ async def send_msg(
 
     # sending message to target
     ## notify target
-    if dbh.get_notify_cid(target_uid):
+    if not is_answer and len(dbh.get_cids(target_uid)) > 1:
         await bot.send_message(target_uid, f"پیام جدید ({target_cid}):")
     ## send the message
     await message.copy(
@@ -151,7 +160,7 @@ async def send_msg(
                 ],
             ]
         ),
-        reply_to_message_id=target_mid if target_mid else None,
+        reply_to_message_id=target_mid,
     )
     await message.reply_text(
         "فرستادم بهش",
@@ -186,6 +195,7 @@ async def answer(
 
         context.user_data["target_cid"] = target_cid
         context.user_data["reply_to"] = target_mid
+        context.user_data["is_answer"] = True
 
         await message.reply_text(
             f"در حال ارسال جواب هستی. کنسل کردن: /cancel",
@@ -311,8 +321,8 @@ async def report(
         first_message = await context.bot.send_message(
             REPORT_CHAT_ID,
             f"id: <code>{report_id}</code>\n"
-            f"reporter: {href_user(update.effective_user.id)}\n"
-            f"reported: {href_user(target_uid)}\n"
+            f"reporter: {get_link_username(userid, bot)}\n"
+            f"reported: {get_link_username(target_uid, bot)}\n"
             f"message:",
             parse_mode=PM.HTML,
         )
@@ -328,6 +338,20 @@ async def report(
             parse_mode=PM.HTML,
         )
 
+    return END
+
+
+@handle_errors
+@verify_user()
+async def command_while_sending(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    message: Message,
+    userid: str,
+    bot: Bot,
+) -> int:
+    context.user_data.clear()
+    await message.reply_text("وسط ارسال پیام بودی. کنسلش کردم. دوباره دستور رو بفرست")
     return END
 
 
@@ -356,7 +380,11 @@ start_cmd_handler = ConversationHandler(
     ],
     states={
         0: [
+            CommandHandler("start", start_cmd),
             MessageHandler(filters.ALL & (~filters.COMMAND), send_msg),
+            MessageHandler(
+                filters.COMMAND & (~filters.Regex("/cancel")), command_while_sending
+            ),
         ],
     },
     fallbacks=[

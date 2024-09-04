@@ -97,65 +97,9 @@ async def unblock_me_cmd(
 ) -> None:
     """sends unblock link of the user"""
     await message.reply_text(
-        "این پیام رو بفرس به یکی که میخوای آنبلاکت کنه و ازش بخواه تا کلیکش کنه:"
+        "این پیام رو بفرس به یکی که میخوای آنبلاکت کنه و ازش بخواه تا بزنه رو لینک:"
     )
     await message.reply_text(f"t.me/{bot.username}?start=UNBLOCK-{userid}")
-
-
-@handle_errors
-@verify_user()
-async def notify_src_cmd(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE,
-    message: Message,
-    userid: str,
-    bot: Bot,
-) -> None:
-    """
-    # notify source help text
-    notify srouce is the "new message (*source*)" text which user can enable
-    or diable. it shows user where did that message come from (link-wise)
-    """
-    await message.reply_text(
-        "این تنظیمات برای این هست که بات بهت خبر بده هر پیام ناشناس از طریق کودوم لینک ارسال شده.\n"
-        "فعال سازی خبردهی: /notify_src_enable\n"
-        "غیرفعال سازی خبردهی: /notify_src_disable\n",
-        parse_mode=PM.HTML,
-    )
-
-
-@handle_errors
-@verify_user()
-async def notify_src_enable_cmd(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE,
-    message: Message,
-    userid: str,
-    bot: Bot,
-) -> None:
-    """enable notify source"""
-    dbh.notify_cid_action(userid, True)
-    await message.reply_text(
-        "خبردهی فعال شد. غیرفعال سازی: /notify_src_disable",
-        parse_mode=PM.HTML,
-    )
-
-
-@handle_errors
-@verify_user()
-async def notify_src_disable_cmd(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE,
-    message: Message,
-    userid: str,
-    bot: Bot,
-) -> None:
-    """disable notify source"""
-    dbh.notify_cid_action(userid, False)
-    await message.reply_text(
-        "خبردهی غیرفعال شد. فعال سازی: /notify_src_enable",
-        parse_mode=PM.HTML,
-    )
 
 
 @handle_errors
@@ -186,11 +130,6 @@ settings_name_handler = ConversationHandler(
         CommandHandler("cancel", cancel),
     ],
     per_user=True,
-)
-notify_src_handler = CommandHandler("notify_src", notify_src_cmd)
-notify_src_enable_handler = CommandHandler("notify_src_enable", notify_src_enable_cmd)
-notify_src_disable_handler = CommandHandler(
-    "notify_src_disable", notify_src_disable_cmd
 )
 unblock_all_handler = CommandHandler("unblock_all", unblock_all_cmd)
 unblock_me_handler = CommandHandler("unblock_me", unblock_me_cmd)

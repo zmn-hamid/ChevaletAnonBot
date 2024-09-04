@@ -6,7 +6,7 @@ from telegram.constants import ParseMode as PM
 # project imports
 from config import ADMINS
 from modules.Global.database import dbh
-from modules.Global.get_user import href_user
+from modules.Global.get_user import get_link_username
 from modules.Global.decorators import verify_user, handle_errors
 from modules.Global.fetch_texts import fetch_text
 from modules.Global.exceptions import WrongSyntaxErr
@@ -25,7 +25,7 @@ async def admin_cmd(
     message: Message,
     userid: str,
     bot: Bot,
-) -> None | Message:
+) -> None:
     """for admins to handle the bot"""
     # check if it's admin
     if userid not in ADMINS:
@@ -63,11 +63,14 @@ async def admin_cmd(
             # send log
             logfile = "log-mass-msg.txt"
             with open(logfile, "w") as f:
-                f.writelines(
-                    [
-                        f"{uid} | {'success' if item['sent'] else f'fail | {item.get('reason')}'}"
-                        for item in sent_to
-                    ]
+                f.write(
+                    "\n".join(
+                        [
+                            f"{item['uid']} | "
+                            f"{'success' if item['sent'] else f'fail | {item.get('reason')}'}"
+                            for item in sent_to
+                        ]
+                    )
                 )
             await message.reply_document(open(logfile, "rb"))
             os.remove(logfile)
@@ -103,13 +106,8 @@ async def admin_cmd(
 
         # user hyperlink option
         elif arg1 == "link":
-            uid = text[1]
-            try:
-                uname_part = f" | @{(await bot.get_chat(uid)).username}"
-            except:
-                uname_part = ""
             return await message.reply_text(
-                f"{href_user(uid)}{uname_part}",
+                get_link_username(text[1], bot),
                 parse_mode=PM.HTML,
             )
 

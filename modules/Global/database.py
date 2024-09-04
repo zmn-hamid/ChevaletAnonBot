@@ -34,7 +34,6 @@ class DBHandler:
                 uid VARCHAR(255) NOT NULL PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
                 is_banned BOOLEAN NOT NULL,
-                notify_cid BOOLEAN NOT NULL,
                 cid_limit INT NOT NULL);
             """
         )
@@ -65,7 +64,7 @@ class DBHandler:
         try:
             self.cur.execute(
                 f"""INSERT INTO {self.users_table}
-                    VALUES ("{uid}", "{name}", FALSE, FALSE, 2)"""
+                    VALUES ("{uid}", "{name}", FALSE, 2)"""
             )
             self.db.commit()
             return True
@@ -132,15 +131,6 @@ class DBHandler:
         )
         self.db.commit()
 
-    def notify_cid_action(self, uid: str, notify: bool) -> None:
-        """notify or not notify the user for the cid (source)"""
-        notify_cid = "TRUE" if notify else "FALSE"
-        self.cur.execute(
-            f"UPDATE {self.users_table} SET notify_cid={notify_cid} "
-            f'WHERE uid="{uid}"'
-        )
-        self.db.commit()
-
     def add_cid(self, uid: int, cid: int, try_counter: int = 0) -> bool:
         """add cid for user"""
         if try_counter >= MAX_TRY_ADD_CID:
@@ -156,7 +146,7 @@ class DBHandler:
             try_counter += 1
             return self.add_cid(uid, cid, try_counter)
 
-    def get_cids(self, uid) -> List[str]:
+    def get_cids(self, uid: str) -> List[str]:
         """get all the cids of a user"""
         self.cur.execute(
             f'''SELECT cid FROM {self.cids_table}
@@ -164,7 +154,7 @@ class DBHandler:
         )
         return [item[0] for item in self.cur.fetchall()]
 
-    def get_name(self, uid) -> str | None:
+    def get_name(self, uid: str) -> str | None:
         """gets the preview name of a user"""
         self.cur.execute(
             f"""SELECT name FROM {self.users_table}
@@ -177,7 +167,7 @@ class DBHandler:
         else:
             return None
 
-    def get_uid(self, cid) -> str | None:
+    def get_uid(self, cid: str) -> str | None:
         """gets the uid based on a cid"""
         self.cur.execute(
             f'''SELECT uid FROM {self.cids_table}
@@ -188,11 +178,6 @@ class DBHandler:
             return output[0][0]
         else:
             return None
-
-    def get_notify_cid(self, uid: str) -> bool:
-        """gets the cid (source) notification settings of a user"""
-        self.cur.execute(f'SELECT notify_cid FROM {self.users_table} WHERE uid="{uid}"')
-        return self.cur.fetchone()[0]
 
     def get_cid_limit(self, uid: str) -> int:
         """gets the cid limit for a user"""

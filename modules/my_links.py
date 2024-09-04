@@ -66,7 +66,7 @@ async def add_link_cmd(
     message: Message,
     userid: str,
     bot: Bot,
-):
+) -> None:
     """adds a new cid if not reached the limit"""
     # check if user has reached limit
     limit = dbh.get_cid_limit(userid)

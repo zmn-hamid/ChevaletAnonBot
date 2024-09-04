@@ -14,7 +14,7 @@ import traceback
 from shortuuid import uuid
 
 
-async def job_set_commands(context: CallbackContext):
+async def job_set_commands(context: CallbackContext) -> None:
     """updates the bot's command menu"""
     await context.application.bot.set_my_commands(
         [
