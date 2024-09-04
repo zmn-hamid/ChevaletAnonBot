@@ -107,7 +107,7 @@ async def admin_cmd(
         # user hyperlink option
         elif arg1 == "link":
             return await message.reply_text(
-                get_link_username(text[1], bot),
+                await get_link_username(text[1], bot),
                 parse_mode=PM.HTML,
             )
 

@@ -321,8 +321,8 @@ async def report(
         first_message = await context.bot.send_message(
             REPORT_CHAT_ID,
             f"id: <code>{report_id}</code>\n"
-            f"reporter: {get_link_username(userid, bot)}\n"
-            f"reported: {get_link_username(target_uid, bot)}\n"
+            f"reporter: {await get_link_username(userid, bot)}\n"
+            f"reported: {await get_link_username(target_uid, bot)}\n"
             f"message:",
             parse_mode=PM.HTML,
         )
