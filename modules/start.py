@@ -351,7 +351,7 @@ async def command_while_sending(
     bot: Bot,
 ) -> int:
     context.user_data.clear()
-    await message.reply_text("وسط ارسال پیام بودی. کنسلش کردم. دوباره دستور رو بفرست")
+    await message.reply_text("وسط ارسال پیام بودی. کنسلش کردم. دوباره بفرست")
     return END
 
 
@@ -381,7 +381,11 @@ start_cmd_handler = ConversationHandler(
     states={
         0: [
             CommandHandler("start", start_cmd),
-            MessageHandler(filters.ALL & (~filters.COMMAND), send_msg),
+            CallbackQueryHandler(answer, r"^answer\|"),
+            CallbackQueryHandler(report, r"^report\|"),
+            CallbackQueryHandler(block, r"^block\|"),
+            CallbackQueryHandler(unblock, r"^unblock\|"),
+            MessageHandler(filters.ALL & (~filters.Regex("/cancel")), send_msg),
             MessageHandler(
                 filters.COMMAND & (~filters.Regex("/cancel")), command_while_sending
             ),
