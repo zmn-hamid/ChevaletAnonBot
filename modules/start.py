@@ -147,16 +147,16 @@ async def send_msg(
             [
                 [
                     InlineKeyboardButton(
-                        "answer",
+                        "جواب دادن",
                         callback_data=f"answer|{sender_cid}|{message.message_id}",
                     ),
                 ],
                 [
                     InlineKeyboardButton(
-                        "report",
+                        "ریپورت",
                         callback_data=f"report|{sender_cid}|{message.message_id}",
                     ),
-                    InlineKeyboardButton("block", callback_data=f"block|{sender_cid}"),
+                    InlineKeyboardButton("بلاک", callback_data=f"block|{sender_cid}"),
                 ],
             ]
         ),
@@ -228,9 +228,9 @@ async def block(
                                 InlineKeyboardButton(
                                     button.text, callback_data=button.callback_data
                                 )
-                                if not button.callback_data.startswith("block")
+                                if not button.callback_data.startswith("بلاک")
                                 else InlineKeyboardButton(
-                                    "unblock",
+                                    "آنبلاک",
                                     callback_data=button.callback_data.replace(
                                         "block", "unblock"
                                     ),
@@ -274,9 +274,9 @@ async def unblock(
                                 InlineKeyboardButton(
                                     button.text, callback_data=button.callback_data
                                 )
-                                if not button.callback_data.startswith("unblock")
+                                if not button.callback_data.startswith("آنبلاک")
                                 else InlineKeyboardButton(
-                                    "block",
+                                    "بلاک",
                                     callback_data=button.callback_data.replace(
                                         "unblock", "block"
                                     ),
