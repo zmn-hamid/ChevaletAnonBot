@@ -1,5 +1,5 @@
 # project imports
-from config import DB_USER, DB_PASS, DB_NAME, MAX_TRY_ADD_CID, DEFAULT_NO_CID
+from config import DB_USER, DB_PASS, DB_NAME, MAX_TRY_ADD_CID, DEFAULT_CID_LIMIT
 
 # global imports
 import mysql.connector
@@ -64,7 +64,7 @@ class DBHandler:
         try:
             self.cur.execute(
                 f"""INSERT INTO {self.users_table}
-                    VALUES ("{uid}", "{name}", FALSE, {DEFAULT_NO_CID})"""
+                    VALUES ("{uid}", "{name}", FALSE, {DEFAULT_CID_LIMIT})"""
             )
             self.db.commit()
             return True
