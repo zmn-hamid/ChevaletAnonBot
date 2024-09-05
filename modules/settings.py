@@ -4,7 +4,7 @@ from telegram.ext import *
 from telegram.constants import ParseMode as PM
 
 # project imports
-from config import VALIDATION_TEXT
+from config import VALIDATION_TEXT, MAX_NAME_LENGTH
 from modules.Global.database import dbh
 from modules.Global.decorators import verify_user, handle_errors
 from modules.Global.fetch_texts import fetch_text
@@ -55,10 +55,11 @@ async def update_name(
     bot: Bot,
 ) -> int:
     """updates user's preview name"""
-    if len(message.text) > 100:
-        return await message.reply_text("name is too long")
+    if len(message.text) > MAX_NAME_LENGTH:
+        await message.reply_text(f"اسم جدید نباید بیشتر از {MAX_NAME_LENGTH}تا حرف باشه. دوباره امتحان کن")
+        return 0
     dbh.cur.execute(
-        f'UPDATE {dbh.users_table} SET name=%s WHERE uid="{userid}"', (message.text, )
+        f'UPDATE {dbh.users_table} SET name=%s WHERE uid="{userid}"', (message.text,)
     )
     dbh.db.commit()
     await message.reply_text(f"انجام شد. اسم جدیدت:\n{dbh.get_name(userid)}")

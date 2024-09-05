@@ -1,5 +1,12 @@
 # project imports
-from config import DB_USER, DB_PASS, DB_NAME, MAX_TRY_ADD_CID, DEFAULT_CID_LIMIT
+from config import (
+    DB_USER,
+    DB_PASS,
+    DB_NAME,
+    MAX_TRY_ADD_CID,
+    DEFAULT_CID_LIMIT,
+    MAX_NAME_LENGTH,
+)
 
 # global imports
 import mysql.connector
@@ -64,7 +71,7 @@ class DBHandler:
         try:
             self.cur.execute(
                 f"INSERT INTO {self.users_table} VALUES (%s, %s, %s, %s)",
-                (str(uid), str(name)[:100], False, DEFAULT_CID_LIMIT),
+                (str(uid), str(name)[:MAX_NAME_LENGTH], False, DEFAULT_CID_LIMIT),
             )
             self.db.commit()
             return True
@@ -170,9 +177,10 @@ class DBHandler:
         return self.cur.fetchone()[0]
 
     def user_status(self, uid: str) -> list:
-        self.cur.execute(f'SELECT is_banned, cid_limit FROM {self.users_table} WHERE uid="{uid}"')
+        self.cur.execute(
+            f'SELECT is_banned, cid_limit FROM {self.users_table} WHERE uid="{uid}"'
+        )
         return self.cur.fetchone()
-
 
 
 dbh = DBHandler()
