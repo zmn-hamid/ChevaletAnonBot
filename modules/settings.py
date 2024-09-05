@@ -55,8 +55,10 @@ async def update_name(
     bot: Bot,
 ) -> int:
     """updates user's preview name"""
+    if len(message.text) > 100:
+        return await message.reply_text("name is too long")
     dbh.cur.execute(
-        f'UPDATE {dbh.users_table} SET name="{message.text}" ' f'WHERE uid="{userid}"'
+        f'UPDATE {dbh.users_table} SET name=%s WHERE uid="{userid}"', (message.text, )
     )
     dbh.db.commit()
     await message.reply_text(f"انجام شد. اسم جدیدت:\n{dbh.get_name(userid)}")

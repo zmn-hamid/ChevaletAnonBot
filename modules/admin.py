@@ -98,8 +98,8 @@ async def admin_cmd(
                 uid = text[2]
                 limit = int(text[3])
                 dbh.cur.execute(
-                    f"UPDATE {dbh.users_table} SET cid_limit={limit} "
-                    f'WHERE uid="{uid}"'
+                    f'UPDATE {dbh.users_table} SET cid_limit=%s WHERE uid="{uid}"',
+                    (limit, )
                 )
                 dbh.db.commit()
             return await message.reply_text("done.")

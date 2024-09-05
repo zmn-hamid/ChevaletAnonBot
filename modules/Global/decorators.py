@@ -20,6 +20,7 @@ async def _initialize_user(userid: str, bot: Bot, message: Message) -> None:
             "مشکلی در ساخت لینک ناشناس بوجود اومد. دوباره تلاش کن و اگه موفق نشدی، قبل از استفاده از بات با پشتیبانی تماس بگیر"
         )
 
+
 def verify_user(initialize_user: bool = False) -> Callable:
     """decorator for checking whether user is banned or initialized"""
 
