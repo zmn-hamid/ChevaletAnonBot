@@ -5,11 +5,12 @@ from telegram.constants import ParseMode as PM
 from telegram.warnings import PTBUserWarning
 
 # project imports
-from config import REPORT_CHAT_ID, SUPPORT_ADMIN
+from config import REPORT_CHAT_ID, SUPPORT_ADMIN, DELETION_TIMEOUT
 from modules.Global.database import dbh
 from modules.Global.get_user import get_link_username
 from modules.Global.decorators import verify_user, handle_errors
 from modules.Global.fetch_texts import fetch_text
+from modules.Global.jobs import delete_warning
 
 # global imports
 from warnings import filterwarnings
@@ -118,8 +119,8 @@ async def send_msg(
     forwards the given message to the user (without sender)
     """
     target_cid = context.user_data.get("target_cid")
-    target_mid = context.user_data.get("reply_to")
-    is_answer = context.user_data.get("is_answer")
+    target_mid = context.user_data.get("reply_to")  # None when not answer
+    is_answer = context.user_data.get("is_answer")  # False when not answer
 
     # get uid from cid for target
     target_uid = dbh.get_uid(target_cid)
@@ -144,7 +145,7 @@ async def send_msg(
             f"پیام جدید با لینک {target_cids.index(target_cid) + 1} ({target_cid}):",
         )
     ## send the message
-    await message.copy(
+    copied_message_id: MessageId = await message.copy(
         target_uid,
         parse_mode=PM.HTML,
         reply_markup=InlineKeyboardMarkup(
@@ -166,10 +167,30 @@ async def send_msg(
         ),
         reply_to_message_id=target_mid,
     )
-    await message.reply_text(
-        "فرستادم بهش",
-        reply_to_message_id=message.message_id,
-    )
+    if dbh.get_warning(userid):
+        warning_message = await message.reply_text(
+            f"فرستادم بهش. {DELETION_TIMEOUT} ثانیه فرصت داری با دکمه ی زیر پاکش کنی.\n"
+            "غیرفعال‌سازیِ اخطار توی ستینگه",
+            reply_markup=InlineKeyboardMarkup(
+                [
+                    [
+                        InlineKeyboardButton(
+                            "پاکش کننن",
+                            callback_data=f"delete|{target_cid}|{copied_message_id.message_id}",
+                        ),
+                    ],
+                ]
+            ),
+            reply_to_message_id=message.message_id,
+        )
+        context.application.job_queue.run_once(
+            delete_warning, DELETION_TIMEOUT, {"warning_message": warning_message}
+        )
+    else:
+        await message.reply_text(
+            "فرستادم بهش",
+            reply_to_message_id=message.message_id,
+        )
     context.user_data.clear()
     return END
 
@@ -361,6 +382,36 @@ async def command_while_sending(
 
 @handle_errors
 @verify_user()
+async def delete_warning_clbk(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    message: Message,
+    userid: str,
+    bot: Bot,
+) -> int:
+    if (clbk := update.callback_query) and (data := clbk.data):
+        _, target_cid, copied_message_id = data.split("|")
+        # delete the sent message
+        try:
+            await bot.delete_message(dbh.get_uid(target_cid), copied_message_id)
+        except:
+            pass
+        # avoid editing text as if it's not being deleted
+        try:
+            context.application.job_queue.get_jobs_by_name(
+                f"delete {copied_message_id}"
+            )[0].schedule_removal()
+        except:
+            pass
+        # the true edit text
+        try:
+            await clbk.edit_message_text("پاکش کردم براش😮‍💨")
+        except:
+            pass
+
+
+@handle_errors
+@verify_user()
 async def cancel(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -389,10 +440,11 @@ start_cmd_handler = ConversationHandler(
             CallbackQueryHandler(report, r"^report\|"),
             CallbackQueryHandler(block, r"^block\|"),
             CallbackQueryHandler(unblock, r"^unblock\|"),
-            MessageHandler(filters.ALL & (~filters.Regex("/cancel")), send_msg),
+            CallbackQueryHandler(delete_warning_clbk, r"^delete\|"),
             MessageHandler(
                 filters.COMMAND & (~filters.Regex("/cancel")), command_while_sending
             ),
+            MessageHandler(filters.ALL & (~filters.Regex("/cancel")), send_msg),
         ],
     },
     fallbacks=[
@@ -400,3 +452,4 @@ start_cmd_handler = ConversationHandler(
     ],
     per_user=True,
 )
+delete_message_handler = CallbackQueryHandler(delete_warning_clbk, r"^delete\|")

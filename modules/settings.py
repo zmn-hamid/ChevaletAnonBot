@@ -109,6 +109,42 @@ async def unblock_me_cmd(
 
 @handle_errors
 @verify_user()
+async def disable_warning_cmd(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    message: Message,
+    userid: str,
+    bot: Bot,
+) -> None:
+    dbh.cur.execute(
+        f'UPDATE {dbh.users_table} SET warning=%s WHERE uid="{userid}"', (False,)
+    )
+    dbh.db.commit()
+    return await message.reply_text(
+        "اخطار غیرفعال شد. برای فعال سازی /enable_warning را بزنید"
+    )
+
+
+@handle_errors
+@verify_user()
+async def enable_warning_cmd(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    message: Message,
+    userid: str,
+    bot: Bot,
+) -> None:
+    dbh.cur.execute(
+        f'UPDATE {dbh.users_table} SET warning=%s WHERE uid="{userid}"', (False)
+    )
+    dbh.db.commit()
+    return await message.reply_text(
+        "اخطار فعال شد. برای غیرفعال سازی /disable_warning را بزنید"
+    )
+
+
+@handle_errors
+@verify_user()
 async def cancel(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -138,3 +174,5 @@ settings_name_handler = ConversationHandler(
 )
 unblock_all_handler = CommandHandler("unblock_all", unblock_all_cmd)
 unblock_me_handler = CommandHandler("unblock_me", unblock_me_cmd)
+disable_warning_handler = CommandHandler("disable_warning", disable_warning_cmd)
+enable_warning_handler = CommandHandler("enable_warning", enable_warning_cmd)

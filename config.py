@@ -15,3 +15,4 @@ MAX_NAME_LENGTH = int(os.environ.get("MAX_NAME_LENGTH"))
 
 VALIDATION_TEXT = "بله مطمئن هستم"
 MAX_TRY_ADD_CID = 5
+DELETION_TIMEOUT = 10

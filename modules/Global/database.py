@@ -41,7 +41,8 @@ class DBHandler:
                 uid VARCHAR(255) NOT NULL PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
                 is_banned BOOLEAN NOT NULL,
-                cid_limit INT NOT NULL);
+                cid_limit INT NOT NULL,
+                warning BOOLEAN NOT NULL);
             """
         )
         self.cur.execute(
@@ -70,8 +71,8 @@ class DBHandler:
         """
         try:
             self.cur.execute(
-                f"INSERT INTO {self.users_table} VALUES (%s, %s, %s, %s)",
-                (str(uid), str(name)[:MAX_NAME_LENGTH], False, DEFAULT_CID_LIMIT),
+                f"INSERT INTO {self.users_table} VALUES (%s, %s, %s, %s, %s)",
+                (str(uid), str(name)[:MAX_NAME_LENGTH], False, DEFAULT_CID_LIMIT, True),
             )
             self.db.commit()
             return True
@@ -174,6 +175,10 @@ class DBHandler:
     def get_cid_limit(self, uid: str) -> int:
         """gets the cid limit for a user"""
         self.cur.execute(f'SELECT cid_limit FROM {self.users_table} WHERE uid="{uid}"')
+        return self.cur.fetchone()[0]
+
+    def get_warning(self, uid: str) -> bool:
+        self.cur.execute(f'SELECT warning FROM {self.users_table} WHERE uid="{uid}"')
         return self.cur.fetchone()[0]
 
     def user_status(self, uid: str) -> list:

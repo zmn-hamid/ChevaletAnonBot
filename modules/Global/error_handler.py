@@ -4,7 +4,7 @@ from telegram.ext import *
 from telegram.constants import ParseMode as PM
 
 # project imports
-from config import ERROR_CHAT_ID, BOT_TOKEN
+from config import ERROR_CHAT_ID
 from modules.Global.log import logger
 
 # global imports
@@ -12,23 +12,6 @@ import html
 import json
 import traceback
 from shortuuid import uuid
-
-
-# build the application
-application = ApplicationBuilder().token(BOT_TOKEN).build()
-job_queue = application.job_queue
-
-
-async def job_set_commands(context: CallbackContext) -> None:
-    """updates the bot's command menu"""
-    await context.application.bot.set_my_commands(
-        [
-            ("help", "🆘 کمک!"),
-            ("my_links", "🔗 لینک های من"),
-            ("settings", "⚙️ تنظیمات پیام ناشناس"),
-        ]
-    )
-    logger.info("successfully set the commands")
 
 
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

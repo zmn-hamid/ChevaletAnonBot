@@ -5,8 +5,8 @@ from telegram import *
 from telegram.ext import *
 
 # project imports
-from modules.Global.log import logger
-from modules.start import start_cmd_handler
+from config import BOT_TOKEN
+from modules.start import start_cmd_handler, delete_message_handler
 from modules.my_links import my_cids_handler, rm_cid_handler, add_cid_handler
 from modules.admin import admin_handler
 from modules.myuid import myuid_handler
@@ -15,18 +15,25 @@ from modules.settings import (
     settings_name_handler,
     unblock_all_handler,
     unblock_me_handler,
+    disable_warning_handler,
+    enable_warning_handler,
 )
 from modules.privacy import privacy_handler
 from modules.help import help_handler, more_links_help_handler
 from modules.other_msgs import other_messages_handler, other_cancels_handler
 
-from modules.app_handlers import application, job_queue, error_handler, job_set_commands
+from modules.Global.log import logger
+from modules.Global.jobs import set_commands
+from modules.Global.error_handler import error_handler
 
+application = ApplicationBuilder().token(BOT_TOKEN).build()
+job_queue = application.job_queue
 
 # adding handlers
 for handler in [
     # start help
     start_cmd_handler,
+    delete_message_handler,
     help_handler,
     more_links_help_handler,
     # mylinks
@@ -38,6 +45,8 @@ for handler in [
     settings_name_handler,
     unblock_all_handler,
     unblock_me_handler,
+    disable_warning_handler,
+    enable_warning_handler,
     # privacy
     privacy_handler,
     # admin
@@ -54,7 +63,7 @@ for handler in [
 application.add_error_handler(error_handler)
 
 # updating the bot's command menu
-job_queue.run_once(job_set_commands, 3)
+job_queue.run_once(set_commands, 3)
 
 # starting the bot
 logger.info(f"starting bot...")
