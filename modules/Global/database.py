@@ -63,8 +63,8 @@ class DBHandler:
         """
         try:
             self.cur.execute(
-                f"""INSERT INTO {self.users_table}
-                    VALUES ("{uid}", "{name}", FALSE, {DEFAULT_CID_LIMIT})"""
+                f"INSERT INTO {self.users_table} "
+                f'VALUES ("{uid}", "{name}", FALSE, {DEFAULT_CID_LIMIT})'
             )
             self.db.commit()
             return True
@@ -100,10 +100,8 @@ class DBHandler:
     def is_blocked(self, blocker_uid: str, blocked_uid: str) -> bool:
         """checks if a user is blocked"""
         self.cur.execute(
-            f"""SELECT * FROM {self.blocks_table}
-                WHERE blocker_uid="{blocker_uid}"
-                and blocked_uid="{blocked_uid}"
-            """
+            f'SELECT * FROM {self.blocks_table} WHERE blocker_uid="{blocker_uid}" '
+            f'and blocked_uid="{blocked_uid}"'
         )
         output = self.cur.fetchall()
         if len(output):
@@ -114,9 +112,7 @@ class DBHandler:
     def user_is_banned(self, uid: str) -> bool:
         """checks if a user is banned"""
         self.cur.execute(
-            f"""SELECT is_banned from {self.users_table}
-                             WHERE uid="{uid}"
-                             """
+            f'SELECT is_banned from {self.users_table} WHERE uid="{uid}"'
         )
         return self.cur.fetchall()[0][0]
 
@@ -124,10 +120,10 @@ class DBHandler:
         """ban or unban user"""
         ban_translation = "TRUE" if ban else "FALSE"
         self.cur.execute(
-            f"""INSERT INTO {self.users_table}
-                             VALUES ("{uid}", {ban_translation})
-                             ON CONFLICT (uid) DO UPDATE
-                             SET is_banned=EXCLUDED.is_banned"""
+            f"INSERT INTO {self.users_table} "
+            f'VALUES ("{uid}", {ban_translation}) '
+            f"ON CONFLICT (uid) DO UPDATE "
+            f"SET is_banned=EXCLUDED.is_banned"
         )
         self.db.commit()
 
@@ -137,8 +133,7 @@ class DBHandler:
             return False
         try:
             self.cur.execute(
-                f"""INSERT INTO {self.cids_table}
-                    VALUES ("{str(uid)}", "{str(cid)}")"""
+                f"""INSERT INTO {self.cids_table} VALUES ("{str(uid)}", "{str(cid)}")"""
             )
             self.db.commit()
             return True
@@ -149,16 +144,14 @@ class DBHandler:
     def get_cids(self, uid: str) -> List[str]:
         """get all the cids of a user"""
         self.cur.execute(
-            f'''SELECT cid FROM {self.cids_table}
-                             WHERE uid="{uid}"'''
+            f'''SELECT cid FROM {self.cids_table} WHERE uid="{uid}"'''
         )
         return [item[0] for item in self.cur.fetchall()]
 
     def get_name(self, uid: str) -> str | None:
         """gets the preview name of a user"""
         self.cur.execute(
-            f"""SELECT name FROM {self.users_table}
-                WHERE uid="{uid}"
+            f"""SELECT name FROM {self.users_table} WHERE uid="{uid}"
             """
         )
         output = self.cur.fetchall()
@@ -170,8 +163,7 @@ class DBHandler:
     def get_uid(self, cid: str) -> str | None:
         """gets the uid based on a cid"""
         self.cur.execute(
-            f'''SELECT uid FROM {self.cids_table}
-                             WHERE cid="{cid}"'''
+            f'''SELECT uid FROM {self.cids_table} WHERE cid="{cid}"'''
         )
         output = self.cur.fetchall()
         if len(output):
