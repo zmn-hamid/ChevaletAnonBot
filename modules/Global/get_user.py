@@ -17,10 +17,10 @@ def get_user_links(userid, bot_username) -> str:
     text = []
     for idx, cid in enumerate(cids):
         text.append(
-            f"<b>({idx+1})</b> <code>t.me/{bot_username}?start={cid}</code>\nحذف کردن لینک: /rm_{cid}\n"
+            f"<b>لینک {idx+1}:</b> t.me/{bot_username}?start={cid}\nحذف کردن لینک: /rm_{cid}\n"
         )
     cid_limit = dbh.get_cid_limit(userid)
-    return "------\n".join(text) + (
+    return "------------\n".join(text) + (
         "\n\n"
         "<b>اضافه کردن لینک جدید</b>: /add_link\n"
         f"{len(cids)} از {cid_limit} لینک مجاز استفاده شده.\n"

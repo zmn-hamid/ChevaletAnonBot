@@ -111,9 +111,7 @@ class DBHandler:
 
     def user_is_banned(self, uid: str) -> bool:
         """checks if a user is banned"""
-        self.cur.execute(
-            f'SELECT is_banned from {self.users_table} WHERE uid="{uid}"'
-        )
+        self.cur.execute(f'SELECT is_banned from {self.users_table} WHERE uid="{uid}"')
         return self.cur.fetchall()[0][0]
 
     def ban_action(self, uid: str, ban: bool) -> None:
@@ -143,9 +141,7 @@ class DBHandler:
 
     def get_cids(self, uid: str) -> List[str]:
         """get all the cids of a user"""
-        self.cur.execute(
-            f'''SELECT cid FROM {self.cids_table} WHERE uid="{uid}"'''
-        )
+        self.cur.execute(f'''SELECT cid FROM {self.cids_table} WHERE uid="{uid}"''')
         return [item[0] for item in self.cur.fetchall()]
 
     def get_name(self, uid: str) -> str | None:
@@ -162,9 +158,7 @@ class DBHandler:
 
     def get_uid(self, cid: str) -> str | None:
         """gets the uid based on a cid"""
-        self.cur.execute(
-            f'''SELECT uid FROM {self.cids_table} WHERE cid="{cid}"'''
-        )
+        self.cur.execute(f'''SELECT uid FROM {self.cids_table} WHERE cid="{cid}"''')
         output = self.cur.fetchall()
         if len(output):
             return output[0][0]

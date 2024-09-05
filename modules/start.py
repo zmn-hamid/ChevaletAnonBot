@@ -137,8 +137,12 @@ async def send_msg(
 
     # sending message to target
     ## notify target
-    if not is_answer and len(dbh.get_cids(target_uid)) > 1:
-        await bot.send_message(target_uid, f"پیام جدید ({target_cid}):")
+    target_cids = dbh.get_cids(target_uid)
+    if not is_answer and len(target_cids) > 1:
+        await bot.send_message(
+            target_uid,
+            f"پیام جدید با لینک {target_cids.index(target_cid) + 1} ({target_cid}):",
+        )
     ## send the message
     await message.copy(
         target_uid,
@@ -228,7 +232,7 @@ async def block(
                                 InlineKeyboardButton(
                                     button.text, callback_data=button.callback_data
                                 )
-                                if not button.callback_data.startswith("بلاک")
+                                if not button.callback_data.startswith("block")
                                 else InlineKeyboardButton(
                                     "آنبلاک",
                                     callback_data=button.callback_data.replace(
@@ -274,7 +278,7 @@ async def unblock(
                                 InlineKeyboardButton(
                                     button.text, callback_data=button.callback_data
                                 )
-                                if not button.callback_data.startswith("آنبلاک")
+                                if not button.callback_data.startswith("unblock")
                                 else InlineKeyboardButton(
                                     "بلاک",
                                     callback_data=button.callback_data.replace(
