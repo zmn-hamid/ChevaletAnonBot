@@ -13,6 +13,13 @@ from typing import Callable
 import html, json
 
 
+async def _initialize_user(userid: str, bot: Bot, message: Message) -> None:
+    output = await init_user(userid, bot)
+    if output == False:
+        await message.reply_text(
+            "مشکلی در ساخت لینک ناشناس بوجود اومد. دوباره تلاش کن و اگه موفق نشدی، قبل از استفاده از بات با پشتیبانی تماس بگیر"
+        )
+
 def verify_user(initialize_user: bool = False) -> Callable:
     """decorator for checking whether user is banned or initialized"""
 
@@ -27,12 +34,13 @@ def verify_user(initialize_user: bool = False) -> Callable:
             userid = str(update.effective_user.id)
             bot = update.get_bot()
             if initialize_user:
-                output = await init_user(userid, bot)
-                if output == False:
-                    await message.reply_text(
-                        "مشکلی در ساخت لینک ناشناس بوجود اومد. دوباره تلاش کن و اگه موفق نشدی، قبل از استفاده از بات با پشتیبانی تماس بگیر"
-                    )
+                await _initialize_user(userid, bot, message)
 
+            try:
+                is_banned = dbh.user_is_banned(userid)
+            except IndexError:
+                await _initialize_user(userid, bot, message)
+                is_banned = dbh.user_is_banned(userid)
             if dbh.user_is_banned(userid):
                 await message.reply_text(
                     "از بات بن شدی. " "اگه فک میکنی این یه اشتباهه با ادمین صحبت کن"
