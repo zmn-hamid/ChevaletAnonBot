@@ -4,7 +4,7 @@ from telegram.ext import *
 from telegram.constants import ParseMode as PM
 
 # project imports
-from config import ERROR_CHAT_ID
+from config import ERROR_CHAT_ID, BOT_TOKEN
 from modules.Global.log import logger
 
 # global imports
@@ -12,6 +12,11 @@ import html
 import json
 import traceback
 from shortuuid import uuid
+
+
+# build the application
+application = ApplicationBuilder().token(BOT_TOKEN).build()
+job_queue = application.job_queue
 
 
 async def job_set_commands(context: CallbackContext) -> None:

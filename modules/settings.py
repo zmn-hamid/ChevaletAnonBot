@@ -56,7 +56,9 @@ async def update_name(
 ) -> int:
     """updates user's preview name"""
     if len(message.text) > MAX_NAME_LENGTH:
-        await message.reply_text(f"اسم جدید نباید بیشتر از {MAX_NAME_LENGTH}تا حرف باشه. دوباره امتحان کن")
+        await message.reply_text(
+            f"اسم جدید نباید بیشتر از {MAX_NAME_LENGTH}تا حرف باشه. دوباره امتحان کن"
+        )
         return 0
     dbh.cur.execute(
         f'UPDATE {dbh.users_table} SET name=%s WHERE uid="{userid}"', (message.text,)
