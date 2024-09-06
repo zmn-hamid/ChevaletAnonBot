@@ -137,7 +137,7 @@ async def enable_warning_cmd(
 ) -> None:
     """enable warning for user"""
     dbh.cur.execute(
-        f'UPDATE {dbh.users_table} SET warning=%s WHERE uid="{userid}"', (False)
+        f'UPDATE {dbh.users_table} SET warning=%s WHERE uid="{userid}"', (True,)
     )
     dbh.db.commit()
     return await message.reply_text(
