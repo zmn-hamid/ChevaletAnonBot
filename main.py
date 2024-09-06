@@ -7,7 +7,13 @@ from telegram.ext import *
 # project imports
 from config import BOT_TOKEN
 from modules.start import start_cmd_handler, delete_message_handler
-from modules.my_links import my_cids_handler, rm_cid_handler, add_cid_handler
+from modules.my_links import (
+    my_cids_handler,
+    rm_cid_handler,
+    add_cid_handler,
+    my_cids_callback_handler,
+    change_cid_handler,
+)
 from modules.admin import admin_handler
 from modules.myuid import myuid_handler
 from modules.settings import (
@@ -26,6 +32,7 @@ from modules.Global.log import logger
 from modules.Global.jobs import set_commands
 from modules.Global.error_handler import error_handler
 
+
 application = ApplicationBuilder().token(BOT_TOKEN).build()
 job_queue = application.job_queue
 
@@ -38,8 +45,10 @@ for handler in [
     more_links_help_handler,
     # mylinks
     my_cids_handler,
+    my_cids_callback_handler,
     rm_cid_handler,
     add_cid_handler,
+    change_cid_handler,
     # settings
     settings_handler,
     settings_name_handler,

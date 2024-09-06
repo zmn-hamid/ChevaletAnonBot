@@ -38,15 +38,17 @@ class DBHandler:
         """creates the tables if they don't exist"""
         self.cur.execute(
             f"""CREATE TABLE IF NOT EXISTS {self.users_table} (
-                uid VARCHAR(255) NOT NULL PRIMARY KEY,
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                uid VARCHAR(255) NOT NULL,
                 name VARCHAR(255) NOT NULL,
                 is_banned BOOLEAN NOT NULL,
-                cid_limit INT NOT NULL,
-                warning BOOLEAN NOT NULL);
+                warning BOOLEAN NOT NULL,
+                cid_limit INT NOT NULL);
             """
         )
         self.cur.execute(
             f"""CREATE TABLE IF NOT EXISTS {self.blocks_table} (
+                id INT AUTO_INCREMENT PRIMARY KEY,
                 blocker_uid VARCHAR(255) NOT NULL,
                 blocked_uid VARCHAR(255) NOT NULL,
                 CONSTRAINT unique_pair UNIQUE (blocker_uid, blocked_uid));
@@ -54,6 +56,7 @@ class DBHandler:
         )
         self.cur.execute(
             f"""CREATE TABLE IF NOT EXISTS {self.cids_table} (
+                id INT AUTO_INCREMENT PRIMARY KEY,
                 uid VARCHAR(255) NOT NULL,
                 cid VARCHAR(255) NOT NULL UNIQUE);
             """
@@ -71,8 +74,8 @@ class DBHandler:
         """
         try:
             self.cur.execute(
-                f"INSERT INTO {self.users_table} VALUES (%s, %s, %s, %s, %s)",
-                (str(uid), str(name)[:MAX_NAME_LENGTH], False, DEFAULT_CID_LIMIT, True),
+                f"INSERT INTO {self.users_table} VALUES (NULL, %s, %s, %s, %s, %s)",
+                (str(uid), str(name)[:MAX_NAME_LENGTH], False, True, DEFAULT_CID_LIMIT),
             )
             self.db.commit()
             return True
@@ -83,7 +86,7 @@ class DBHandler:
         """blocks the given user"""
         try:
             self.cur.execute(
-                f"INSERT INTO {self.blocks_table} VALUES (%s, %s)",
+                f"INSERT INTO {self.blocks_table} VALUES (NULL, %s, %s)",
                 (
                     str(blocker_uid),
                     str(blocked_uid),
@@ -128,7 +131,7 @@ class DBHandler:
         """ban or unban user"""
         ban_translation = "TRUE" if ban else "FALSE"
         self.cur.execute(
-            f"INSERT INTO {self.users_table} VALUES (%s, %s) "
+            f"INSERT INTO {self.users_table} VALUES (NULL, %s, %s) "
             f"ON CONFLICT (uid) DO UPDATE "
             f"SET is_banned=EXCLUDED.is_banned",
             (str(uid), ban_translation),
@@ -141,7 +144,7 @@ class DBHandler:
             return False
         try:
             self.cur.execute(
-                f"INSERT INTO {self.cids_table} VALUES (%s, %s)", (str(uid), str(cid))
+                f"INSERT INTO {self.cids_table} VALUES (NULL, %s, %s)", (str(uid), str(cid))
             )
             self.db.commit()
             return True
@@ -151,7 +154,8 @@ class DBHandler:
 
     def get_cids(self, uid: str) -> List[str]:
         """get all the cids of a user"""
-        self.cur.execute(f'SELECT cid FROM {self.cids_table} WHERE uid="{uid}"')
+        self.cur.execute(f'SELECT cid FROM {self.cids_table} WHERE uid="{uid}" '
+                         'ORDER BY id ASC')
         return [item[0] for item in self.cur.fetchall()]
 
     def get_name(self, uid: str) -> str | None:

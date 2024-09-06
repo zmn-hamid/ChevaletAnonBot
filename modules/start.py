@@ -13,14 +13,16 @@ from modules.Global.fetch_texts import fetch_text
 from modules.Global.jobs import delete_warning
 
 # global imports
-from warnings import filterwarnings
 from shortuuid import uuid
+from warnings import filterwarnings
 
 
 # ignore the per_message error
 filterwarnings(
     action="ignore", message=r".*CallbackQueryHandler", category=PTBUserWarning
 )
+
+
 # end conversation
 END = ConversationHandler.END
 

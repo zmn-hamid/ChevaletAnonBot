@@ -116,6 +116,7 @@ async def disable_warning_cmd(
     userid: str,
     bot: Bot,
 ) -> None:
+    """disable warning for user"""
     dbh.cur.execute(
         f'UPDATE {dbh.users_table} SET warning=%s WHERE uid="{userid}"', (False,)
     )
@@ -134,6 +135,7 @@ async def enable_warning_cmd(
     userid: str,
     bot: Bot,
 ) -> None:
+    """enable warning for user"""
     dbh.cur.execute(
         f'UPDATE {dbh.users_table} SET warning=%s WHERE uid="{userid}"', (False)
     )

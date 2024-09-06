@@ -12,6 +12,7 @@ DB_PASS = os.environ.get("DB_PASS")
 LOG_LEVEL = logging._nameToLevel[os.environ.get("LOG_LEVEL").upper()]
 DEFAULT_CID_LIMIT = int(os.environ.get("DEFAULT_CID_LIMIT"))
 MAX_NAME_LENGTH = int(os.environ.get("MAX_NAME_LENGTH"))
+MAX_CID_LENGTH = int(os.environ.get("MAX_CID_LENGTH"))
 
 VALIDATION_TEXT = "بله مطمئن هستم"
 MAX_TRY_ADD_CID = 5

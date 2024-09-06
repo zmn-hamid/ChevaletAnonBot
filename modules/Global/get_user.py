@@ -1,31 +1,31 @@
 # telegram imports
-from telegram import Message, Bot
+from telegram import Bot
 
-# project imports
-from config import SELLER_ADMIN
-from modules.Global.database import dbh
+# Global imports
+from typing import List
 
 
-def href_user(userid) -> str:
+def href_user(userid: str) -> str:
     """returns hyperlinked user"""
     return f'<a href="tg://user?id={userid}">u{userid}</a>'
 
 
-def get_user_links(userid, bot_username) -> str:
-    """returns formatted user cid's"""
-    cids = dbh.get_cids(userid)
+def get_user_links(cids: List[str], bot_username: str, flag_cid: int = -1) -> str:
     text = []
     for idx, cid in enumerate(cids):
         text.append(
-            f"<b>لینک {idx+1}:</b> t.me/{bot_username}?start={cid}\nحذف کردن لینک: /rm_{cid}\n"
+            "<b>%sلینک %s:</b> t.me/%s?start=%s\n"
+            % ("* " if flag_cid == cid else "", idx + 1, bot_username, cid)
         )
-    cid_limit = dbh.get_cid_limit(userid)
-    return "------------\n".join(text) + (
-        "\n\n"
-        "<b>اضافه کردن لینک جدید</b>: /add_link\n"
+    return "------------\n".join(text)
+
+
+def user_links_text(cids: List[str], cid_limit: int, bot_username: str) -> str:
+    """returns formatted user cid's"""
+    return (
+        f"{get_user_links(cids, bot_username)}\n\n"
         f"{len(cids)} از {cid_limit} لینک مجاز استفاده شده.\n"
-        f"برای دریافت لینک های بیشتر به این آیدی پیام بدید: @{SELLER_ADMIN}\n"
-        f"توضیحات قابلیت لینک های بیشتر: /more_links"
+        f"چرا چندتا لینک داشته باشی؟ اینو بزن تا بفهمی: /more_links"
     )
 
 
