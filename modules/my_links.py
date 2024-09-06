@@ -94,7 +94,7 @@ async def add_link_clbk(
             )
 
         # add cid and return links
-        output = dbh.add_cid(userid, generate_cid())
+        output = dbh.add_cid(userid, generate_cid(), 0)
         if output == False:
             return await message.reply_text(
                 "مشکلی در ساخت لینک ناشناس بوجود اومد. دوباره تلاش کن و اگه موفق نشدی، قبل از استفاده از بات با پشتیبانی تماس بگیر"
@@ -105,8 +105,9 @@ async def add_link_clbk(
                 reply_markup=InlineKeyboardMarkup(MARKUP_BUTTONS["default-set"]),
                 parse_mode=PM.HTML,
             )
-        except: pass
-        await clbk.answer('added a new link')
+        except:
+            pass
+        await clbk.answer("added a new link")
 
 
 @handle_errors
@@ -174,7 +175,16 @@ async def remove_link_clbk(
                     f'cid="{chosen_cid}" and uid="{userid}"'
                 )
                 dbh.db.commit()
-                await clbk.answer("با موفقیت حذف شد.", show_alert=True)
+                if len(dbh.get_cids(userid)) < 1:  # < in case set to -1
+                    # create new cid
+                    dbh.add_cid(userid, generate_cid(), 0)
+                    await clbk.answer(
+                        "با موفقیت حذف شد ولی چون فقط یک لینک داشتی، "
+                        "بجاش یکی دیگه تولید شد",
+                        show_alert=True,
+                    )
+                else:
+                    await clbk.answer("با موفقیت حذف شد.")
                 cids = dbh.get_cids(userid)
                 await clbk.edit_message_text(
                     get_user_links(cids, bot.username),
@@ -249,7 +259,7 @@ async def change_link_clbk(
         elif len(data_split) == 2:
             # ask for sending the new id
             chosen_cid = data_split[1]
-            await clbk.edit_message_text(
+            msg = await clbk.edit_message_text(
                 get_user_links(cids, bot.username, flag_cid=chosen_cid),
                 reply_markup=InlineKeyboardMarkup(
                     [
@@ -273,7 +283,7 @@ async def change_link_clbk(
                 parse_mode=PM.HTML,
             )
             context.user_data["chosen_cid"] = chosen_cid
-            context.user_data["inline_mid"] = clbk.inline_message_id
+            context.user_data["links_mid"] = msg.message_id
             return 0
 
 
@@ -288,6 +298,8 @@ async def update_cid(
 ) -> int:
     """changes the cid"""
     new_cid = message.text
+    chosen_cid = context.user_data.get("chosen_cid")
+    links_mid = context.user_data.get("links_mid")
 
     # escape the cid
     for char in new_cid:
@@ -301,8 +313,8 @@ async def update_cid(
 
     # check if new cid is repetitive
     dbh.cur.execute(f"SELECT cid FROM {dbh.cids_table}")
-    cids = [item[0] for item in dbh.cur.fetchall()]
-    if new_cid in cids:
+    all_the_cids = [item[0] for item in dbh.cur.fetchall()]
+    if new_cid in all_the_cids:
         await message.reply_text(
             "این آیدی برداشته شده. آیدی دیگه ای بفرس یا کنسل کن: /cancel",
             reply_to_message_id=message.message_id,
@@ -310,32 +322,35 @@ async def update_cid(
         return 0
 
     # update
-    chosen_cid = context.user_data["chosen_cid"]
     try:
         dbh.cur.execute(
-            f"UPDATE {dbh.cids_table} SET cid=%s WHERE cid='{chosen_cid}'", (new_cid, )
+            f"UPDATE {dbh.cids_table} SET cid=%s WHERE cid='{chosen_cid}'", (new_cid,)
         )
         dbh.db.commit()
-        # try:
-        await bot.edit_message_text(
-            inline_message_id=context.user_data["inline_mid"],
-            text=get_user_links(cids, bot.username),
-            reply_markup=InlineKeyboardMarkup(
-                [
+        cids = dbh.get_cids(userid)
+        try:
+            await bot.edit_message_text(
+                message_id=links_mid,
+                chat_id=userid,
+                text=get_user_links(dbh.get_cids(userid), bot.username),
+                reply_markup=InlineKeyboardMarkup(
                     [
-                        InlineKeyboardButton(
-                            f"شخصی سازی لینک {idx+1}",
-                            callback_data=f"ch-link|{cid}",
-                        )
+                        [
+                            InlineKeyboardButton(
+                                f"شخصی سازی لینک {idx+1}",
+                                callback_data=f"ch-link|{cid}",
+                            )
+                        ]
+                        for idx, cid in enumerate(cids)
                     ]
-                    for idx, cid in enumerate(cids)
-                ]
-                + [[MARKUP_BUTTONS["undo"]]]
-            ),
-            parse_mode=PM.HTML,
-        )
-        # except: pass
-        
+                    + [[MARKUP_BUTTONS["undo"]]]
+                ),
+                parse_mode=PM.HTML,
+            )
+        except:
+            pass
+        await message.reply_text("با موفقیت تغییر یافت")
+
         return ConversationHandler.END
     except IntegrityError:
         await message.reply_text(
@@ -372,7 +387,8 @@ async def cancel(
     cids = dbh.get_cids(userid)
     try:
         await bot.edit_message_text(
-            inline_message_id=context.user_data["inline_mid"],
+            message_id=context.user_data["links_mid"],
+            chat_id=userid,
             text=get_user_links(cids, bot.username),
             reply_markup=InlineKeyboardMarkup(
                 [
@@ -388,7 +404,8 @@ async def cancel(
             ),
             parse_mode=PM.HTML,
         )
-    except: pass
+    except:
+        pass
     context.user_data.clear()
     await message.reply_text("کنسل شد.")
     return ConversationHandler.END

@@ -144,7 +144,8 @@ class DBHandler:
             return False
         try:
             self.cur.execute(
-                f"INSERT INTO {self.cids_table} VALUES (NULL, %s, %s)", (str(uid), str(cid))
+                f"INSERT INTO {self.cids_table} VALUES (NULL, %s, %s)",
+                (str(uid), str(cid)),
             )
             self.db.commit()
             return True
@@ -154,8 +155,9 @@ class DBHandler:
 
     def get_cids(self, uid: str) -> List[str]:
         """get all the cids of a user"""
-        self.cur.execute(f'SELECT cid FROM {self.cids_table} WHERE uid="{uid}" '
-                         'ORDER BY id ASC')
+        self.cur.execute(
+            f'SELECT cid FROM {self.cids_table} WHERE uid="{uid}" ' "ORDER BY id ASC"
+        )
         return [item[0] for item in self.cur.fetchall()]
 
     def get_name(self, uid: str) -> str | None:
