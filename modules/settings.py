@@ -38,7 +38,7 @@ async def change_name_cmd(
 ) -> int:
     """sends changing name help text"""
     await message.reply_text(
-        f"اسم نمایشی‌ات:\n{dbh.get_name(uid=userid)}\n"
+        f"اسم نمایشی‌ات:\n{dbh.get_name(uid=userid)}\n\n"
         f"این اسمیه که بقیه موقع فرستادن پیام بهت میبینن.\n"
         "اسم جدید رو بفرست یا کنسل کن: /cancel:",
         parse_mode=PM.HTML,
@@ -149,7 +149,7 @@ async def audio_tag_cmd(
     """sends changing name help text"""
     audio_tag = dbh.get_audio_tag(userid)
     if audio_tag:
-        custom_tag_text = f"تگ آهنگات:\n{audio_tag}\n"
+        custom_tag_text = f"تگ آهنگات:\n{audio_tag}\n\n"
     else:
         custom_tag_text = 'تگ آهنگی ثبت نکردی\n'
     await message.reply_text(

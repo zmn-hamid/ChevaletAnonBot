@@ -70,6 +70,7 @@ async def my_cids_cmd(
         user_links_text(dbh.get_cids(userid), dbh.get_cid_limit(userid), bot.username),
         reply_markup=InlineKeyboardMarkup(MARKUP_BUTTONS["default-set"]),
         parse_mode=PM.HTML,
+        disable_web_page_preview=False,
     )
 
 
@@ -103,6 +104,7 @@ async def add_link_clbk(
                 user_links_text(dbh.get_cids(userid), cid_limit, bot.username),
                 reply_markup=InlineKeyboardMarkup(MARKUP_BUTTONS["default-set"]),
                 parse_mode=PM.HTML,
+                disable_web_page_preview=False,
             )
         except:
             pass
@@ -162,6 +164,7 @@ async def remove_link_clbk(
                     ]
                 ),
                 parse_mode=PM.HTML,
+                disable_web_page_preview=False,
             )
 
         elif len(data_split) == 3:
@@ -200,6 +203,7 @@ async def remove_link_clbk(
                         + [[MARKUP_BUTTONS["undo"]]]
                     ),
                     parse_mode=PM.HTML,
+                    disable_web_page_preview=False,
                 )
             else:
                 # don't delete
@@ -252,6 +256,7 @@ async def change_link_clbk(
                     + [[MARKUP_BUTTONS["undo"]]]
                 ),
                 parse_mode=PM.HTML,
+                disable_web_page_preview=False,
             )
             return ConversationHandler.END
 
@@ -273,6 +278,7 @@ async def change_link_clbk(
                     + [[MARKUP_BUTTONS["undo"]]]
                 ),
                 parse_mode=PM.HTML,
+                disable_web_page_preview=False,
             )
             await message.reply_text(
                 "آیدی جدیدِ لینکت رو توی پیام بعد بفرس برام.\n"
@@ -351,6 +357,7 @@ async def update_cid(
                     + [[MARKUP_BUTTONS["undo"]]]
                 ),
                 parse_mode=PM.HTML,
+                disable_web_page_preview=False,
             )
         except:
             pass
@@ -367,7 +374,7 @@ async def update_cid(
 
 @handle_errors
 @verify_user()
-async def command_while_sending(
+async def others_while_sending(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
     message: Message,
@@ -428,7 +435,7 @@ change_cid_handler = ConversationHandler(
         0: [
             MessageHandler(filters.TEXT & (~filters.COMMAND), update_cid),
             MessageHandler(
-                filters.ALL & (~filters.Regex("/cancel")), command_while_sending
+                filters.ALL & (~filters.Regex("/cancel")), others_while_sending
             ),
         ]
     },
