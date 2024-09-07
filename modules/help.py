@@ -5,7 +5,6 @@ from telegram.constants import ParseMode as PM
 
 # project imports
 from config import SUPPORT_ADMIN
-from modules.Global.database import dbh
 from modules.Global.decorators import verify_user, handle_errors
 from modules.Global.fetch_texts import fetch_text
 

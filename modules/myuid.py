@@ -3,7 +3,6 @@ from telegram import *
 from telegram.ext import *
 
 # project imports
-from modules.Global.database import dbh
 from modules.Global.decorators import verify_user, handle_errors
 
 # end conversation

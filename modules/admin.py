@@ -13,8 +13,8 @@ from modules.Global.exceptions import WrongSyntaxErr
 from modules.other_msgs import other_messages_template
 
 # global imports
-from mysql.connector.errors import IntegrityError
 import os
+from mysql.connector.errors import IntegrityError
 
 
 @handle_errors
@@ -74,6 +74,11 @@ async def admin_cmd(
                 )
             await message.reply_document(open(logfile, "rb"))
             os.remove(logfile)
+
+        # number of users
+        elif arg1 == 'user-count':
+            dbh.cur.execute(f'SELECT COUNT(*) FROM {dbh.users_table}')
+            await message.reply_text(f'{dbh.cur.fetchone()[0]} users')
 
         # user status -> banned cid limit stats
         elif arg1 == "stats":

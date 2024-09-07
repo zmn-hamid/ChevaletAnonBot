@@ -5,14 +5,13 @@ from telegram.constants import ParseMode as PM
 from telegram.warnings import PTBUserWarning
 
 # project imports
-from config import VALIDATION_TEXT, SELLER_ADMIN
+from config import SELLER_ADMIN, MAX_CID_LENGTH, MIN_CID_LENGTH, ALLOWED_CID_CHARS
 from modules.Global.database import dbh
 from modules.Global.decorators import verify_user, handle_errors
 from modules.Global.get_user import user_links_text, get_user_links
 from modules.Global.cid_gen import generate_cid
 
 # global imports
-from string import ascii_letters, digits
 from mysql.connector.errors import IntegrityError
 from warnings import filterwarnings
 
@@ -278,6 +277,7 @@ async def change_link_clbk(
             await message.reply_text(
                 "آیدی جدیدِ لینکت رو توی پیام بعد بفرس برام.\n"
                 "فقط <i>حروف کوچیک و بزرگ انگلیسی، اعداد، آندرلاین و خط تیره</i> مجازه.\n"
+                f"تعداد حروف مجاز: {MIN_CID_LENGTH} تا {MAX_CID_LENGTH}\n"
                 "کنسل کردن: /cancel",
                 reply_markup=InlineKeyboardMarkup([[MARKUP_BUTTONS["what-is-id"]]]),
                 parse_mode=PM.HTML,
@@ -301,9 +301,14 @@ async def update_cid(
     chosen_cid = context.user_data.get("chosen_cid")
     links_mid = context.user_data.get("links_mid")
 
-    # escape the cid
+    # check unallowed length
+    if not MIN_CID_LENGTH < len(new_cid) < MAX_CID_LENGTH:
+        await message.reply_text(f'خطا: تعداد حروف مجاز {MIN_CID_LENGTH} تا {MAX_CID_LENGTH} حرفه')
+        return 0
+
+    # check for unallowed characters
     for char in new_cid:
-        if char not in ascii_letters + digits + "_-":
+        if char not in ALLOWED_CID_CHARS:
             await message.reply_text(
                 "فقط حروف کوچیک و بزرگ انگلیسی، اعداد، آندرلاین و خط تیره مجازه. "
                 "دوباره امتحان کن یا کنسل کن: /cancel",

@@ -103,6 +103,7 @@ async def start_cmd(
                 f"در حال ارسال پیام به {dbh.get_name(target_uid)} هستی.\n"
                 "کنسل کردن: /cancel",
                 reply_to_message_id=message.message_id,
+                parse_mode=PM.HTML,
             )
             return 0  # state 0
 
@@ -124,7 +125,7 @@ async def send_msg(
     target_mid = context.user_data.get("reply_to")  # None when not answer
     is_answer = context.user_data.get("is_answer")  # False when not answer
 
-    # get uid from cid for target
+    # get target uid
     target_uid = dbh.get_uid(target_cid)
 
     # check is blocked by user
@@ -139,7 +140,6 @@ async def send_msg(
     sender_cid = dbh.get_cids(userid)[0]
 
     # sending message to target
-    ## notify target
     target_cids = dbh.get_cids(target_uid)
     if not is_answer and len(target_cids) > 1:
         await bot.send_message(
@@ -147,10 +147,7 @@ async def send_msg(
             f"پیام جدید با لینک {target_cids.index(target_cid) + 1} ({target_cid}):",
         )
     ## send the message
-    copied_message_id: MessageId = await message.copy(
-        target_uid,
-        parse_mode=PM.HTML,
-        reply_markup=InlineKeyboardMarkup(
+    reply_markup = InlineKeyboardMarkup(
             [
                 [
                     InlineKeyboardButton(
@@ -166,7 +163,11 @@ async def send_msg(
                     InlineKeyboardButton("بلاک", callback_data=f"block|{sender_cid}"),
                 ],
             ]
-        ),
+        )
+    copied_message_id: MessageId = await message.copy(
+        target_uid,
+        parse_mode=PM.HTML,
+        reply_markup=reply_markup,
         reply_to_message_id=target_mid,
     )
     if dbh.get_warning(userid):
@@ -193,6 +194,42 @@ async def send_msg(
             "فرستادم بهش",
             reply_to_message_id=message.message_id,
         )
+
+    # add custom and audio tag
+    custom_tag = dbh.get_custom_tag(target_uid)
+    async def edit_caption(the_tag):
+        try:
+            caption_html = message.caption_html if message.caption_html else ''
+            new_text = caption_html + '\n' + the_tag
+            await bot.edit_message_caption(
+                caption=new_text,
+                chat_id=target_uid,
+                message_id=copied_message_id.message_id,
+                parse_mode=PM.HTML,
+                show_caption_above_media=message.show_caption_above_media,
+                reply_markup=reply_markup,
+            )
+        except:
+            pass
+    if message.audio and not custom_tag:
+        await edit_caption(dbh.get_audio_tag(target_uid))
+    elif custom_tag:
+        # edit text
+        try:
+            text_html = message.text_html if message.text_html else ''
+            new_text = text_html + '\n' + custom_tag
+            await bot.edit_message_text(
+                text=new_text,
+                chat_id=target_uid,
+                message_id=copied_message_id.message_id,
+                parse_mode=PM.HTML,
+                link_preview_options=message.link_preview_options,
+                reply_markup=reply_markup,
+            )
+        except:
+            # edit caption if no text
+            await edit_caption(custom_tag)
+
     context.user_data.clear()
     return END
 
@@ -398,16 +435,17 @@ async def delete_warning_clbk(
             await bot.delete_message(dbh.get_uid(target_cid), copied_message_id)
         except:
             pass
-        # avoid editing text as if it's not being deleted
+        # delete the message so it won't fuck up
+        ## save reply_to
+        reply_mid = message.reply_to_message.message_id
+        ### delete
         try:
-            context.application.job_queue.get_jobs_by_name(
-                f"delete {copied_message_id}"
-            )[0].schedule_removal()
+            await message.delete()
         except:
             pass
         # the true edit text
         try:
-            await clbk.edit_message_text("پاکش کردم براش😮‍💨")
+            await message.reply_text("پاکش کردم براش😮‍💨", reply_to_message_id=reply_mid)
         except:
             pass
 

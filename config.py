@@ -1,4 +1,4 @@
-import os, logging
+import os, logging, string
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 REPORT_CHAT_ID = os.environ.get("REPORT_CHAT_ID")
@@ -13,7 +13,9 @@ LOG_LEVEL = logging._nameToLevel[os.environ.get("LOG_LEVEL").upper()]
 DEFAULT_CID_LIMIT = int(os.environ.get("DEFAULT_CID_LIMIT"))
 MAX_NAME_LENGTH = int(os.environ.get("MAX_NAME_LENGTH"))
 MAX_CID_LENGTH = int(os.environ.get("MAX_CID_LENGTH"))
+MIN_CID_LENGTH = int(os.environ.get("MIN_CID_LENGTH"))
 
-VALIDATION_TEXT = "بله مطمئن هستم"
 MAX_TRY_ADD_CID = 5
 DELETION_TIMEOUT = 10
+DEFAULT_AUDIO_TAG = '[ناشناس]'
+ALLOWED_CID_CHARS = string.ascii_letters + string.digits + "_-"
