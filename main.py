@@ -13,6 +13,7 @@ from modules.my_links import (
     add_cid_handler,
     my_cids_callback_handler,
     change_cid_handler,
+    cid_explanation_handler,
 )
 from modules.admin import admin_handler
 from modules.myuid import myuid_handler
@@ -49,6 +50,7 @@ for handler in [
     rm_cid_handler,
     add_cid_handler,
     change_cid_handler,
+    cid_explanation_handler,
     # settings
     settings_handler,
     settings_name_handler,

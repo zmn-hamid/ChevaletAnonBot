@@ -10,6 +10,7 @@ from modules.Global.database import dbh
 from modules.Global.decorators import verify_user, handle_errors
 from modules.Global.get_user import user_links_text, get_user_links
 from modules.Global.cid_gen import generate_cid
+from modules.Global.fetch_texts import fetch_text
 
 # global imports
 from mysql.connector.errors import IntegrityError
@@ -293,6 +294,22 @@ async def change_link_clbk(
             return 0
 
 
+
+@handle_errors
+@verify_user()
+async def cid_explanation(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    message: Message,
+    userid: str,
+    bot: Bot,
+) -> int:
+    # try:
+        await message.reply_text(fetch_text("cid_explanation"), parse_mode=PM.HTML)
+    # except:
+    #     pass
+
+
 @handle_errors
 @verify_user()
 async def update_cid(
@@ -445,3 +462,4 @@ change_cid_handler = ConversationHandler(
     ],
     per_user=True,
 )
+cid_explanation_handler = CallbackQueryHandler(cid_explanation, r"what-is-id")
