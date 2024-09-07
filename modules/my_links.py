@@ -70,7 +70,7 @@ async def my_cids_cmd(
         user_links_text(dbh.get_cids(userid), dbh.get_cid_limit(userid), bot.username),
         reply_markup=InlineKeyboardMarkup(MARKUP_BUTTONS["default-set"]),
         parse_mode=PM.HTML,
-        disable_web_page_preview=False,
+        disable_web_page_preview=True,
     )
 
 
@@ -104,7 +104,7 @@ async def add_link_clbk(
                 user_links_text(dbh.get_cids(userid), cid_limit, bot.username),
                 reply_markup=InlineKeyboardMarkup(MARKUP_BUTTONS["default-set"]),
                 parse_mode=PM.HTML,
-                disable_web_page_preview=False,
+                disable_web_page_preview=True,
             )
         except:
             pass
@@ -164,7 +164,7 @@ async def remove_link_clbk(
                     ]
                 ),
                 parse_mode=PM.HTML,
-                disable_web_page_preview=False,
+                disable_web_page_preview=True,
             )
 
         elif len(data_split) == 3:
@@ -203,7 +203,7 @@ async def remove_link_clbk(
                         + [[MARKUP_BUTTONS["undo"]]]
                     ),
                     parse_mode=PM.HTML,
-                    disable_web_page_preview=False,
+                    disable_web_page_preview=True,
                 )
             else:
                 # don't delete
@@ -256,7 +256,7 @@ async def change_link_clbk(
                     + [[MARKUP_BUTTONS["undo"]]]
                 ),
                 parse_mode=PM.HTML,
-                disable_web_page_preview=False,
+                disable_web_page_preview=True,
             )
             return ConversationHandler.END
 
@@ -278,7 +278,7 @@ async def change_link_clbk(
                     + [[MARKUP_BUTTONS["undo"]]]
                 ),
                 parse_mode=PM.HTML,
-                disable_web_page_preview=False,
+                disable_web_page_preview=True,
             )
             await message.reply_text(
                 "آیدی جدیدِ لینکت رو توی پیام بعد بفرس برام.\n"
@@ -357,7 +357,7 @@ async def update_cid(
                     + [[MARKUP_BUTTONS["undo"]]]
                 ),
                 parse_mode=PM.HTML,
-                disable_web_page_preview=False,
+                disable_web_page_preview=True,
             )
         except:
             pass
@@ -415,6 +415,7 @@ async def cancel(
                 + [[MARKUP_BUTTONS["undo"]]]
             ),
             parse_mode=PM.HTML,
+            disable_web_page_preview=True,
         )
     except:
         pass
