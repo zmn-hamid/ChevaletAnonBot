@@ -316,6 +316,7 @@ settings_name_handler = ConversationHandler(
     states={
         0: [
             MessageHandler(filters.TEXT & (~filters.COMMAND), update_name),
+            MessageHandler(filters.ALL & (~filters.Regex("/cancel")), cancel_all),
         ],
         1: [
             CommandHandler('remove_custom_tag', remove_custom_tag),
