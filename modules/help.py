@@ -23,10 +23,16 @@ async def help_cmd(
         fetch_text("start_help") % (SUPPORT_ADMIN),
         parse_mode=PM.HTML,
         disable_web_page_preview=True,
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(
-                "❔چرا چندتا لینک داشته باشم",
-                callback_data=f"more-links",
-            )]])
+        reply_markup=InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton(
+                        "❔چرا چندتا لینک داشته باشم",
+                        callback_data=f"more-links",
+                    )
+                ]
+            ]
+        ),
     )
 
 

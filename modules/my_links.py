@@ -211,7 +211,7 @@ async def change_link_clbk(
         if len(data_split) == 1:
             # ask to choose
             await clbk.edit_message_text(
-                get_user_links(cids, bot.username) + '\n\nانتخاب کن',
+                get_user_links(cids, bot.username) + "\n\nانتخاب کن",
                 reply_markup=InlineKeyboardMarkup(
                     [
                         [
@@ -236,9 +236,11 @@ async def change_link_clbk(
             # ask for sending the new id
             chosen_cid = data_split[1]
             msg = await clbk.edit_message_text(
-                get_user_links(cids, bot.username, flag_cid=chosen_cid) + '\n\n\n' + fetch_text("mylinks") % (MIN_CID_LENGTH, MAX_CID_LENGTH),
+                get_user_links(cids, bot.username, flag_cid=chosen_cid)
+                + "\n\n\n"
+                + fetch_text("mylinks") % (MIN_CID_LENGTH, MAX_CID_LENGTH),
                 reply_markup=InlineKeyboardMarkup(
-                    [[MYLINKS_MARKUP["what-is-cid"]],[MYLINKS_MARKUP["back-to-menu"]]]
+                    [[MYLINKS_MARKUP["what-is-cid"]], [MYLINKS_MARKUP["back-to-menu"]]]
                 ),
                 parse_mode=PM.HTML,
                 disable_web_page_preview=True,
@@ -391,7 +393,6 @@ async def cancel(
     context.user_data.clear()
     await message.reply_text("کنسل شد.")
     return ConversationHandler.END
-
 
 
 _mylinks_clbk = CallbackQueryHandler(my_cids_cmd, r"mylinks-menu")

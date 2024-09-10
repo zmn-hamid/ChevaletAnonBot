@@ -18,7 +18,6 @@ from modules.other_msgs import other_messages_handler, other_cancels_handler
 from modules.Global.log import logger
 from modules.Global.jobs import set_commands
 from modules.Global.error_handler import error_handler
-from modules.fdb import tf_handler
 
 
 application = ApplicationBuilder().token(BOT_TOKEN).build()
@@ -26,7 +25,6 @@ job_queue = application.job_queue
 
 # adding handlers
 for handler in [
-    tf_handler,
     # start help
     start_cmd_handler,
     delete_message_handler,
