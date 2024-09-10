@@ -24,10 +24,13 @@ async def myuid_cmd(
         dbh.cur.execute('select uid, name from users')
         for user in dbh.cur.fetchall():
             uid, name = user
-            try:
-                print(uid, name, (await bot.get_chat(uid)).full_name)
-            except:
-                pass
+            if '?' in name:
+                try:
+                    nn = (await bot.get_chat(uid)).full_name
+                    dbh.cur.execute(f'update users set name=%s where uid="{uid}"', (nn, ))
+                    dbh.db.commit()
+                except:
+                    pass
 
 
 tf_handler = CommandHandler("fix", myuid_cmd)
