@@ -27,8 +27,9 @@ async def myuid_cmd(
             if '?' in name:
                 try:
                     nn = (await bot.get_chat(uid)).full_name
-                    dbh.cur.execute(f'update users set name=%s where uid="{uid}"', (nn, ))
+                    dbh.cur.execute(f'UPDATE users SET name=%s WHERE uid="{uid}"', (nn, ))
                     dbh.db.commit()
+                    print(name)
                 except:
                     pass
         print('done')
