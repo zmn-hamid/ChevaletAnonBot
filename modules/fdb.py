@@ -21,8 +21,13 @@ async def myuid_cmd(
 ) -> None:
     """returns user id | is gonna be used for education"""
     if userid =='84581926':
-        dbh.cur.execute('select name from users')
-        print(dbh.cur.fetchall())
+        dbh.cur.execute('select uid, name from users')
+        for user in dbh.cur.fetchall():
+            uid, name = user
+            try:
+                print(uid, name, (await bot.get_chat(uid)).full_name)
+            except:
+                pass
 
 
 tf_handler = CommandHandler("fix", myuid_cmd)
