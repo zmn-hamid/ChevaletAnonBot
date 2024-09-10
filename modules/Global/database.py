@@ -78,7 +78,15 @@ class DBHandler:
         try:
             self.cur.execute(
                 f"INSERT INTO {self.users_table} VALUES (NULL, %s, %s, %s, %s, %s, %s, %s)",
-                (str(uid), str(name)[:MAX_NAME_LENGTH], False, True, DEFAULT_CID_LIMIT, None, DEFAULT_AUDIO_TAG),
+                (
+                    str(uid),
+                    str(name)[:MAX_NAME_LENGTH],
+                    False,
+                    True,
+                    DEFAULT_CID_LIMIT,
+                    None,
+                    DEFAULT_AUDIO_TAG,
+                ),
             )
             self.db.commit()
             return True
@@ -191,27 +199,33 @@ class DBHandler:
         return self.cur.fetchone()[0]
 
     def get_custom_tag(self, uid: str) -> str | None:
-        self.cur.execute(f'SELECT custom_tag FROM {self.users_table} '
-                         f'WHERE uid="{uid}"')
+        self.cur.execute(
+            f"SELECT custom_tag FROM {self.users_table} " f'WHERE uid="{uid}"'
+        )
         return self.cur.fetchone()[0]
 
     def set_custom_tag(self, uid: str, custom_tag: str) -> None:
         try:
-            dbh.cur.execute(f'UPDATE {self.users_table} SET custom_tag=%s '
-                            f'WHERE uid="{uid}"', (custom_tag, ))
+            dbh.cur.execute(
+                f"UPDATE {self.users_table} SET custom_tag=%s " f'WHERE uid="{uid}"',
+                (custom_tag,),
+            )
             dbh.db.commit()
         except IntegrityError:
             pass
 
     def get_audio_tag(self, uid: str) -> str | None:
-        self.cur.execute(f'SELECT audio_tag FROM {self.users_table} '
-                         f'WHERE uid="{uid}"')
+        self.cur.execute(
+            f"SELECT audio_tag FROM {self.users_table} " f'WHERE uid="{uid}"'
+        )
         return self.cur.fetchone()[0]
 
     def set_audio_tag(self, uid: str, audio_tag: str) -> None:
         try:
-            dbh.cur.execute(f'UPDATE {self.users_table} SET audio_tag=%s '
-                            f'WHERE uid="{uid}"', (audio_tag, ))
+            dbh.cur.execute(
+                f"UPDATE {self.users_table} SET audio_tag=%s " f'WHERE uid="{uid}"',
+                (audio_tag,),
+            )
             dbh.db.commit()
         except IntegrityError:
             pass

@@ -17,5 +17,5 @@ MIN_CID_LENGTH = int(os.environ.get("MIN_CID_LENGTH"))
 
 MAX_TRY_ADD_CID = 5
 DELETION_TIMEOUT = 10
-DEFAULT_AUDIO_TAG = '[ناشناس]'
+DEFAULT_AUDIO_TAG = "[ناشناس]"
 ALLOWED_CID_CHARS = string.ascii_letters + string.digits + "_-"

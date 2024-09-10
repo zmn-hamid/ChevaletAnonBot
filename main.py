@@ -21,6 +21,7 @@ from modules.settings import (
     settings_handler,
     settings_name_handler,
     unblock_all_handler,
+    unblock_all_clbk_handler,
     unblock_me_handler,
     disable_warning_handler,
     enable_warning_handler,
@@ -58,6 +59,7 @@ for handler in [
     unblock_me_handler,
     disable_warning_handler,
     enable_warning_handler,
+    unblock_all_clbk_handler,
     # privacy
     privacy_handler,
     # admin

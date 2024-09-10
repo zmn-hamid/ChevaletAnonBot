@@ -148,22 +148,22 @@ async def send_msg(
         )
     ## send the message
     reply_markup = InlineKeyboardMarkup(
+        [
             [
-                [
-                    InlineKeyboardButton(
-                        "جواب دادن",
-                        callback_data=f"answer|{sender_cid}|{message.message_id}",
-                    ),
-                ],
-                [
-                    InlineKeyboardButton(
-                        "ریپورت",
-                        callback_data=f"report|{sender_cid}|{message.message_id}",
-                    ),
-                    InlineKeyboardButton("بلاک", callback_data=f"block|{sender_cid}"),
-                ],
-            ]
-        )
+                InlineKeyboardButton(
+                    "جواب دادن",
+                    callback_data=f"answer|{sender_cid}|{message.message_id}",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    "ریپورت",
+                    callback_data=f"report|{sender_cid}|{message.message_id}",
+                ),
+                InlineKeyboardButton("بلاک", callback_data=f"block|{sender_cid}"),
+            ],
+        ]
+    )
     copied_message_id: MessageId = await message.copy(
         target_uid,
         parse_mode=PM.HTML,
@@ -197,10 +197,11 @@ async def send_msg(
 
     # add custom and audio tag
     custom_tag = dbh.get_custom_tag(target_uid)
+
     async def edit_caption(the_tag):
         try:
-            caption_html = message.caption_html if message.caption_html else ''
-            new_text = caption_html + '\n' + the_tag
+            caption_html = message.caption_html if message.caption_html else ""
+            new_text = caption_html + "\n" + the_tag
             await bot.edit_message_caption(
                 caption=new_text,
                 chat_id=target_uid,
@@ -211,13 +212,14 @@ async def send_msg(
             )
         except:
             pass
+
     if message.audio and not custom_tag:
         await edit_caption(dbh.get_audio_tag(target_uid))
     elif custom_tag:
         # edit text
         try:
-            text_html = message.text_html if message.text_html else ''
-            new_text = text_html + '\n' + custom_tag
+            text_html = message.text_html if message.text_html else ""
+            new_text = text_html + "\n" + custom_tag
             await bot.edit_message_text(
                 text=new_text,
                 chat_id=target_uid,

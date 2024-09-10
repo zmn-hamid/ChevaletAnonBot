@@ -67,8 +67,10 @@ async def update_name(
         f'UPDATE {dbh.users_table} SET name=%s WHERE uid="{userid}"', (new_name,)
     )
     dbh.db.commit()
-    await message.reply_text(f"انجام شد. اسم جدیدت:\n{dbh.get_name(userid)}",
-                             parse_mode=PM.HTML,)
+    await message.reply_text(
+        f"انجام شد. اسم جدیدت:\n{dbh.get_name(userid)}",
+        parse_mode=PM.HTML,
+    )
 
     return ConversationHandler.END
 
@@ -87,7 +89,7 @@ async def custom_tag_cmd(
     if custom_tag:
         custom_tag_text = f"تگ دلخواهت:\n{custom_tag}\n"
     else:
-        custom_tag_text = 'تگ دلخواهی ثبت نکردی\n'
+        custom_tag_text = "تگ دلخواهی ثبت نکردی\n"
     await message.reply_text(
         f"{custom_tag_text}"
         f"این تگیه که به انتهای پیام ناشناسات اضافه میشه.\n"
@@ -116,9 +118,11 @@ async def update_custom_tag(
         )
         return 1
     dbh.set_custom_tag(userid, new_tag)
-    await message.reply_text(f"انجام شد. تگ جدیدت:\n{dbh.get_custom_tag(userid)}\n\n"
-                             f"میتونی لینک خودتو تست کنی تا ببینی چجوری شده :)",
-                             parse_mode=PM.HTML)
+    await message.reply_text(
+        f"انجام شد. تگ جدیدت:\n{dbh.get_custom_tag(userid)}\n\n"
+        f"میتونی لینک خودتو تست کنی تا ببینی چجوری شده :)",
+        parse_mode=PM.HTML,
+    )
 
     return ConversationHandler.END
 
@@ -133,7 +137,7 @@ async def remove_custom_tag(
     bot: Bot,
 ) -> int:
     dbh.set_custom_tag(userid, None)
-    await message.reply_text('تگ دلخواهت با موفقیت حذف شد.')
+    await message.reply_text("تگ دلخواهت با موفقیت حذف شد.")
     return ConversationHandler.END
 
 
@@ -151,7 +155,7 @@ async def audio_tag_cmd(
     if audio_tag:
         custom_tag_text = f"تگ آهنگات:\n{audio_tag}\n\n"
     else:
-        custom_tag_text = 'تگ آهنگی ثبت نکردی\n'
+        custom_tag_text = "تگ آهنگی ثبت نکردی\n"
     await message.reply_text(
         f"{custom_tag_text}"
         f"این تگیه که به انتهای آهنگایی که ناشناس میفرستن بهت اضافه میشه.\n"
@@ -181,9 +185,11 @@ async def update_audio_tag(
         )
         return 2
     dbh.set_audio_tag(userid, new_tag)
-    await message.reply_text(f"انجام شد. تگ جدیدت:\n{dbh.get_audio_tag(userid)}\n\n"
-                             f"میتونی لینک خودتو تست کنی تا ببینی چجوری شده :)",
-                             parse_mode=PM.HTML)
+    await message.reply_text(
+        f"انجام شد. تگ جدیدت:\n{dbh.get_audio_tag(userid)}\n\n"
+        f"میتونی لینک خودتو تست کنی تا ببینی چجوری شده :)",
+        parse_mode=PM.HTML,
+    )
 
     return ConversationHandler.END
 
@@ -198,7 +204,9 @@ async def remove_audio_tag(
     bot: Bot,
 ) -> int:
     dbh.set_audio_tag(userid, None)
-    await message.reply_text('تگ آهنگت با موفقیت حذف شد. همچنان اگه تگ دلخواه داشته باشی، اون میاد زیر آهنگا')
+    await message.reply_text(
+        "تگ آهنگت با موفقیت حذف شد. همچنان اگه تگ دلخواه داشته باشی، اون میاد زیر آهنگا"
+    )
     return ConversationHandler.END
 
 
@@ -212,16 +220,39 @@ async def unblock_all_cmd(
     bot: Bot,
 ) -> None:
     """unblocks every one (with approval)"""
-    if message.text == f"/unblock_all {VALIDATION_TEXT}":
-        dbh.cur.execute(f'DELETE FROM {dbh.blocks_table} WHERE blocker_uid="{userid}"')
-        dbh.db.commit()
-        await message.reply_text("همه با موفقیت آنبلاک شدن.")
-    else:
-        await message.reply_text(
-            "اگه مطمئنی این متن رو بفرس: "
-            f"<code>/unblock_all {VALIDATION_TEXT}</code>",
-            parse_mode=PM.HTML,
-        )
+    await message.reply_text(
+        "مطمئنی؟",
+        reply_markup=InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton("آره", callback_data="unblock-all|yes"),
+                    InlineKeyboardButton("نههه", callback_data="unblock-all|no"),
+                ],
+            ],
+        ),
+    )
+
+
+@handle_errors
+@verify_user()
+async def unblock_all_clbk(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    message: Message,
+    userid: str,
+    bot: Bot,
+) -> None:
+    """unblocks every one (with approval) callback"""
+    if (clbk := update.callback_query) and (data := clbk.data):
+        _, confirmation_text = data.split("|")
+        if confirmation_text == "yes":
+            dbh.cur.execute(
+                f'DELETE FROM {dbh.blocks_table} WHERE blocker_uid="{userid}"'
+            )
+            dbh.db.commit()
+            await clbk.edit_message_text("همه با موفقیت آنبلاک شدن.")
+        elif confirmation_text == "no":
+            await clbk.edit_message_text("کنسل شد")
 
 
 @handle_errors
@@ -277,6 +308,7 @@ async def enable_warning_cmd(
         "اخطار فعال شد. برای غیرفعال سازی /disable_warning را بزنید"
     )
 
+
 @handle_errors
 @verify_user()
 async def cancel(
@@ -301,9 +333,10 @@ async def cancel_all(
     bot: Bot,
 ) -> int:
     """cancel all"""
-    await message.reply_text("در حال تغییر تنظیماتت بودی پس کنسلش کردم. دوباره امتحان کن")
+    await message.reply_text(
+        "در حال تغییر تنظیماتت بودی پس کنسلش کردم. دوباره امتحان کن"
+    )
     return ConversationHandler.END
-
 
 
 settings_handler = CommandHandler("settings", settings_cmd)
@@ -319,15 +352,15 @@ settings_name_handler = ConversationHandler(
             MessageHandler(filters.ALL & (~filters.Regex("/cancel")), cancel_all),
         ],
         1: [
-            CommandHandler('remove_custom_tag', remove_custom_tag),
+            CommandHandler("remove_custom_tag", remove_custom_tag),
             MessageHandler(filters.TEXT & (~filters.COMMAND), update_custom_tag),
             MessageHandler(filters.ALL & (~filters.Regex("/cancel")), cancel_all),
         ],
         2: [
-            CommandHandler('remove_audio_tag', remove_audio_tag),
+            CommandHandler("remove_audio_tag", remove_audio_tag),
             MessageHandler(filters.TEXT & (~filters.COMMAND), update_audio_tag),
             MessageHandler(filters.ALL & (~filters.Regex("/cancel")), cancel_all),
-        ]
+        ],
     },
     fallbacks=[
         CommandHandler("cancel", cancel),
@@ -335,6 +368,7 @@ settings_name_handler = ConversationHandler(
     per_user=True,
 )
 unblock_all_handler = CommandHandler("unblock_all", unblock_all_cmd)
+unblock_all_clbk_handler = CallbackQueryHandler(unblock_all_clbk, r"^unblock-all")
 unblock_me_handler = CommandHandler("unblock_me", unblock_me_cmd)
 disable_warning_handler = CommandHandler("disable_warning", disable_warning_cmd)
 enable_warning_handler = CommandHandler("enable_warning", enable_warning_cmd)

@@ -76,9 +76,9 @@ async def admin_cmd(
             os.remove(logfile)
 
         # number of users
-        elif arg1 == 'user-count':
-            dbh.cur.execute(f'SELECT COUNT(*) FROM {dbh.users_table}')
-            await message.reply_text(f'{dbh.cur.fetchone()[0]} users')
+        elif arg1 == "user-count":
+            dbh.cur.execute(f"SELECT COUNT(*) FROM {dbh.users_table}")
+            await message.reply_text(f"{dbh.cur.fetchone()[0]} users")
 
         # user status -> banned cid limit stats
         elif arg1 == "stats":

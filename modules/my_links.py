@@ -294,7 +294,6 @@ async def change_link_clbk(
             return 0
 
 
-
 @handle_errors
 @verify_user()
 async def cid_explanation(
@@ -305,9 +304,11 @@ async def cid_explanation(
     bot: Bot,
 ) -> int:
     # try:
-        await message.reply_text(fetch_text("cid_explanation"), parse_mode=PM.HTML)
-    # except:
-    #     pass
+    await message.reply_text(fetch_text("cid_explanation"), parse_mode=PM.HTML)
+
+
+# except:
+#     pass
 
 
 @handle_errors
@@ -326,7 +327,9 @@ async def update_cid(
 
     # check unallowed length
     if not MIN_CID_LENGTH < len(new_cid) < MAX_CID_LENGTH:
-        await message.reply_text(f'خطا: تعداد حروف مجاز {MIN_CID_LENGTH} تا {MAX_CID_LENGTH} حرفه')
+        await message.reply_text(
+            f"خطا: تعداد حروف مجاز {MIN_CID_LENGTH} تا {MAX_CID_LENGTH} حرفه"
+        )
         return 0
 
     # check for unallowed characters
