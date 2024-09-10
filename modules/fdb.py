@@ -31,6 +31,7 @@ async def myuid_cmd(
                     dbh.db.commit()
                 except:
                     pass
+        print('done')
 
 
 tf_handler = CommandHandler("fix", myuid_cmd)
