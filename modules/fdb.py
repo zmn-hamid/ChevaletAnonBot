@@ -30,10 +30,11 @@ async def myuid_cmd(
                 try:
                     nn = (await bot.get_chat(uid)).full_name
                 except:
+                    print('block')
                     continue
                 dbh.cur.execute(f'UPDATE users SET name=%s WHERE uid="{uid}"', (nn, ))
                 dbh.db.commit()
-                print(name)
+                print('+', name)
         print('done')
 
 
