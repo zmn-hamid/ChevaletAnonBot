@@ -7,27 +7,12 @@ from telegram.ext import *
 # project imports
 from config import BOT_TOKEN
 from modules.start import start_cmd_handler, delete_message_handler
-from modules.my_links import (
-    my_cids_handler,
-    rm_cid_handler,
-    add_cid_handler,
-    my_cids_callback_handler,
-    change_cid_handler,
-    cid_explanation_handler,
-)
+from modules.my_links import mylinks_handler
 from modules.admin import admin_handler
 from modules.myuid import myuid_handler
-from modules.settings import (
-    settings_handler,
-    settings_name_handler,
-    unblock_all_handler,
-    unblock_all_clbk_handler,
-    unblock_me_handler,
-    disable_warning_handler,
-    enable_warning_handler,
-)
+from modules.settings import settings_handler
 from modules.privacy import privacy_handler
-from modules.help import help_handler, more_links_help_handler
+from modules.help import help_handler, more_links_clbk_handler
 from modules.other_msgs import other_messages_handler, other_cancels_handler
 
 from modules.Global.log import logger
@@ -44,22 +29,11 @@ for handler in [
     start_cmd_handler,
     delete_message_handler,
     help_handler,
-    more_links_help_handler,
+    more_links_clbk_handler,
     # mylinks
-    my_cids_handler,
-    my_cids_callback_handler,
-    rm_cid_handler,
-    add_cid_handler,
-    change_cid_handler,
-    cid_explanation_handler,
+    mylinks_handler,
     # settings
     settings_handler,
-    settings_name_handler,
-    unblock_all_handler,
-    unblock_me_handler,
-    disable_warning_handler,
-    enable_warning_handler,
-    unblock_all_clbk_handler,
     # privacy
     privacy_handler,
     # admin

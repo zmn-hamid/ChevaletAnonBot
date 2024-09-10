@@ -11,6 +11,7 @@ from modules.Global.decorators import verify_user, handle_errors
 from modules.Global.get_user import user_links_text, get_user_links
 from modules.Global.cid_gen import generate_cid
 from modules.Global.fetch_texts import fetch_text
+from modules.Global.reply_markups import MYLINKS_MARKUP
 
 # global imports
 from mysql.connector.errors import IntegrityError
@@ -21,36 +22,6 @@ from warnings import filterwarnings
 filterwarnings(
     action="ignore", message=r".*CallbackQueryHandler", category=PTBUserWarning
 )
-
-
-MARKUP_BUTTONS = {
-    "default-set": [
-        [
-            InlineKeyboardButton(
-                "اضافه کردن لینک جدید",
-                callback_data=f"add-link",
-            ),
-        ],
-        [
-            InlineKeyboardButton(
-                "شخصی سازی لینک",
-                callback_data=f"ch-link",
-            ),
-            InlineKeyboardButton(
-                "حذف کردن لینک",
-                callback_data=f"rm-link",
-            ),
-        ],
-    ],
-    "undo": InlineKeyboardButton(
-        "برگشت به منوی اصلی",
-        callback_data=f"undo-main-menu",
-    ),
-    "what-is-id": InlineKeyboardButton(
-        f"آیدی لینک چیه؟",
-        callback_data=f"what-is-id|",
-    ),
-}
 
 
 @handle_errors
@@ -69,10 +40,11 @@ async def my_cids_cmd(
         method = message.reply_text
     await method(
         user_links_text(dbh.get_cids(userid), dbh.get_cid_limit(userid), bot.username),
-        reply_markup=InlineKeyboardMarkup(MARKUP_BUTTONS["default-set"]),
+        reply_markup=InlineKeyboardMarkup(MYLINKS_MARKUP["default-set"]),
         parse_mode=PM.HTML,
         disable_web_page_preview=True,
     )
+    return ConversationHandler.END
 
 
 @handle_errors
@@ -96,14 +68,10 @@ async def add_link_clbk(
 
         # add cid and return links
         output = dbh.add_cid(userid, generate_cid(), 0)
-        if output == False:
-            return await message.reply_text(
-                "مشکلی در ساخت لینک ناشناس بوجود اومد. دوباره تلاش کن و اگه موفق نشدی، قبل از استفاده از بات با پشتیبانی تماس بگیر"
-            )
         try:
             await clbk.edit_message_text(
                 user_links_text(dbh.get_cids(userid), cid_limit, bot.username),
-                reply_markup=InlineKeyboardMarkup(MARKUP_BUTTONS["default-set"]),
+                reply_markup=InlineKeyboardMarkup(MYLINKS_MARKUP["default-set"]),
                 parse_mode=PM.HTML,
                 disable_web_page_preview=True,
             )
@@ -139,7 +107,7 @@ async def remove_link_clbk(
                         ]
                         for idx, cid in enumerate(cids)
                     ]
-                    + [[MARKUP_BUTTONS["undo"]]]
+                    + [[MYLINKS_MARKUP["back-to-menu"]]]
                 ),
                 parse_mode=PM.HTML,
             )
@@ -154,7 +122,7 @@ async def remove_link_clbk(
                     [
                         [
                             InlineKeyboardButton(
-                                f"آره مطمئنم",
+                                f"✅ آره مطمئنم",
                                 callback_data=f"rm-link|{chosen_cid}|yes",
                             ),
                             InlineKeyboardButton(
@@ -201,7 +169,7 @@ async def remove_link_clbk(
                             ]
                             for idx, cid in enumerate(cids)
                         ]
-                        + [[MARKUP_BUTTONS["undo"]]]
+                        + [[MYLINKS_MARKUP["back-to-menu"]]]
                     ),
                     parse_mode=PM.HTML,
                     disable_web_page_preview=True,
@@ -221,7 +189,7 @@ async def remove_link_clbk(
                             ]
                             for idx, cid in enumerate(cids)
                         ]
-                        + [[MARKUP_BUTTONS["undo"]]]
+                        + [[MYLINKS_MARKUP["back-to-menu"]]]
                     ),
                     parse_mode=PM.HTML,
                 )
@@ -243,7 +211,7 @@ async def change_link_clbk(
         if len(data_split) == 1:
             # ask to choose
             await clbk.edit_message_text(
-                get_user_links(cids, bot.username),
+                get_user_links(cids, bot.username) + '\n\nانتخاب کن',
                 reply_markup=InlineKeyboardMarkup(
                     [
                         [
@@ -254,7 +222,10 @@ async def change_link_clbk(
                         ]
                         for idx, cid in enumerate(cids)
                     ]
-                    + [[MARKUP_BUTTONS["undo"]]]
+                    + [
+                        [MYLINKS_MARKUP["what-is-customize"]],
+                        [MYLINKS_MARKUP["back-to-menu"]],
+                    ]
                 ),
                 parse_mode=PM.HTML,
                 disable_web_page_preview=True,
@@ -265,50 +236,16 @@ async def change_link_clbk(
             # ask for sending the new id
             chosen_cid = data_split[1]
             msg = await clbk.edit_message_text(
-                get_user_links(cids, bot.username, flag_cid=chosen_cid),
+                get_user_links(cids, bot.username, flag_cid=chosen_cid) + '\n\n\n' + fetch_text("mylinks") % (MIN_CID_LENGTH, MAX_CID_LENGTH),
                 reply_markup=InlineKeyboardMarkup(
-                    [
-                        [
-                            InlineKeyboardButton(
-                                f"شخصی سازی لینک {idx+1}",
-                                callback_data=f"ch-link|{cid}",
-                            )
-                        ]
-                        for idx, cid in enumerate(cids)
-                    ]
-                    + [[MARKUP_BUTTONS["undo"]]]
+                    [[MYLINKS_MARKUP["what-is-cid"]],[MYLINKS_MARKUP["back-to-menu"]]]
                 ),
                 parse_mode=PM.HTML,
                 disable_web_page_preview=True,
             )
-            await message.reply_text(
-                "آیدی جدیدِ لینکت رو توی پیام بعد بفرس برام.\n"
-                "فقط <i>حروف کوچیک و بزرگ انگلیسی، اعداد، آندرلاین و خط تیره</i> مجازه.\n"
-                f"تعداد حروف مجاز: {MIN_CID_LENGTH} تا {MAX_CID_LENGTH}\n"
-                "کنسل کردن: /cancel",
-                reply_markup=InlineKeyboardMarkup([[MARKUP_BUTTONS["what-is-id"]]]),
-                parse_mode=PM.HTML,
-            )
             context.user_data["chosen_cid"] = chosen_cid
             context.user_data["links_mid"] = msg.message_id
             return 0
-
-
-@handle_errors
-@verify_user()
-async def cid_explanation(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE,
-    message: Message,
-    userid: str,
-    bot: Bot,
-) -> int:
-    # try:
-    await message.reply_text(fetch_text("cid_explanation"), parse_mode=PM.HTML)
-
-
-# except:
-#     pass
 
 
 @handle_errors
@@ -326,7 +263,7 @@ async def update_cid(
     links_mid = context.user_data.get("links_mid")
 
     # check unallowed length
-    if not MIN_CID_LENGTH < len(new_cid) < MAX_CID_LENGTH:
+    if not MIN_CID_LENGTH <= len(new_cid) <= MAX_CID_LENGTH:
         await message.reply_text(
             f"خطا: تعداد حروف مجاز {MIN_CID_LENGTH} تا {MAX_CID_LENGTH} حرفه"
         )
@@ -374,7 +311,7 @@ async def update_cid(
                         ]
                         for idx, cid in enumerate(cids)
                     ]
-                    + [[MARKUP_BUTTONS["undo"]]]
+                    + [[MYLINKS_MARKUP["back-to-menu"]]]
                 ),
                 parse_mode=PM.HTML,
                 disable_web_page_preview=True,
@@ -390,6 +327,18 @@ async def update_cid(
             "دوباره امتحان کن یا کنسل کن: /cancel"
         )
         return 0
+
+
+@handle_errors
+@verify_user()
+async def what_is_cid(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    message: Message,
+    userid: str,
+    bot: Bot,
+) -> int:
+    await message.reply_text(fetch_text("cid_explanation"), parse_mode=PM.HTML)
 
 
 @handle_errors
@@ -432,7 +381,7 @@ async def cancel(
                     ]
                     for idx, cid in enumerate(cids)
                 ]
-                + [[MARKUP_BUTTONS["undo"]]]
+                + [[MYLINKS_MARKUP["back-to-menu"]]]
             ),
             parse_mode=PM.HTML,
             disable_web_page_preview=True,
@@ -444,25 +393,30 @@ async def cancel(
     return ConversationHandler.END
 
 
-my_cids_handler = CommandHandler("my_links", my_cids_cmd)
-my_cids_callback_handler = CallbackQueryHandler(my_cids_cmd, r"undo-main-menu")
-add_cid_handler = CallbackQueryHandler(add_link_clbk, r"add-link")
-rm_cid_handler = CallbackQueryHandler(remove_link_clbk, r"^rm-link")
-change_cid_handler = ConversationHandler(
+
+_mylinks_clbk = CallbackQueryHandler(my_cids_cmd, r"mylinks-menu")
+_what_is_cid = CallbackQueryHandler(what_is_cid, r"what-is-cid")
+mylinks_handler = ConversationHandler(
     entry_points=[
+        # change cid handler
         CallbackQueryHandler(change_link_clbk, r"^ch-link"),
+        # other handlers
+        CallbackQueryHandler(add_link_clbk, r"add-link"),
+        CallbackQueryHandler(remove_link_clbk, r"^rm-link"),
+        CommandHandler("my_links", my_cids_cmd),
+        _mylinks_clbk,
+        _what_is_cid,
     ],
     states={
         0: [
             MessageHandler(filters.TEXT & (~filters.COMMAND), update_cid),
-            MessageHandler(
-                filters.ALL & (~filters.Regex("/cancel")), others_while_sending
-            ),
         ]
     },
     fallbacks=[
+        _what_is_cid,
+        _mylinks_clbk,
         CommandHandler("cancel", cancel),
+        MessageHandler(filters.ALL & filters.COMMAND, others_while_sending),
     ],
     per_user=True,
 )
-cid_explanation_handler = CallbackQueryHandler(cid_explanation, r"what-is-id")

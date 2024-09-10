@@ -23,12 +23,16 @@ async def help_cmd(
         fetch_text("start_help") % (SUPPORT_ADMIN),
         parse_mode=PM.HTML,
         disable_web_page_preview=True,
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(
+                "❔چرا چندتا لینک داشته باشم",
+                callback_data=f"more-links",
+            )]])
     )
 
 
 @handle_errors
 @verify_user()
-async def more_links_cmd(
+async def more_links_clbk(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
     message: Message,
@@ -36,8 +40,9 @@ async def more_links_cmd(
     bot: Bot,
 ) -> None:
     """sends more links help text"""
-    await message.reply_text(fetch_text("more_links"), parse_mode=PM.HTML)
+    if (clbk := update.callback_query) and (data := clbk.data):
+        await message.reply_text(fetch_text("more_links"), parse_mode=PM.HTML)
 
 
-more_links_help_handler = CommandHandler("more_links", more_links_cmd)
 help_handler = CommandHandler("help", help_cmd)
+more_links_clbk_handler = CallbackQueryHandler(more_links_clbk, r"more-links")

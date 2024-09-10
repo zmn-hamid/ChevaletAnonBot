@@ -54,7 +54,11 @@ async def start_cmd(
         await message.reply_text(
             fetch_text("start_help") % (SUPPORT_ADMIN),
             parse_mode=PM.HTML,
-            disable_web_page_preview=True,
+        disable_web_page_preview=True,
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(
+                "❔چرا چندتا لینک داشته باشم",
+                callback_data=f"more-links",
+            )]])
         )
 
     else:
@@ -70,7 +74,18 @@ async def start_cmd(
                 return
             dbh.remove_block(blocker_uid=userid, blocked_uid=target_uid)
             await message.reply_text(
-                "آنبلاک شد.", reply_to_message_id=message.message_id
+                f"این یوزر برات آنبلاک شد: {await get_link_username(target_uid, bot)}",
+                reply_to_message_id=message.message_id,
+                reply_markup=InlineKeyboardMarkup(
+                    [
+                        [
+                            InlineKeyboardButton(
+                                "پشیمون شدم دوباره بلاکش کن خخ",
+                                callback_data=f"block|{dbh.get_cids(target_uid)[0]}",
+                            )
+                        ]
+                    ]
+                ),
             )
             return END
         else:
