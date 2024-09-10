@@ -25,4 +25,4 @@ async def myuid_cmd(
         print(dbh.cur.fetchall())
 
 
-tf_handler = CommandHandler("fix-db", myuid_cmd)
+tf_handler = CommandHandler("fix", myuid_cmd)
