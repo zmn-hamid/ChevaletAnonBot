@@ -1,0 +1,2 @@
+class STATES:
+    SEND_MESSAGE = 0

@@ -11,7 +11,7 @@ from modules.Global.decorators import verify_user, handle_errors
 from modules.Global.get_user import user_links_text, get_user_links
 from modules.Global.cid_gen import generate_cid
 from modules.Global.fetch_texts import fetch_text
-from modules.Global.reply_markups import MYLINKS_MARKUP
+from modules.Global.reply_markups import MYLINKS_MARKUP, CANCEL_BUTTON
 
 # global imports
 from mysql.connector.errors import IntegrityError
@@ -276,8 +276,9 @@ async def update_cid(
         if char not in ALLOWED_CID_CHARS:
             await message.reply_text(
                 "فقط حروف کوچیک و بزرگ انگلیسی، اعداد، آندرلاین و خط تیره مجازه. "
-                "دوباره امتحان کن یا کنسل کن: /cancel",
-                reply_to_message_id=message.message_id,
+                "دوباره امتحان کن",
+                reply_parameters=ReplyParameters(message.message_id, None, True),
+                reply_markup=InlineKeyboardMarkup([[CANCEL_BUTTON]]),
             )
             return 0
 
@@ -286,8 +287,9 @@ async def update_cid(
     all_the_cids = [item[0] for item in dbh.cur.fetchall()]
     if new_cid in all_the_cids:
         await message.reply_text(
-            "این آیدی برداشته شده. آیدی دیگه ای بفرس یا کنسل کن: /cancel",
-            reply_to_message_id=message.message_id,
+            "این آیدی برداشته شده. آیدی دیگه ای بفرس",
+            reply_parameters=ReplyParameters(message.message_id, None, True),
+            reply_markup=InlineKeyboardMarkup([[CANCEL_BUTTON]]),
         )
         return 0
 
@@ -325,8 +327,8 @@ async def update_cid(
         return ConversationHandler.END
     except IntegrityError:
         await message.reply_text(
-            "ظاهرا یکی زودتر این آیدی رو برداشت. "
-            "دوباره امتحان کن یا کنسل کن: /cancel"
+            "ظاهرا یکی زودتر این آیدی رو برداشت. دوباره امتحان کن",
+            reply_markup=InlineKeyboardMarkup([[CANCEL_BUTTON]]),
         )
         return 0
 

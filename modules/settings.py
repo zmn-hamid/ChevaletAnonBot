@@ -419,8 +419,6 @@ async def what_is_formatting(
     )
 
 
-_settings_clbk_handler = CallbackQueryHandler(settings_cmd_clbk, r"settings-menu")
-_what_is_formatting = CallbackQueryHandler(what_is_formatting, r"what-is-formatting")
 settings_handler = ConversationHandler(
     entry_points=[
         CallbackQueryHandler(change_name, r"^change-name\|"),
@@ -431,8 +429,10 @@ settings_handler = ConversationHandler(
         CallbackQueryHandler(unblock_all_clbk, r"^unblock-all\|"),
         CallbackQueryHandler(unblock_me_clbk, r"^unblock-me\|"),
         CommandHandler("settings", settings_cmd_clbk),
-        _settings_clbk_handler,
-        _what_is_formatting,
+        _settings_clbk := CallbackQueryHandler(settings_cmd_clbk, r"settings-menu"),
+        _formatting_clbk := CallbackQueryHandler(
+            what_is_formatting, r"what-is-formatting"
+        ),
     ],
     states={
         0: [
@@ -448,8 +448,8 @@ settings_handler = ConversationHandler(
         ],
     },
     fallbacks=[
-        _what_is_formatting,
-        _settings_clbk_handler,
+        _formatting_clbk,
+        _settings_clbk,
         CallbackQueryHandler(settings_cmd_clbk, r"nvm-back-to-menu"),
         MessageHandler(filters.ALL & filters.COMMAND, cancel_all),
     ],

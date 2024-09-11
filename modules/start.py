@@ -7,15 +7,24 @@ from telegram.warnings import PTBUserWarning
 # project imports
 from config import REPORT_CHAT_ID, SUPPORT_ADMIN, DELETION_TIMEOUT
 from modules.Global.database import dbh
-from modules.Global.get_user import get_link_username
+from modules.Global.get_user import get_username, href_user
 from modules.Global.decorators import verify_user, handle_errors
 from modules.Global.fetch_texts import fetch_text
 from modules.Global.jobs import delete_warning
+from modules.Global.reply_markups import CANCEL_BUTTON
+from modules.Global.states import STATES
 
 # global imports
 from shortuuid import uuid
 from warnings import filterwarnings
 
+
+# reply markup buttons
+class BTN:
+    REPLY = '⌨️ ارسال جواب'
+    BLOCK = '🔒 بلاک'
+    UNBLOCK = '🔓 آنبلاک'
+    REPORT = '⚠️ ریپورت'
 
 # ignore the per_message error
 filterwarnings(
@@ -66,6 +75,7 @@ async def start_cmd(
                 ]
             ),
         )
+        return END
 
     else:
         if split_text[1].startswith("UNBLOCK-"):
@@ -75,13 +85,15 @@ async def start_cmd(
                 int(target_uid)
             except:
                 await message.reply_text(
-                    "لینکت اشتباهه?", reply_to_message_id=message.message_id
+                    "لینکت اشتباهه?",
+                    reply_parameters=ReplyParameters(message.message_id, None, True),
                 )
-                return
+                return END
             dbh.remove_block(blocker_uid=userid, blocked_uid=target_uid)
             await message.reply_text(
-                f"این یوزر برات آنبلاک شد: {await get_link_username(target_uid, bot)}",
-                reply_to_message_id=message.message_id,
+                f"این یوزر برات آنبلاک شد:\n{await get_username(target_uid, bot)} | {href_user(target_uid, '')}",
+                reply_parameters=ReplyParameters(message.message_id, None, True),
+                parse_mode=PM.HTML,
                 reply_markup=InlineKeyboardMarkup(
                     [
                         [
@@ -108,25 +120,33 @@ async def start_cmd(
             if dbh.is_blocked(blocker_uid=target_uid, blocked_uid=userid):
                 await message.reply_text(
                     "این کاربر بلاکت کرده خخ",
-                    reply_to_message_id=message.message_id,
+                    reply_parameters=ReplyParameters(message.message_id, None, True),
+                )
+                return END
+
+            # check is blocked by user
+            if dbh.user_is_banned(target_uid):
+                await message.reply_text(
+                    "این کاربر از بات بن شده اصن",
+                    reply_parameters=ReplyParameters(message.message_id, None, True),
                 )
                 return END
 
             # save target to context
             context.user_data["target_cid"] = target_cid
-            context.user_data["is_answer"] = False
+            context.user_data["reply_to"] = None
 
             if target_uid == userid:
                 await message.reply_text(
                     "میخوای با خودت صحبت کنی؟ :) عب نداره راحت باش"
                 )
             await message.reply_text(
-                f"در حال ارسال پیام به {dbh.get_name(target_uid)} هستی.\n"
-                "کنسل کردن: /cancel",
-                reply_to_message_id=message.message_id,
+                f"در حال ارسال پیام به {dbh.get_name(target_uid)} هستی.",
+                reply_parameters=ReplyParameters(message.message_id, None, True),
                 parse_mode=PM.HTML,
+                reply_markup=InlineKeyboardMarkup([[CANCEL_BUTTON]]),
             )
-            return 0  # state 0
+            return 0
 
 
 @handle_errors
@@ -144,7 +164,6 @@ async def send_msg(
     """
     target_cid = context.user_data.get("target_cid")
     target_mid = context.user_data.get("reply_to")  # None when not answer
-    is_answer = context.user_data.get("is_answer")  # False when not answer
 
     # get target uid
     target_uid = dbh.get_uid(target_cid)
@@ -152,7 +171,8 @@ async def send_msg(
     # check is blocked by user
     if dbh.is_blocked(blocker_uid=target_uid, blocked_uid=userid):
         await message.reply_text(
-            "این کاربر بلاکت کرده خخ", reply_to_message_id=message.message_id
+            "این کاربر بلاکت کرده خخ",
+            reply_parameters=ReplyParameters(message.message_id, None, True),
         )
         return END
 
@@ -162,7 +182,9 @@ async def send_msg(
 
     # sending message to target
     target_cids = dbh.get_cids(target_uid)
-    if not is_answer and len(target_cids) > 1:
+    ## notify user if target has >1 cid
+    ### no target uid means not an answer
+    if not target_mid and len(target_cids) > 1:
         await bot.send_message(
             target_uid,
             f"پیام جدید با لینک {target_cids.index(target_cid) + 1} ({target_cid}):",
@@ -172,16 +194,16 @@ async def send_msg(
         [
             [
                 InlineKeyboardButton(
-                    "جواب دادن",
+                    BTN.REPLY,
                     callback_data=f"answer|{sender_cid}|{message.message_id}",
                 ),
             ],
             [
                 InlineKeyboardButton(
-                    "ریپورت",
+                    BTN.REPORT,
                     callback_data=f"report|{sender_cid}|{message.message_id}",
                 ),
-                InlineKeyboardButton("بلاک", callback_data=f"block|{sender_cid}"),
+                InlineKeyboardButton(BTN.BLOCK, callback_data=f"block|{sender_cid}"),
             ],
         ]
     )
@@ -205,7 +227,7 @@ async def send_msg(
                     ],
                 ]
             ),
-            reply_to_message_id=message.message_id,
+            reply_parameters=ReplyParameters(message.message_id, None, True),
         )
         context.application.job_queue.run_once(
             delete_warning, DELETION_TIMEOUT, {"warning_message": warning_message}
@@ -213,45 +235,53 @@ async def send_msg(
     else:
         await message.reply_text(
             "فرستادم بهش",
-            reply_to_message_id=message.message_id,
+            reply_parameters=ReplyParameters(message.message_id, None, True),
         )
 
-    # add custom and audio tag
+    # add custom tag and audio tag
     custom_tag = dbh.get_custom_tag(target_uid)
 
-    async def edit_caption(the_tag):
+    async def add_tag(tag: str, edit_what: str, **kwargs) -> None:
+        """
+        # base function for adding tag to text or caption
+
+        `edit_what` is either `caption` or `text`
+        """
         try:
-            caption_html = message.caption_html if message.caption_html else ""
-            new_text = caption_html + "\n" + the_tag
-            await bot.edit_message_caption(
-                caption=new_text,
+            if edit_what == "caption":
+                edit_method = bot.edit_message_caption
+                og_text_html = message.caption_html if message.caption_html else ""
+            else:
+                edit_method = bot.edit_message_text
+                og_text_html = message.text_html if message.text_html else ""
+            await edit_method(
+                caption=og_text_html + "\n" + tag,
                 chat_id=target_uid,
                 message_id=copied_message_id.message_id,
                 parse_mode=PM.HTML,
-                show_caption_above_media=message.show_caption_above_media,
                 reply_markup=reply_markup,
+                **kwargs,
             )
         except:
             pass
 
     if message.audio and not custom_tag:
-        await edit_caption(dbh.get_audio_tag(target_uid))
+        await add_tag(
+            dbh.get_audio_tag(target_uid),
+            "caption",
+            show_caption_above_media=message.show_caption_above_media,
+        )
     elif custom_tag:
         # edit text
         try:
-            text_html = message.text_html if message.text_html else ""
-            new_text = text_html + "\n" + custom_tag
-            await bot.edit_message_text(
-                text=new_text,
-                chat_id=target_uid,
-                message_id=copied_message_id.message_id,
-                parse_mode=PM.HTML,
-                link_preview_options=message.link_preview_options,
-                reply_markup=reply_markup,
+            await add_tag(
+                custom_tag, "text", link_preview_options=message.link_preview_options
             )
         except:
             # edit caption if no text
-            await edit_caption(custom_tag)
+            await add_tag(
+                custom_tag, "caption", link_preview_options=message.link_preview_options
+            )
 
     context.user_data.clear()
     return END
@@ -276,19 +306,20 @@ async def answer(
         # check is blocked by user
         if dbh.is_blocked(blocker_uid=dbh.get_uid(target_cid), blocked_uid=userid):
             await message.reply_text(
-                "این کاربر بلاکت کرده خخ", reply_to_message_id=message.message_id
+                "این کاربر بلاکت کرده خخ",
+                reply_parameters=ReplyParameters(message.message_id, None, True),
             )
             return END
 
         context.user_data["target_cid"] = target_cid
         context.user_data["reply_to"] = target_mid
-        context.user_data["is_answer"] = True
 
         await message.reply_text(
-            f"در حال ارسال جواب هستی. کنسل کردن: /cancel",
-            reply_to_message_id=message.message_id,
+            f"در حال ارسال جواب هستی",
+            reply_parameters=ReplyParameters(message.message_id, None, True),
+            reply_markup=InlineKeyboardMarkup([[CANCEL_BUTTON]]),
         )
-        return 0  # state 0
+        return STATES.SEND_MESSAGE
 
 
 @handle_errors
@@ -305,8 +336,9 @@ async def block(
     """
     if (clbk := update.callback_query) and (data := clbk.data):
         _, target_cid = data.split("|")
+        target_uid = dbh.get_uid(target_cid)
 
-        if dbh.add_block(userid, dbh.get_uid(target_cid)):
+        if dbh.add_block(userid, target_uid):
             await message.edit_reply_markup(
                 InlineKeyboardMarkup(
                     [
@@ -317,7 +349,7 @@ async def block(
                                 )
                                 if not button.callback_data.startswith("block")
                                 else InlineKeyboardButton(
-                                    "آنبلاک",
+                                    BTN.UNBLOCK,
                                     callback_data=button.callback_data.replace(
                                         "block", "unblock"
                                     ),
@@ -329,12 +361,13 @@ async def block(
                     ]
                 )
             )
-            await clbk.answer("با موفقیت بلاک شد.")
-            return END
+            if userid == target_uid:
+                await clbk.answer("یه تراپی برو💀👍")
+            else:
+                await clbk.answer("با موفقیت بلاک شد.")
 
         else:
-            await clbk.answer("بلاک هستش.")
-            return END
+            await clbk.answer("همین الانش بلاک هست")
 
 
 @handle_errors
@@ -351,8 +384,9 @@ async def unblock(
     """
     if (clbk := update.callback_query) and (data := clbk.data):
         _, target_cid = data.split("|")
+        target_uid = dbh.get_uid(target_cid)
 
-        if dbh.remove_block(userid, dbh.get_uid(target_cid)):
+        if dbh.remove_block(userid, target_uid):
             await message.edit_reply_markup(
                 InlineKeyboardMarkup(
                     [
@@ -363,7 +397,7 @@ async def unblock(
                                 )
                                 if not button.callback_data.startswith("unblock")
                                 else InlineKeyboardButton(
-                                    "بلاک",
+                                    BTN.BLOCK,
                                     callback_data=button.callback_data.replace(
                                         "unblock", "block"
                                     ),
@@ -375,12 +409,13 @@ async def unblock(
                     ]
                 )
             )
-            await clbk.answer("با موفقیت آنبلاک شد.")
-            return END
+            if userid == target_uid:
+                await clbk.answer("خوبه پس تراپی جواب داد🥹")
+            else:
+                await clbk.answer("با موفقیت آنبلاک شد.")
 
         else:
-            await clbk.answer("آنبلاک هستش.")
-            return END
+            await clbk.answer("همین الانش بلاک نیس")
 
 
 @handle_errors
@@ -421,16 +456,14 @@ async def report(
         )
         await message.reply_text(
             f"ریپورت شد.\nکد پیگیری: <code>{report_id}</code>",
-            reply_to_message_id=message.message_id,
+            reply_parameters=ReplyParameters(message.message_id, None, True),
             parse_mode=PM.HTML,
         )
-
-    return END
 
 
 @handle_errors
 @verify_user()
-async def command_while_sending(
+async def cancel_all(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
     message: Message,
@@ -438,7 +471,10 @@ async def command_while_sending(
     bot: Bot,
 ) -> int:
     context.user_data.clear()
-    await message.reply_text("وسط ارسال پیام بودی. کنسلش کردم. دوباره بفرست")
+    await message.reply_text(
+        "وسط ارسال پیام بودی. کنسلش کردم. دوباره بفرست",
+        reply_parameters=ReplyParameters(message.message_id, None, True),
+    )
     return END
 
 
@@ -471,6 +507,7 @@ async def delete_warning_clbk(
             await message.reply_text("پاکش کردم براش😮‍💨", reply_to_message_id=reply_mid)
         except:
             pass
+        return END
 
 
 @handle_errors
@@ -484,35 +521,39 @@ async def cancel(
 ) -> int:
     """# cancel"""
     context.user_data.clear()
-    await message.reply_text("کنسل شد.")
+    await message.edit_text("کنسل شد")
     return END
 
 
+delete_message_handler = CallbackQueryHandler(delete_warning_clbk, r"^delete\|")
+start_clbk = CommandHandler("start", start_cmd)
+answer_clbk = CallbackQueryHandler(answer, r"^answer\|")
+report_clbk = CallbackQueryHandler(report, r"^report\|")
+block_clbk = CallbackQueryHandler(block, r"^block\|")
+unblock_clbk = CallbackQueryHandler(unblock, r"^unblock\|")
 start_cmd_handler = ConversationHandler(
     entry_points=[
-        CommandHandler("start", start_cmd),
-        CallbackQueryHandler(answer, r"^answer\|"),
-        CallbackQueryHandler(report, r"^report\|"),
-        CallbackQueryHandler(block, r"^block\|"),
-        CallbackQueryHandler(unblock, r"^unblock\|"),
+        start_clbk,
+        answer_clbk,
+        report_clbk,
+        block_clbk,
+        unblock_clbk,
     ],
     states={
         0: [
-            CommandHandler("start", start_cmd),
-            CallbackQueryHandler(answer, r"^answer\|"),
-            CallbackQueryHandler(report, r"^report\|"),
-            CallbackQueryHandler(block, r"^block\|"),
-            CallbackQueryHandler(unblock, r"^unblock\|"),
-            CallbackQueryHandler(delete_warning_clbk, r"^delete\|"),
-            MessageHandler(
-                filters.COMMAND & (~filters.Regex("/cancel")), command_while_sending
-            ),
-            MessageHandler(filters.ALL & (~filters.Regex("/cancel")), send_msg),
+            start_clbk,
+            answer_clbk,
+            report_clbk,
+            block_clbk,
+            unblock_clbk,
+            MessageHandler(filters.ALL & (~filters.COMMAND), send_msg),
         ],
     },
     fallbacks=[
+        delete_message_handler,
         CommandHandler("cancel", cancel),
+        CallbackQueryHandler(cancel, r"cancel"),
+        MessageHandler(filters.ALL & filters.COMMAND, cancel_all),
     ],
     per_user=True,
 )
-delete_message_handler = CallbackQueryHandler(delete_warning_clbk, r"^delete\|")

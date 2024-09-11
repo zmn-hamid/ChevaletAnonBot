@@ -5,9 +5,9 @@ from telegram import Bot
 from typing import List
 
 
-def href_user(userid: str) -> str:
+def href_user(userid: str, pre_text: str='u') -> str:
     """returns hyperlinked user"""
-    return f'<a href="tg://user?id={userid}">u{userid}</a>'
+    return f'<a href="tg://user?id={userid}">{pre_text}{userid}</a>'
 
 
 def get_user_links(cids: List[str], bot_username: str, flag_cid: int = -1) -> str:
@@ -29,9 +29,11 @@ def user_links_text(cids: List[str], cid_limit: int, bot_username: str) -> str:
     )
 
 
-async def get_link_username(userid: str, bot: Bot) -> str:
+async def get_username(userid: str, bot: Bot):
     try:
-        uname_part = f" | @{(await bot.get_chat(userid)).username}"
+        return f"@{(await bot.get_chat(userid)).username}"
     except:
-        uname_part = ""
-    return f"{href_user(userid)}{uname_part}"
+        return ""
+
+async def get_link_username(userid: str, bot: Bot) -> str:
+    return f"{href_user(userid)} | {await get_username(userid, bot)}"

@@ -77,3 +77,5 @@ MYLINKS_MARKUP = {
         callback_data=f"what-is-cid|",
     ),
 }
+
+CANCEL_BUTTON = InlineKeyboardButton("بیخیالش", callback_data="cancel")
