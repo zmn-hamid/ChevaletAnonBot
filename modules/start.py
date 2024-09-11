@@ -222,7 +222,7 @@ async def send_msg(
         target_uid,
         parse_mode=PM.HTML,
         reply_markup=reply_markup,
-        reply_parameters=ReplyParameters(target_mid, None, True),
+        reply_to_message_id=target_mid,
     )
     if dbh.get_warning(userid):
         warning_message = await message.reply_text(
