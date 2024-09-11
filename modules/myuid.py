@@ -19,7 +19,10 @@ async def myuid_cmd(
     bot: Bot,
 ) -> None:
     """returns user id | is gonna be used for education"""
-    await message.reply_text(userid)
+    await message.reply_text(
+        userid,
+        reply_parameters=ReplyParameters(message.message_id, None, True),
+    )
 
 
 myuid_handler = CommandHandler("myuid", myuid_cmd)

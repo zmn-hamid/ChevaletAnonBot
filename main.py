@@ -13,7 +13,7 @@ from modules.myuid import myuid_handler
 from modules.settings import settings_handler
 from modules.privacy import privacy_handler
 from modules.help import help_handler, more_links_clbk_handler
-from modules.other_msgs import other_messages_handler, other_cancels_handler
+from modules.other_msgs import other_messages_handler
 
 from modules.Global.log import logger
 from modules.Global.jobs import set_commands
@@ -41,7 +41,6 @@ for handler in [
     # myuid
     myuid_handler,
     # other messages
-    other_cancels_handler,
     other_messages_handler,
 ]:
     application.add_handler(handler)

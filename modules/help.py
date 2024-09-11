@@ -23,6 +23,7 @@ async def help_cmd(
         fetch_text("start_help") % (SUPPORT_ADMIN),
         parse_mode=PM.HTML,
         disable_web_page_preview=True,
+        reply_parameters=ReplyParameters(message.message_id, None, True),
         reply_markup=InlineKeyboardMarkup(
             [
                 [
@@ -47,7 +48,11 @@ async def more_links_clbk(
 ) -> None:
     """sends more links help text"""
     if (clbk := update.callback_query) and (data := clbk.data):
-        await message.reply_text(fetch_text("more_links"), parse_mode=PM.HTML)
+        await message.reply_text(
+            fetch_text("more_links"),
+            parse_mode=PM.HTML,
+            reply_parameters=ReplyParameters(message.message_id, None, True),
+        )
 
 
 help_handler = CommandHandler("help", help_cmd)

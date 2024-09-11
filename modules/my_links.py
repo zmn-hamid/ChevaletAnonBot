@@ -355,45 +355,10 @@ async def others_while_sending(
     bot: Bot,
 ) -> int:
     context.user_data.clear()
-    await message.reply_text("در حال تغییر آیدی بودی، اگه پشیمون شدی بزن رو /cancel")
-    return 0
-
-
-@handle_errors
-@verify_user()
-async def cancel(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE,
-    message: Message,
-    userid: str,
-    bot: Bot,
-) -> int:
-    """cancel"""
-    cids = dbh.get_cids(userid)
-    try:
-        await bot.edit_message_text(
-            message_id=context.user_data["links_mid"],
-            chat_id=userid,
-            text=get_user_links(cids, bot.username),
-            reply_markup=InlineKeyboardMarkup(
-                [
-                    [
-                        InlineKeyboardButton(
-                            f"شخصی سازی لینک {idx+1}",
-                            callback_data=f"ch-link|{cid}",
-                        )
-                    ]
-                    for idx, cid in enumerate(cids)
-                ]
-                + [[MYLINKS_MARKUP["back-to-menu"]]]
-            ),
-            parse_mode=PM.HTML,
-            disable_web_page_preview=True,
-        )
-    except:
-        pass
-    context.user_data.clear()
-    await message.reply_text("کنسل شد.")
+    await message.reply_text(
+        "در حال تغییر آیدی بودی پس کنسلش کردم. دوباره بفرست",
+        reply_parameters=ReplyParameters(message.message_id, None, True),
+    )
     return ConversationHandler.END
 
 
@@ -418,7 +383,6 @@ mylinks_handler = ConversationHandler(
     fallbacks=[
         _what_is_cid,
         _mylinks_clbk,
-        CommandHandler("cancel", cancel),
         MessageHandler(filters.ALL & filters.COMMAND, others_while_sending),
     ],
     per_user=True,

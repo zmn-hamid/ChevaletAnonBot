@@ -207,7 +207,7 @@ class DBHandler:
     def set_custom_tag(self, uid: str, custom_tag: str) -> None:
         try:
             dbh.cur.execute(
-                f"UPDATE {self.users_table} SET custom_tag=%s " f'WHERE uid="{uid}"',
+                f'UPDATE {self.users_table} SET custom_tag=%s WHERE uid="{uid}"',
                 (custom_tag,),
             )
             dbh.db.commit()
@@ -215,15 +215,13 @@ class DBHandler:
             pass
 
     def get_audio_tag(self, uid: str) -> str | None:
-        self.cur.execute(
-            f"SELECT audio_tag FROM {self.users_table} " f'WHERE uid="{uid}"'
-        )
+        self.cur.execute(f'SELECT audio_tag FROM {self.users_table} WHERE uid="{uid}"')
         return self.cur.fetchone()[0]
 
     def set_audio_tag(self, uid: str, audio_tag: str) -> None:
         try:
             dbh.cur.execute(
-                f"UPDATE {self.users_table} SET audio_tag=%s " f'WHERE uid="{uid}"',
+                f'UPDATE {self.users_table} SET audio_tag=%s WHERE uid="{uid}"',
                 (audio_tag,),
             )
             dbh.db.commit()

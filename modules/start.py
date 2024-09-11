@@ -21,10 +21,11 @@ from warnings import filterwarnings
 
 # reply markup buttons
 class BTN:
-    REPLY = '⌨️ ارسال جواب'
-    BLOCK = '🔒 بلاک'
-    UNBLOCK = '🔓 آنبلاک'
-    REPORT = '⚠️ ریپورت'
+    REPLY = "⌨️ ارسال جواب"
+    BLOCK = "🔒 بلاک"
+    UNBLOCK = "🔓 آنبلاک"
+    REPORT = "⚠️ ریپورت"
+
 
 # ignore the per_message error
 filterwarnings(
@@ -74,6 +75,7 @@ async def start_cmd(
                     ]
                 ]
             ),
+            reply_parameters=ReplyParameters(message.message_id, None, True),
         )
         return END
 
@@ -89,22 +91,28 @@ async def start_cmd(
                     reply_parameters=ReplyParameters(message.message_id, None, True),
                 )
                 return END
-            dbh.remove_block(blocker_uid=userid, blocked_uid=target_uid)
-            await message.reply_text(
-                f"این یوزر برات آنبلاک شد:\n{await get_username(target_uid, bot)} | {href_user(target_uid, '')}",
-                reply_parameters=ReplyParameters(message.message_id, None, True),
-                parse_mode=PM.HTML,
-                reply_markup=InlineKeyboardMarkup(
-                    [
+            if dbh.is_blocked(blocker_uid=userid, blocked_uid=target_uid):
+                dbh.remove_block(blocker_uid=userid, blocked_uid=target_uid)
+                await message.reply_text(
+                    f"این یوزر برات آنبلاک شد:\n{await get_username(target_uid, bot)} | {href_user(target_uid, '')}",
+                    reply_parameters=ReplyParameters(message.message_id, None, True),
+                    parse_mode=PM.HTML,
+                    reply_markup=InlineKeyboardMarkup(
                         [
-                            InlineKeyboardButton(
-                                "پشیمون شدم دوباره بلاکش کن خخ",
-                                callback_data=f"block|{dbh.get_cids(target_uid)[0]}",
-                            )
+                            [
+                                InlineKeyboardButton(
+                                    "پشیمون شدم دوباره بلاکش کن خخ",
+                                    callback_data=f"block|{dbh.get_cids(target_uid)[0]}",
+                                )
+                            ]
                         ]
-                    ]
-                ),
-            )
+                    ),
+                )
+            else:
+                await message.reply_text(
+                    "این یوزر اصن برات بلاک نبود",
+                    reply_parameters=ReplyParameters(message.message_id, None, True),
+                )
             return END
         else:
             # sending message
@@ -113,7 +121,10 @@ async def start_cmd(
 
             # check if target_cid exists
             if target_uid == None:
-                await message.reply_text("این لینک اشتباهه و کار نمیکنه")
+                await message.reply_text(
+                    "این لینک اشتباهه و کار نمیکنه",
+                    reply_parameters=ReplyParameters(message.message_id, None, True),
+                )
                 return END
 
             # check is blocked by user
@@ -211,7 +222,7 @@ async def send_msg(
         target_uid,
         parse_mode=PM.HTML,
         reply_markup=reply_markup,
-        reply_to_message_id=target_mid,
+        reply_parameters=ReplyParameters(target_mid, None, True),
     )
     if dbh.get_warning(userid):
         warning_message = await message.reply_text(
@@ -452,7 +463,7 @@ async def report(
             REPORT_CHAT_ID,
             target_uid,
             target_mid,
-            reply_to_message_id=first_message.message_id,
+            reply_parameters=ReplyParameters(first_message.message_id, None, True),
         )
         await message.reply_text(
             f"ریپورت شد.\nکد پیگیری: <code>{report_id}</code>",
@@ -504,7 +515,10 @@ async def delete_warning_clbk(
             pass
         # the true edit text
         try:
-            await message.reply_text("پاکش کردم براش😮‍💨", reply_to_message_id=reply_mid)
+            await message.reply_text(
+                "پاکش کردم براش😮‍💨",
+                reply_parameters=ReplyParameters(reply_mid, None, True),
+            )
         except:
             pass
         return END

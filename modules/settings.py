@@ -194,7 +194,8 @@ async def update_custom_tag(
     if len(new_tag) > MAX_NAME_LENGTH:
         await message.reply_text(
             f"تگ جدید نباید بیشتر از {MAX_NAME_LENGTH}تا حرف باشه. دوباره امتحان کن.\n"
-            f"نکته: لینک و بولد و اینا یه مقدار به تعداد حرفات اضافه میکنن"
+            f"نکته: لینک و بولد و اینا یه مقدار به تعداد حرفات اضافه میکنن",
+            reply_parameters=ReplyParameters(message.message_id, None, True),
         )
         return 1
     dbh.set_custom_tag(userid, new_tag)
@@ -206,6 +207,7 @@ async def update_custom_tag(
         f"انجام شد. تگ جدیدت:\n{dbh.get_custom_tag(userid)}\n\n"
         f"میتونی لینک خودتو تست کنی تا ببینی چجوری شده :)",
         parse_mode=PM.HTML,
+        reply_parameters=ReplyParameters(message.message_id, None, True),
         reply_markup=InlineKeyboardMarkup(
             [
                 [SETTINGS_MARKUP["back-to-menu"]],
@@ -225,12 +227,8 @@ async def remove_custom_tag(
     bot: Bot,
 ) -> int:
     dbh.set_custom_tag(userid, None)
-    try:
-        await bot.delete_message(userid, context.user_data["og_mid"])
-    except:
-        pass
-    await message.reply_text(
-        "تگ دلخواهت با موفقیت پاک شد.",
+    await message.edit_text(
+        "تگ دلخواهت با موفقیت پاک شد",
         reply_markup=InlineKeyboardMarkup(
             [
                 [SETTINGS_MARKUP["back-to-menu"]],
@@ -265,7 +263,7 @@ async def audio_tag(
             ),
         )
         context.user_data["og_mid"] = msg.message_id
-        return 1
+        return 2
 
 
 @handle_errors
@@ -282,7 +280,8 @@ async def update_audio_tag(
     if len(new_tag) > MAX_NAME_LENGTH:
         await message.reply_text(
             f"تگ جدید نباید بیشتر از {MAX_NAME_LENGTH}تا حرف باشه. دوباره امتحان کن.\n"
-            f"نکته: لینک و بولد و اینا یه مقدار به تعداد حرفات اضافه میکنن"
+            f"نکته: لینک و بولد و اینا یه مقدار به تعداد حرفات اضافه میکنن",
+            reply_parameters=ReplyParameters(message.message_id, None, True),
         )
         return 2
     dbh.set_audio_tag(userid, new_tag)
@@ -294,6 +293,7 @@ async def update_audio_tag(
         f"انجام شد. تگ جدیدت:\n{dbh.get_audio_tag(userid)}\n\n"
         f"میتونی لینک خودتو تست کنی تا ببینی چجوری شده :)",
         parse_mode=PM.HTML,
+        reply_parameters=ReplyParameters(message.message_id, None, True),
         reply_markup=InlineKeyboardMarkup(
             [
                 [SETTINGS_MARKUP["back-to-menu"]],
@@ -313,12 +313,8 @@ async def remove_audio_tag(
     bot: Bot,
 ) -> int:
     dbh.set_audio_tag(userid, None)
-    try:
-        await bot.delete_message(userid, context.user_data["og_mid"])
-    except:
-        pass
-    await message.reply_text(
-        "تگ دلخواهت با موفقیت پاک شد.",
+    await message.edit_text(
+        "تگ دلخواهت با موفقیت پاک شد",
         reply_markup=InlineKeyboardMarkup(
             [
                 [SETTINGS_MARKUP["back-to-menu"]],
@@ -346,7 +342,7 @@ async def unblock_all_clbk(
             )
             dbh.db.commit()
             await clbk.edit_message_text(
-                "همه با موفقیت آنبلاک شدن.",
+                "همه با موفقیت آنبلاک شدن",
                 reply_markup=InlineKeyboardMarkup([[SETTINGS_MARKUP["back-to-menu"]]]),
             )
         else:
@@ -380,10 +376,13 @@ async def unblock_me_clbk(
     bot: Bot,
 ) -> None:
     """sends unblock link of the user"""
-    await message.reply_text(
+    msg: Message = await message.reply_text(
         "این لینک رو بفرس به یکی که بلاکت کرده. وقتی که بزنه روش آنبلاک میشی:"
     )
-    await message.reply_text(f"t.me/{bot.username}?start=UNBLOCK-{userid}")
+    await message.reply_text(
+        f"t.me/{bot.username}?start=UNBLOCK-{userid}",
+        reply_parameters=ReplyParameters(msg.message_id, None, True),
+    )
 
 
 @handle_errors
@@ -397,7 +396,8 @@ async def cancel_all(
 ) -> int:
     """cancel all"""
     await message.reply_text(
-        "در حال تغییر تنظیماتت بودی پس کنسلش کردم. دوباره امتحان کن"
+        "در حال تغییر تنظیماتت بودی پس کنسلش کردم. دوباره امتحان کن",
+        reply_parameters=ReplyParameters(message.message_id, None, True),
     )
     context.user_data.clear()
     return END
@@ -413,7 +413,6 @@ async def what_is_formatting(
     bot: Bot,
 ) -> int:
     """cancel all"""
-    # await message.reply_text()
     await update.callback_query.answer(
         fetch_text("formatting_explanation"), show_alert=True
     )
