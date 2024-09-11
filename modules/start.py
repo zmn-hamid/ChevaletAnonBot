@@ -7,7 +7,7 @@ from telegram.warnings import PTBUserWarning
 # project imports
 from config import REPORT_CHAT_ID, SUPPORT_ADMIN, DELETION_TIMEOUT
 from modules.Global.database import dbh
-from modules.Global.get_user import get_username, href_user
+from modules.Global.get_user import get_username, href_user, get_link_username
 from modules.Global.decorators import verify_user, handle_errors
 from modules.Global.fetch_texts import fetch_text
 from modules.Global.jobs import delete_warning
