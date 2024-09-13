@@ -5,12 +5,11 @@ from telegram.constants import ParseMode as PM
 
 # project imports
 from config import SUPPORT_ADMIN
-from modules.Global.decorators import verify_user, handle_errors
+from modules.Global.decorators import prep_function
 from modules.Global.fetch_texts import fetch_text
 
 
-@handle_errors
-@verify_user(initialize_user=True)
+@prep_function
 async def help_cmd(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -18,7 +17,7 @@ async def help_cmd(
     userid: str,
     bot: Bot,
 ) -> None:
-    """sends priacy and security help text"""
+    """# sends priacy and security help text"""
     await message.reply_text(
         fetch_text("start_help") % (SUPPORT_ADMIN),
         parse_mode=PM.HTML,
@@ -37,8 +36,7 @@ async def help_cmd(
     )
 
 
-@handle_errors
-@verify_user()
+@prep_function
 async def more_links_clbk(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,

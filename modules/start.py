@@ -8,11 +8,10 @@ from telegram.warnings import PTBUserWarning
 from config import REPORT_CHAT_ID, SUPPORT_ADMIN, DELETION_TIMEOUT
 from modules.Global.database import dbh
 from modules.Global.get_user import get_username, href_user, get_link_username
-from modules.Global.decorators import verify_user, handle_errors
+from modules.Global.decorators import prep_function
 from modules.Global.fetch_texts import fetch_text
 from modules.Global.jobs import delete_warning
 from modules.Global.reply_markups import CANCEL_BUTTON
-from modules.Global.states import STATES
 
 # global imports
 from shortuuid import uuid
@@ -37,8 +36,7 @@ filterwarnings(
 END = ConversationHandler.END
 
 
-@handle_errors
-@verify_user(initialize_user=True)
+@prep_function
 async def start_cmd(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -136,7 +134,7 @@ async def start_cmd(
                 return END
 
             # check is blocked by user
-            if dbh.user_is_banned(target_uid):
+            if dbh.is_banned(target_uid):
                 await message.reply_text(
                     "این کاربر از بات بن شده اصن",
                     reply_parameters=ReplyParameters(message.message_id, None, True),
@@ -160,8 +158,7 @@ async def start_cmd(
             return 0
 
 
-@handle_errors
-@verify_user()
+@prep_function
 async def send_msg(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -298,8 +295,7 @@ async def send_msg(
     return END
 
 
-@handle_errors
-@verify_user()
+@prep_function
 async def answer(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -330,11 +326,10 @@ async def answer(
             reply_parameters=ReplyParameters(message.message_id, None, True),
             reply_markup=InlineKeyboardMarkup([[CANCEL_BUTTON]]),
         )
-        return STATES.SEND_MESSAGE
+        return 0
 
 
-@handle_errors
-@verify_user()
+@prep_function
 async def block(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -381,8 +376,7 @@ async def block(
             await clbk.answer("همین الانش بلاک هست")
 
 
-@handle_errors
-@verify_user()
+@prep_function
 async def unblock(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -429,8 +423,7 @@ async def unblock(
             await clbk.answer("همین الانش بلاک نیس")
 
 
-@handle_errors
-@verify_user()
+@prep_function
 async def report(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -439,7 +432,7 @@ async def report(
     bot: Bot,
 ) -> int:
     """
-    # reports the message to report channel
+    # reports the message to admins
     """
     if (clbk := update.callback_query) and (data := clbk.data):
         _, target_cid, target_mid = data.split("|")
@@ -472,8 +465,7 @@ async def report(
         )
 
 
-@handle_errors
-@verify_user()
+@prep_function
 async def cancel_all(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -481,6 +473,7 @@ async def cancel_all(
     userid: str,
     bot: Bot,
 ) -> int:
+    """# cancel if other messages sent"""
     context.user_data.clear()
     await message.reply_text(
         "وسط ارسال پیام بودی. کنسلش کردم. دوباره بفرست",
@@ -489,15 +482,15 @@ async def cancel_all(
     return END
 
 
-@handle_errors
-@verify_user()
-async def delete_warning_clbk(
+@prep_function
+async def warning_clbk(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
     message: Message,
     userid: str,
     bot: Bot,
 ) -> int:
+    """# delete the sent message on undo"""
     if (clbk := update.callback_query) and (data := clbk.data):
         _, target_cid, copied_message_id = data.split("|")
         # delete the sent message
@@ -524,8 +517,7 @@ async def delete_warning_clbk(
         return END
 
 
-@handle_errors
-@verify_user()
+@prep_function
 async def cancel(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -539,7 +531,7 @@ async def cancel(
     return END
 
 
-delete_message_handler = CallbackQueryHandler(delete_warning_clbk, r"^delete\|")
+delete_message_handler = CallbackQueryHandler(warning_clbk, r"^delete\|")
 start_clbk = CommandHandler("start", start_cmd)
 answer_clbk = CallbackQueryHandler(answer, r"^answer\|")
 report_clbk = CallbackQueryHandler(report, r"^report\|")

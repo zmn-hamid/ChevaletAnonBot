@@ -3,21 +3,21 @@ from telegram import *
 from telegram.ext import *
 
 # project imports
-from modules.Global.decorators import verify_user, handle_errors
+from modules.Global.decorators import prep_function
 
 # end conversation
 END = ConversationHandler.END
 
 
 async def other_messages_template(message: Message):
+    """# template for unknown messages"""
     return await message.reply_text(
         "متوجه نشدم. اگه کمک میخوای از /help استفاده کن",
         reply_parameters=ReplyParameters(message.message_id, None, True),
     )
 
 
-@handle_errors
-@verify_user()
+@prep_function
 async def other_messages(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -25,7 +25,7 @@ async def other_messages(
     userid: str,
     bot: Bot,
 ) -> None:
-    """other messages that are sent"""
+    """# for unkown messages"""
     await other_messages_template(message)
 
 

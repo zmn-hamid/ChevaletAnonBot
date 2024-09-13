@@ -7,7 +7,7 @@ from telegram.warnings import PTBUserWarning
 # project imports
 from config import SELLER_ADMIN, MAX_CID_LENGTH, MIN_CID_LENGTH, ALLOWED_CID_CHARS
 from modules.Global.database import dbh
-from modules.Global.decorators import verify_user, handle_errors
+from modules.Global.decorators import prep_function
 from modules.Global.get_user import user_links_text, get_user_links
 from modules.Global.cid_gen import generate_cid
 from modules.Global.fetch_texts import fetch_text
@@ -24,16 +24,15 @@ filterwarnings(
 )
 
 
-@handle_errors
-@verify_user()
-async def my_cids_cmd(
+@prep_function
+async def mylinks_cmd(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
     message: Message,
     userid: str,
     bot: Bot,
 ) -> None:
-    """returns users cids"""
+    """# returns users cids"""
     if update.callback_query:
         method = update.callback_query.edit_message_text
     else:
@@ -47,8 +46,7 @@ async def my_cids_cmd(
     return ConversationHandler.END
 
 
-@handle_errors
-@verify_user()
+@prep_function
 async def add_link_clbk(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -56,7 +54,7 @@ async def add_link_clbk(
     userid: str,
     bot: Bot,
 ) -> None:
-    """adds a cid"""
+    """# adds a cid"""
     if clbk := update.callback_query:
         # check if user has reached limit
         cid_limit = dbh.get_cid_limit(userid)
@@ -80,8 +78,7 @@ async def add_link_clbk(
         await clbk.answer("added a new link")
 
 
-@handle_errors
-@verify_user()
+@prep_function
 async def remove_link_clbk(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -89,7 +86,7 @@ async def remove_link_clbk(
     userid: str,
     bot: Bot,
 ) -> None:
-    """removes a cid"""
+    """# removes a cid"""
     if (clbk := update.callback_query) and (data := clbk.data):
         data_split = data.split("|")
         cids = dbh.get_cids(userid)
@@ -195,8 +192,7 @@ async def remove_link_clbk(
                 )
 
 
-@handle_errors
-@verify_user()
+@prep_function
 async def change_link_clbk(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -204,7 +200,7 @@ async def change_link_clbk(
     userid: str,
     bot: Bot,
 ) -> int:
-    """changes a cid"""
+    """# change cid selection"""
     if (clbk := update.callback_query) and (data := clbk.data):
         data_split = data.split("|")
         cids = dbh.get_cids(userid)
@@ -250,8 +246,7 @@ async def change_link_clbk(
             return 0
 
 
-@handle_errors
-@verify_user()
+@prep_function
 async def update_cid(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -259,7 +254,7 @@ async def update_cid(
     userid: str,
     bot: Bot,
 ) -> int:
-    """changes the cid"""
+    """# changes the cid"""
     new_cid = message.text
     chosen_cid = context.user_data.get("chosen_cid")
     links_mid = context.user_data.get("links_mid")
@@ -333,8 +328,7 @@ async def update_cid(
         return 0
 
 
-@handle_errors
-@verify_user()
+@prep_function
 async def what_is_cid(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -342,11 +336,11 @@ async def what_is_cid(
     userid: str,
     bot: Bot,
 ) -> int:
+    """# explanation for cid"""
     await message.reply_text(fetch_text("cid_explanation"), parse_mode=PM.HTML)
 
 
-@handle_errors
-@verify_user()
+@prep_function
 async def others_while_sending(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -354,6 +348,7 @@ async def others_while_sending(
     userid: str,
     bot: Bot,
 ) -> int:
+    """# if other messages sent"""
     context.user_data.clear()
     await message.reply_text(
         "در حال تغییر آیدی بودی پس کنسلش کردم. دوباره بفرست",
@@ -362,7 +357,7 @@ async def others_while_sending(
     return ConversationHandler.END
 
 
-_mylinks_clbk = CallbackQueryHandler(my_cids_cmd, r"mylinks-menu")
+_mylinks_clbk = CallbackQueryHandler(mylinks_cmd, r"mylinks-menu")
 _what_is_cid = CallbackQueryHandler(what_is_cid, r"what-is-cid")
 mylinks_handler = ConversationHandler(
     entry_points=[
@@ -371,7 +366,7 @@ mylinks_handler = ConversationHandler(
         # other handlers
         CallbackQueryHandler(add_link_clbk, r"add-link"),
         CallbackQueryHandler(remove_link_clbk, r"^rm-link"),
-        CommandHandler("my_links", my_cids_cmd),
+        CommandHandler("my_links", mylinks_cmd),
         _mylinks_clbk,
         _what_is_cid,
     ],

@@ -6,7 +6,7 @@ from telegram.constants import ParseMode as PM
 # project imports
 from config import MAX_NAME_LENGTH
 from modules.Global.database import dbh
-from modules.Global.decorators import verify_user, handle_errors
+from modules.Global.decorators import prep_function
 from modules.Global.fetch_texts import fetch_text
 from modules.Global.reply_markups import SETTINGS_MARKUP
 
@@ -15,8 +15,7 @@ from modules.Global.reply_markups import SETTINGS_MARKUP
 END = ConversationHandler.END
 
 
-@handle_errors
-@verify_user()
+@prep_function
 async def settings_cmd_clbk(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -37,8 +36,7 @@ async def settings_cmd_clbk(
     return END
 
 
-@handle_errors
-@verify_user()
+@prep_function
 async def change_name(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -46,7 +44,7 @@ async def change_name(
     userid: str,
     bot: Bot,
 ) -> int:
-    """sends changing name help text"""
+    """# sends changing name help text"""
     if (clbk := update.callback_query) and (data := clbk.data):
         msg = await clbk.edit_message_text(
             fetch_text("settings/change_name") % (dbh.get_name(userid)),
@@ -62,8 +60,7 @@ async def change_name(
         return 0
 
 
-@handle_errors
-@verify_user()
+@prep_function
 async def update_name(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -71,7 +68,7 @@ async def update_name(
     userid: str,
     bot: Bot,
 ) -> int:
-    """updates user's preview name"""
+    """# updates user's preview name"""
     new_name = message.text_html
     if len(new_name) > MAX_NAME_LENGTH:
         await message.reply_text(
@@ -100,8 +97,7 @@ async def update_name(
     return ConversationHandler.END
 
 
-@handle_errors
-@verify_user()
+@prep_function
 async def warning_clbk(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -109,7 +105,7 @@ async def warning_clbk(
     userid: str,
     bot: Bot,
 ) -> None:
-    """warning settings for user"""
+    """# warning settings for user"""
     if (clbk := update.callback_query) and (data := clbk.data):
 
         async def _warning_text():
@@ -120,9 +116,11 @@ async def warning_clbk(
                 reply_markup=InlineKeyboardMarkup(
                     [
                         [
-                            SETTINGS_MARKUP["warning-deactivate"]
-                            if current
-                            else SETTINGS_MARKUP["warning-activate"],
+                            (
+                                SETTINGS_MARKUP["warning-deactivate"]
+                                if current
+                                else SETTINGS_MARKUP["warning-activate"]
+                            ),
                         ],
                         [SETTINGS_MARKUP["back-to-menu"]],
                     ]
@@ -152,8 +150,7 @@ async def warning_clbk(
         return END
 
 
-@handle_errors
-@verify_user()
+@prep_function
 async def custom_tag(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -161,7 +158,9 @@ async def custom_tag(
     userid: str,
     bot: Bot,
 ) -> int:
-    """custom tag"""
+    """
+    # custom tag help text
+    """
     if (clbk := update.callback_query) and (data := clbk.data):
         user_custom_tag = dbh.get_custom_tag(userid)
         msg = await clbk.edit_message_text(
@@ -180,8 +179,7 @@ async def custom_tag(
         return 1
 
 
-@handle_errors
-@verify_user()
+@prep_function
 async def update_custom_tag(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -189,7 +187,7 @@ async def update_custom_tag(
     userid: str,
     bot: Bot,
 ) -> int:
-    """updates user's preview name"""
+    """# updates user's custom tag"""
     new_tag = message.text_html
     if len(new_tag) > MAX_NAME_LENGTH:
         await message.reply_text(
@@ -217,8 +215,7 @@ async def update_custom_tag(
     return ConversationHandler.END
 
 
-@handle_errors
-@verify_user()
+@prep_function
 async def remove_custom_tag(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -226,6 +223,7 @@ async def remove_custom_tag(
     userid: str,
     bot: Bot,
 ) -> int:
+    """# removes the custom tag of user"""
     dbh.set_custom_tag(userid, None)
     await message.edit_text(
         "تگ دلخواهت با موفقیت پاک شد",
@@ -238,8 +236,7 @@ async def remove_custom_tag(
     return ConversationHandler.END
 
 
-@handle_errors
-@verify_user()
+@prep_function
 async def audio_tag(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -247,7 +244,7 @@ async def audio_tag(
     userid: str,
     bot: Bot,
 ) -> int:
-    """audio tag"""
+    """# audio tag help text"""
     if (clbk := update.callback_query) and (data := clbk.data):
         user_audio_tag = dbh.get_audio_tag(userid)
         msg = await clbk.edit_message_text(
@@ -266,8 +263,7 @@ async def audio_tag(
         return 2
 
 
-@handle_errors
-@verify_user()
+@prep_function
 async def update_audio_tag(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -275,7 +271,7 @@ async def update_audio_tag(
     userid: str,
     bot: Bot,
 ) -> int:
-    """updates user's preview name"""
+    """# updates user's audio tag"""
     new_tag = message.text_html
     if len(new_tag) > MAX_NAME_LENGTH:
         await message.reply_text(
@@ -303,8 +299,7 @@ async def update_audio_tag(
     return ConversationHandler.END
 
 
-@handle_errors
-@verify_user()
+@prep_function
 async def remove_audio_tag(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -312,6 +307,7 @@ async def remove_audio_tag(
     userid: str,
     bot: Bot,
 ) -> int:
+    """# removes user audio tag"""
     dbh.set_audio_tag(userid, None)
     await message.edit_text(
         "تگ دلخواهت با موفقیت پاک شد",
@@ -324,8 +320,7 @@ async def remove_audio_tag(
     return ConversationHandler.END
 
 
-@handle_errors
-@verify_user()
+@prep_function
 async def unblock_all_clbk(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -333,7 +328,7 @@ async def unblock_all_clbk(
     userid: str,
     bot: Bot,
 ) -> None:
-    """warning settings for user"""
+    """# unblocks all the blocked users"""
     if (clbk := update.callback_query) and (data := clbk.data):
         _, activation_text = data.split("|", 1)
         if activation_text:
@@ -366,8 +361,7 @@ async def unblock_all_clbk(
         return END
 
 
-@handle_errors
-@verify_user()
+@prep_function
 async def unblock_me_clbk(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -375,7 +369,7 @@ async def unblock_me_clbk(
     userid: str,
     bot: Bot,
 ) -> None:
-    """sends unblock link of the user"""
+    """# unblock me help text"""
     msg: Message = await message.reply_text(
         "این لینک رو بفرس به یکی که بلاکت کرده. وقتی که بزنه روش آنبلاک میشی:"
     )
@@ -385,8 +379,7 @@ async def unblock_me_clbk(
     )
 
 
-@handle_errors
-@verify_user()
+@prep_function
 async def cancel_all(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -394,7 +387,7 @@ async def cancel_all(
     userid: str,
     bot: Bot,
 ) -> int:
-    """cancel all"""
+    """# cancel other messages sent while in convo"""
     await message.reply_text(
         "در حال تغییر تنظیماتت بودی پس کنسلش کردم. دوباره امتحان کن",
         reply_parameters=ReplyParameters(message.message_id, None, True),
@@ -403,8 +396,7 @@ async def cancel_all(
     return END
 
 
-@handle_errors
-@verify_user()
+@prep_function
 async def what_is_formatting(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -412,7 +404,7 @@ async def what_is_formatting(
     userid: str,
     bot: Bot,
 ) -> int:
-    """cancel all"""
+    """# sends help text for what is text formatting"""
     await update.callback_query.answer(
         fetch_text("formatting_explanation"), show_alert=True
     )

@@ -4,7 +4,7 @@ import logging
 
 from config import LOG_LEVEL
 
-logger = logging.getLogger("SirSebastian")
+logger = logging.getLogger("ChevaletAnonBot")
 log_format = logging.Formatter("[%(levelname)-9s][%(asctime)s] %(message)s")
 
 stream_handler = logging.StreamHandler()

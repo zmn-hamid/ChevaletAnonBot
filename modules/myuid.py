@@ -3,14 +3,13 @@ from telegram import *
 from telegram.ext import *
 
 # project imports
-from modules.Global.decorators import verify_user, handle_errors
+from modules.Global.decorators import prep_function
 
 # end conversation
 END = ConversationHandler.END
 
 
-@handle_errors
-@verify_user()
+@prep_function
 async def myuid_cmd(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -18,7 +17,11 @@ async def myuid_cmd(
     userid: str,
     bot: Bot,
 ) -> None:
-    """returns user id | is gonna be used for education"""
+    """
+    # returns user id
+
+    is gonna be used for education
+    """
     await message.reply_text(
         userid,
         reply_parameters=ReplyParameters(message.message_id, None, True),

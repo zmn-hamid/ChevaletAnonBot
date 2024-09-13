@@ -133,7 +133,7 @@ class DBHandler:
         else:
             return False
 
-    def user_is_banned(self, uid: str) -> bool:
+    def is_banned(self, uid: str) -> bool:
         """checks if a user is banned"""
         self.cur.execute(f'SELECT is_banned from {self.users_table} WHERE uid="{uid}"')
         return self.cur.fetchall()[0][0]
@@ -195,16 +195,19 @@ class DBHandler:
         return self.cur.fetchone()[0]
 
     def get_warning(self, uid: str) -> bool:
+        """getes the warning state of user"""
         self.cur.execute(f'SELECT warning FROM {self.users_table} WHERE uid="{uid}"')
         return self.cur.fetchone()[0]
 
     def get_custom_tag(self, uid: str) -> str | None:
+        """gets user's custom tag"""
         self.cur.execute(
             f"SELECT custom_tag FROM {self.users_table} " f'WHERE uid="{uid}"'
         )
         return self.cur.fetchone()[0]
 
     def set_custom_tag(self, uid: str, custom_tag: str) -> None:
+        """sets custom tag for user"""
         try:
             dbh.cur.execute(
                 f'UPDATE {self.users_table} SET custom_tag=%s WHERE uid="{uid}"',
@@ -215,10 +218,12 @@ class DBHandler:
             pass
 
     def get_audio_tag(self, uid: str) -> str | None:
+        """gets the audio tag of user"""
         self.cur.execute(f'SELECT audio_tag FROM {self.users_table} WHERE uid="{uid}"')
         return self.cur.fetchone()[0]
 
     def set_audio_tag(self, uid: str, audio_tag: str) -> None:
+        """sets audio tag for user"""
         try:
             dbh.cur.execute(
                 f'UPDATE {self.users_table} SET audio_tag=%s WHERE uid="{uid}"',
@@ -229,6 +234,7 @@ class DBHandler:
             pass
 
     def user_status(self, uid: str) -> list:
+        """gets ban status and cid limit of user"""
         self.cur.execute(
             f'SELECT is_banned, cid_limit FROM {self.users_table} WHERE uid="{uid}"'
         )

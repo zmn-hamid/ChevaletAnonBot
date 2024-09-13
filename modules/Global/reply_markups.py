@@ -15,7 +15,6 @@ SETTINGS_MARKUP = {
             InlineKeyboardButton("🚫 آنبلاک همه", callback_data="unblock-all|"),
         ],
     ],
-    # TODO clbk for formatting
     "formatting": InlineKeyboardButton(
         "❔قالب بندی چیه", callback_data="what-is-formatting"
     ),

@@ -7,7 +7,7 @@ from telegram.constants import ParseMode as PM
 from config import ADMINS
 from modules.Global.database import dbh
 from modules.Global.get_user import get_link_username
-from modules.Global.decorators import verify_user, handle_errors
+from modules.Global.decorators import prep_function
 from modules.Global.fetch_texts import fetch_text
 from modules.Global.exceptions import WrongSyntaxErr
 from modules.other_msgs import other_messages_template
@@ -17,8 +17,7 @@ import os
 from mysql.connector.errors import IntegrityError
 
 
-@handle_errors
-@verify_user()
+@prep_function
 async def admin_cmd(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -26,7 +25,7 @@ async def admin_cmd(
     userid: str,
     bot: Bot,
 ) -> None:
-    """for admins to handle the bot"""
+    """# admin messages handler"""
     # check if it's admin
     if userid not in ADMINS:
         return await other_messages_template(message)

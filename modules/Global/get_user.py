@@ -11,6 +11,7 @@ def href_user(userid: str, pre_text: str = "u") -> str:
 
 
 def get_user_links(cids: List[str], bot_username: str, flag_cid: int = -1) -> str:
+    """# gets formatted cids"""
     text = []
     for idx, cid in enumerate(cids):
         text.append(
@@ -21,15 +22,15 @@ def get_user_links(cids: List[str], bot_username: str, flag_cid: int = -1) -> st
 
 
 def user_links_text(cids: List[str], cid_limit: int, bot_username: str) -> str:
-    """returns formatted user cid's"""
+    """returns formatted cid's with additionals"""
     return (
         f"{get_user_links(cids, bot_username)}\n\n"
-        f"{len(cids)} از {cid_limit} لینک مجاز استفاده شده.\n"
-        f"چرا چندتا لینک داشته باشی؟ اینو بزن تا بفهمی: /more_links"
+        f"{len(cids)} از {cid_limit} لینک مجاز استفاده شده"
     )
 
 
-async def get_username(userid: str, bot: Bot):
+async def get_username(userid: str, bot: Bot) -> str:
+    """# gets the formatted username"""
     try:
         return f"@{(await bot.get_chat(userid)).username}"
     except:
