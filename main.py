@@ -16,7 +16,7 @@ from modules.help import help_handler, more_links_clbk_handler
 from modules.other_msgs import other_messages_handler
 
 from modules.Global.log import logger
-from modules.Global.jobs import set_commands
+from modules.Global.jobs import set_commands, renew_connection
 from modules.Global.error_handler import error_handler
 
 
@@ -50,6 +50,9 @@ application.add_error_handler(error_handler)
 
 # updating the bot's command menu
 job_queue.run_once(set_commands, 3)
+
+# renew sql connection every 8 minutes
+job_queue.run_repeating(renew_connection, 8 * 60)
 
 # starting the bot
 logger.info(f"starting bot...")
