@@ -10,7 +10,7 @@ from modules.Global.database import dbh
 async def renew_connection(context: CallbackContext) -> None:
     """updates the bot's command menu"""
     dbh.connect_db()
-    logger.info("renewed sql connection")
+    logger.debug("renewed sql connection")
 
 
 async def set_commands(context: CallbackContext) -> None:
