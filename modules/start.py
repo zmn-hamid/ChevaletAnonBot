@@ -3,6 +3,7 @@ from telegram import *
 from telegram.ext import *
 from telegram.constants import ParseMode as PM
 from telegram.warnings import PTBUserWarning
+from telegram.error import BadRequest
 
 # project imports
 from config import REPORT_CHAT_ID, SUPPORT_ADMIN, DELETION_TIMEOUT
@@ -215,12 +216,32 @@ async def send_msg(
             ],
         ]
     )
-    copied_message_id: MessageId = await message.copy(
-        target_uid,
-        parse_mode=PM.HTML,
-        reply_markup=reply_markup,
-        reply_to_message_id=target_mid,
-    )
+    try:
+        copied_message_id: MessageId = await message.copy(
+            target_uid,
+            parse_mode=PM.HTML,
+            reply_markup=reply_markup,
+            reply_parameters=(
+                (
+                    ReplyParameters(
+                        target_mid,
+                        allow_sending_without_reply=False,
+                    )
+                )
+                if target_mid
+                else None
+            ),
+        )
+    except BadRequest as e:
+        if str(e) == "Message to be replied not found":
+            message.reply_text(
+                "پیامی که میخوای جوابشو بدی از چت مخاطبت پاک شده. باید از نو پیام بفرستی بهش",
+                reply_parameters=ReplyParameters(message.message_id, None, True),
+            )
+        elif str(e) == "MESSAGE_ID_INVALID":
+            return END
+        else:
+            raise BadRequest(str(e)) from e
     if dbh.get_warning(userid):
         warning_message = await message.reply_text(
             f"فرستادم بهش. {DELETION_TIMEOUT} ثانیه فرصت داری با دکمه ی زیر پاکش کنی.\n"
