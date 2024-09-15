@@ -235,9 +235,11 @@ async def send_msg(
     except BadRequest as e:
         if str(e) == "Message to be replied not found":
             message.reply_text(
-                "پیامی که میخوای جوابشو بدی از چت مخاطبت پاک شده. باید از نو پیام بفرستی بهش",
+                "پیامی که میخوای جوابشو بدی از چت مخاطبت پاک شده. باید از نو پیام بفرستی بهش\n"
+                "این پیام موقتا تعبیه شده. اگه فک میکنی اشتباه تشخیص دادیم، لطفا به ادمین خبر بده",
                 reply_parameters=ReplyParameters(message.message_id, None, True),
             )
+            return END
         elif str(e) == "MESSAGE_ID_INVALID":
             return END
         else:
