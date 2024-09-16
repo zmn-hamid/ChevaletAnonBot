@@ -32,3 +32,11 @@ async def delete_warning(context: CallbackContext) -> None:
         await msg.edit_text("فرستادم بهش")
     except:
         pass
+
+
+async def delete_message(context: CallbackContext) -> None:
+    """deletes the warning message"""
+    try:
+        await context.job.data.get("message").delete()
+    except:
+        pass

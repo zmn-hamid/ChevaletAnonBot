@@ -11,7 +11,7 @@ from modules.Global.database import dbh
 from modules.Global.get_user import get_username, href_user, get_link_username
 from modules.Global.decorators import prep_function
 from modules.Global.fetch_texts import fetch_text
-from modules.Global.jobs import delete_warning
+from modules.Global.jobs import delete_warning, delete_message
 from modules.Global.reply_markups import CANCEL_BUTTON
 
 # global imports
@@ -550,8 +550,9 @@ async def cancel(
 ) -> int:
     """# cancel"""
     context.user_data.clear()
-    # await message.edit_text("کنسل شد")
-    await message.delete()
+    await message.edit_text("چشم بهم بزنی این پیام نیس👋")
+    context.application.job_queue.run_once(delete_message, 3, {"message": message})
+    # await message.delete()
     return END
 
 
