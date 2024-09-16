@@ -551,7 +551,7 @@ async def cancel(
     """# cancel"""
     context.user_data.clear()
     await message.edit_text("چشم بهم بزنی این پیام نیس👋")
-    context.application.job_queue.run_once(delete_message, 3, {"message": message})
+    context.application.job_queue.run_once(delete_message, 2, {"message": message})
     # await message.delete()
     return END
 
