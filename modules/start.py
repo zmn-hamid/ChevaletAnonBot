@@ -550,7 +550,8 @@ async def cancel(
 ) -> int:
     """# cancel"""
     context.user_data.clear()
-    await message.edit_text("کنسل شد")
+    # await message.edit_text("کنسل شد")
+    await message.delete()
     return END
 
 
