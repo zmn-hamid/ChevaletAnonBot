@@ -560,6 +560,7 @@ answer_clbk = CallbackQueryHandler(answer, r"^answer\|")
 report_clbk = CallbackQueryHandler(report, r"^report\|")
 block_clbk = CallbackQueryHandler(block, r"^block\|")
 unblock_clbk = CallbackQueryHandler(unblock, r"^unblock\|")
+cancel_clbk = CallbackQueryHandler(cancel, r"cancel")
 start_cmd_handler = ConversationHandler(
     entry_points=[
         start_clbk,
@@ -567,6 +568,7 @@ start_cmd_handler = ConversationHandler(
         report_clbk,
         block_clbk,
         unblock_clbk,
+        cancel_clbk,
     ],
     states={
         0: [
@@ -580,8 +582,7 @@ start_cmd_handler = ConversationHandler(
     },
     fallbacks=[
         delete_message_handler,
-        CommandHandler("cancel", cancel),
-        CallbackQueryHandler(cancel, r"cancel"),
+        cancel_clbk,
         MessageHandler(filters.ALL & filters.COMMAND, cancel_all),
     ],
     per_user=True,

@@ -25,7 +25,7 @@ filterwarnings(
 
 
 @prep_function
-async def mylinks_cmd(
+async def my_links_cmd(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
     message: Message,
@@ -357,7 +357,7 @@ async def others_while_sending(
     return ConversationHandler.END
 
 
-_mylinks_clbk = CallbackQueryHandler(mylinks_cmd, r"mylinks-menu")
+_mylinks_clbk = CallbackQueryHandler(my_links_cmd, r"mylinks-menu")
 _what_is_cid = CallbackQueryHandler(what_is_cid, r"what-is-cid")
 mylinks_handler = ConversationHandler(
     entry_points=[
@@ -366,7 +366,7 @@ mylinks_handler = ConversationHandler(
         # other handlers
         CallbackQueryHandler(add_link_clbk, r"add-link"),
         CallbackQueryHandler(remove_link_clbk, r"^rm-link"),
-        CommandHandler("my_links", mylinks_cmd),
+        CommandHandler("my_links", my_links_cmd),
         _mylinks_clbk,
         _what_is_cid,
     ],
