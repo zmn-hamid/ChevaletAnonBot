@@ -40,7 +40,11 @@ def prep_function(func) -> Callable:
                 context.user_data.clear()
                 return ConversationHandler.END
 
-            return await func(update, context, message, userid, bot)
+            output = await func(update, context, message, userid, bot)
+            # clear userdata
+            if output == ConversationHandler.END:
+                context.user_data.clear()
+            return output
         except Forbidden as e:
             # bot is blocked by the user
             logger.debug(str(e))
@@ -59,10 +63,20 @@ def delete_notify_on_END(func) -> Callable:
         wrapper_list = []
         context.user_data["wrapper_list"] = wrapper_list
         output = await func(update, context)
-        try:
-            await wrapper_list[0].delete()
-        except:
-            pass
-        return output
+
+        # main
+        if output in ["del+0", "del+e"]:
+            try:
+                await wrapper_list[0].delete()
+            except:
+                pass
+
+        # output
+        if output == "del+0":
+            return 0
+        elif output == "del+e":
+            return ConversationHandler.END
+        else:
+            return output
 
     return wrapper

@@ -253,7 +253,7 @@ async def send_msg(
                 "\n\nدوباره پیامتو بفرست.",
                 reply_parameters=ReplyParameters(message.message_id),
             )
-            return 0
+            return "del+0"
         else:
             raise Forbidden(str(e)) from e
     except BadRequest as e:
@@ -264,22 +264,22 @@ async def send_msg(
                     "\n\nدوباره پیامتو بفرست.",
                     reply_parameters=ReplyParameters(message.message_id),
                 )
-                return 0
+                return "del+0"
             else:
                 await message.reply_text(
                     "پیامی که میخوای جوابشو بدی از چت مخاطبت پاک شده. باید از نو پیام بفرستی بهش\n"
                     "این پیام موقتا تعبیه شده. اگه فک میکنی اشتباه تشخیص دادیم، لطفا به ادمین خبر بده",
                     reply_parameters=ReplyParameters(message.message_id),
                 )
-                return END
+                return "del+e"
         elif str(e) == "MESSAGE_ID_INVALID":
-            return END
+            return "del+e"
         elif str(e) == "Quote_text_invalid":
             await message.reply_text(
                 "پیام اشتباهی رو ریپلای کردی. دوباره امتحان کن",
                 reply_parameters=ReplyParameters(message.message_id),
             )
-            return 0
+            return "del+0"
         else:
             raise BadRequest(str(e)) from e
     if dbh.get_warning(userid):
@@ -543,6 +543,23 @@ async def cancel_all(
 
 
 @prep_function
+async def cancel_cmd(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    message: Message,
+    userid: str,
+    bot: Bot,
+) -> int:
+    """# cancel if other messages sent"""
+    context.user_data.clear()
+    await message.reply_text(
+        "هرچی که بود کنسل شد",
+        reply_parameters=ReplyParameters(message.message_id),
+    )
+    return END
+
+
+@prep_function
 async def warning_clbk(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -606,7 +623,6 @@ start_cmd_handler = ConversationHandler(
         report_clbk,
         block_clbk,
         unblock_clbk,
-        cancel_clbk,
     ],
     states={
         0: [
@@ -621,6 +637,7 @@ start_cmd_handler = ConversationHandler(
     fallbacks=[
         delete_message_handler,
         cancel_clbk,
+        CommandHandler("cancel", cancel_cmd),
         MessageHandler(filters.ALL & filters.COMMAND, cancel_all),
     ],
     per_user=True,

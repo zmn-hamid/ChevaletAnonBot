@@ -37,6 +37,54 @@ async def settings_cmd_clbk(
 
 
 @prep_function
+async def reply_channel_clbk(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    message: Message,
+    userid: str,
+    bot: Bot,
+) -> None:
+    """# unblocks all the blocked users"""
+    if (clbk := update.callback_query) and (data := clbk.data):
+        await clbk.edit_message_text(
+            fetch_text("settings/reply_channel"),
+            parse_mode=PM.HTML,
+            reply_markup=InlineKeyboardMarkup(
+                [
+                    [
+                        SETTINGS_MARKUP["back-to-menu"],
+                    ],
+                ]
+            ),
+        )
+        return END
+
+
+@prep_function
+async def reply_quote_clbk(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    message: Message,
+    userid: str,
+    bot: Bot,
+) -> None:
+    """# unblocks all the blocked users"""
+    if (clbk := update.callback_query) and (data := clbk.data):
+        await clbk.edit_message_text(
+            fetch_text("settings/reply_quote"),
+            parse_mode=PM.HTML,
+            reply_markup=InlineKeyboardMarkup(
+                [
+                    [
+                        SETTINGS_MARKUP["back-to-menu"],
+                    ],
+                ]
+            ),
+        )
+        return END
+
+
+@prep_function
 async def change_name(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -87,7 +135,6 @@ async def update_name(
     await message.reply_html(
         f"انجام شد. اسم جدیدت:\n{dbh.get_name(userid)}\n\n"
         f"میتونی لینک خودتو تست کنی تا ببینی چجوری شده :)",
-        parse_mode=PM.HTML,
         reply_markup=InlineKeyboardMarkup(
             [
                 [SETTINGS_MARKUP["back-to-menu"]],
@@ -395,6 +442,23 @@ async def cancel_all(
 
 
 @prep_function
+async def cancel_cmd(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    message: Message,
+    userid: str,
+    bot: Bot,
+) -> int:
+    """# cancel if other messages sent"""
+    context.user_data.clear()
+    await message.reply_text(
+        "هرچی که بود کنسل شد",
+        reply_parameters=ReplyParameters(message.message_id),
+    )
+    return END
+
+
+@prep_function
 async def what_is_formatting(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -412,6 +476,8 @@ _settings_clbk = CallbackQueryHandler(settings_cmd_clbk, r"settings-menu")
 _formatting_clbk = CallbackQueryHandler(what_is_formatting, r"what-is-formatting")
 settings_handler = ConversationHandler(
     entry_points=[
+        CallbackQueryHandler(reply_channel_clbk, r"^reply-channel\|"),
+        CallbackQueryHandler(reply_quote_clbk, r"^reply-quote\|"),
         CallbackQueryHandler(change_name, r"^change-name\|"),
         CallbackQueryHandler(custom_tag, r"^custom-tag\|"),
         CallbackQueryHandler(audio_tag, r"^audio-tag\|"),
@@ -440,6 +506,7 @@ settings_handler = ConversationHandler(
         _formatting_clbk,
         _settings_clbk,
         CallbackQueryHandler(settings_cmd_clbk, r"nvm-back-to-menu"),
+        CommandHandler("cancel", cancel_cmd),
         MessageHandler(filters.ALL & filters.COMMAND, cancel_all),
     ],
     per_user=True,

@@ -11,7 +11,7 @@ from modules.Global.decorators import prep_function
 from modules.Global.get_user import user_links_text, get_user_links
 from modules.Global.cid_gen import generate_cid
 from modules.Global.fetch_texts import fetch_text
-from modules.Global.reply_markups import MYLINKS_MARKUP, CANCEL_BUTTON
+from modules.Global.reply_markups import MYLINKS_MARKUP
 
 # global imports
 from mysql.connector.errors import IntegrityError
@@ -273,7 +273,6 @@ async def update_cid(
                 "فقط حروف کوچیک و بزرگ انگلیسی، اعداد، آندرلاین و خط تیره مجازه. "
                 "دوباره امتحان کن",
                 reply_parameters=ReplyParameters(message.message_id),
-                reply_markup=InlineKeyboardMarkup([[CANCEL_BUTTON]]),
             )
             return 0
 
@@ -284,7 +283,6 @@ async def update_cid(
         await message.reply_text(
             "این آیدی برداشته شده. آیدی دیگه ای بفرس",
             reply_parameters=ReplyParameters(message.message_id),
-            reply_markup=InlineKeyboardMarkup([[CANCEL_BUTTON]]),
         )
         return 0
 
@@ -323,7 +321,7 @@ async def update_cid(
     except IntegrityError:
         await message.reply_text(
             "ظاهرا یکی زودتر این آیدی رو برداشت. دوباره امتحان کن",
-            reply_markup=InlineKeyboardMarkup([[CANCEL_BUTTON]]),
+            reply_parameters=ReplyParameters(message.message_id),
         )
         return 0
 
@@ -357,6 +355,23 @@ async def others_while_sending(
     return ConversationHandler.END
 
 
+@prep_function
+async def cancel_cmd(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    message: Message,
+    userid: str,
+    bot: Bot,
+) -> int:
+    """# cancel if other messages sent"""
+    context.user_data.clear()
+    await message.reply_text(
+        "هرچی که بود کنسل شد",
+        reply_parameters=ReplyParameters(message.message_id),
+    )
+    return ConversationHandler.END
+
+
 _mylinks_clbk = CallbackQueryHandler(my_links_cmd, r"mylinks-menu")
 _what_is_cid = CallbackQueryHandler(what_is_cid, r"what-is-cid")
 mylinks_handler = ConversationHandler(
@@ -378,6 +393,7 @@ mylinks_handler = ConversationHandler(
     fallbacks=[
         _what_is_cid,
         _mylinks_clbk,
+        CommandHandler("cancel", cancel_cmd),
         MessageHandler(filters.ALL & filters.COMMAND, others_while_sending),
     ],
     per_user=True,

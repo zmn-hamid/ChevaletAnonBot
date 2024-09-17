@@ -3,11 +3,19 @@ from telegram import InlineKeyboardButton
 SETTINGS_MARKUP = {
     "main-menu-set": [
         [
+            InlineKeyboardButton(
+                "🖋 ریپلای به بخشی از پیام", callback_data="reply-quote|"
+            ),
+            InlineKeyboardButton(
+                "🖋 ریپلای به پستِ کانال", callback_data="reply-channel|"
+            ),
+        ],
+        [
             InlineKeyboardButton("⚠️ اخطار پاک سازی پیام", callback_data="warning|"),
             InlineKeyboardButton("📛 تغییر نام نمایشی", callback_data="change-name|"),
         ],
         [
-            InlineKeyboardButton("🎵 تگ آهنگ", callback_data="audio-tag|"),
+            InlineKeyboardButton("#️⃣ تگ آهنگ", callback_data="audio-tag|"),
             InlineKeyboardButton("#️⃣ تگ دلخواه", callback_data="custom-tag|"),
         ],
         [
