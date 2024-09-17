@@ -291,7 +291,7 @@ async def send_msg(
                     [
                         InlineKeyboardButton(
                             "پاکش کننن",
-                            callback_data=f"delete|{target_cid}|{copied_message_id.message_id}",
+                            callback_data=f"delete|{target_cid}|{copied_message_id.message_id}|{announce_msg.message_id}",
                         ),
                     ],
                 ]
@@ -560,7 +560,7 @@ async def cancel_cmd(
 
 
 @prep_function
-async def warning_clbk(
+async def delete_msg_clbk(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
     message: Message,
@@ -569,10 +569,12 @@ async def warning_clbk(
 ) -> int:
     """# delete the sent message on undo"""
     if (clbk := update.callback_query) and (data := clbk.data):
-        _, target_cid, copied_message_id = data.split("|")
+        _, target_cid, copied_message_id, announce_mid = data.split("|")
         # delete the sent message
         try:
-            await bot.delete_message(dbh.get_uid(target_cid), copied_message_id)
+            await bot.delete_messages(
+                dbh.get_uid(target_cid), [copied_message_id, announce_mid]
+            )
         except:
             pass
         # delete the message so it won't fuck up
@@ -609,7 +611,7 @@ async def cancel(
     return END
 
 
-delete_message_handler = CallbackQueryHandler(warning_clbk, r"^delete\|")
+delete_message_handler = CallbackQueryHandler(delete_msg_clbk, r"^delete\|")
 start_clbk = CommandHandler("start", start_cmd)
 answer_clbk = CallbackQueryHandler(answer, r"^answer\|")
 report_clbk = CallbackQueryHandler(report, r"^report\|")
