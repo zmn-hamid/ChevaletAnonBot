@@ -8,10 +8,11 @@ from config import (
     MAX_NAME_LENGTH,
     DEFAULT_AUDIO_TAG,
 )
+from modules.Global.log import logger
 
 # global imports
 import mysql.connector
-from mysql.connector.errors import IntegrityError
+from mysql.connector.errors import IntegrityError, OperationalError
 from typing import List
 
 
@@ -65,7 +66,7 @@ class DBHandler:
             """
         )
 
-    def add_user(self, uid: str, name) -> bool:
+    def add_user(self, uid: str, name, retry_on_OperationalError: bool = True) -> bool:
         """
         # adds user to the database
         the defaults:
@@ -90,6 +91,15 @@ class DBHandler:
             )
             self.db.commit()
             return True
+        except OperationalError as e:
+            if retry_on_OperationalError:
+                self.connect_db()
+                return self.add_user(
+                    uid=uid, name=name, retry_on_OperationalError=False
+                )
+            else:
+                logger.error(f"OperationalError: {e}")
+                raise Exception(str(e))
         except IntegrityError:
             return False
 
