@@ -4,11 +4,11 @@ from telegram.ext import *
 from telegram.error import Forbidden
 
 # project imports
+from modules.Global.log import logger
 from modules.Global.database import dbh
 from modules.Global.user_init import init_user
 
 # global imports
-from functools import wraps
 from typing import Callable
 
 
@@ -19,6 +19,7 @@ def prep_function(func) -> Callable:
         try:
             # only handle updates from private chats
             if update.effective_chat.type in ["channel", "group"]:
+                print(update.channel_post.text)
                 return ConversationHandler.END
 
             message: Message = update.effective_message
@@ -41,8 +42,28 @@ def prep_function(func) -> Callable:
                 return ConversationHandler.END
 
             return await func(update, context, message, userid, bot)
-        except Forbidden:
+        except Forbidden as e:
             # bot is blocked by the user
+            logger.debug(str(e))
             return ConversationHandler.END
+
+    return wrapper
+
+
+def delete_notify_on_END(func) -> Callable:
+    """deletes the notify user message that is sent before private messages"""
+
+    async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        # making a list so whatever added to it in the function
+        # will be accessible from here (inside the wrapper)
+        # reason: lists are linked to their instances by default
+        wrapper_list = []
+        context.user_data["wrapper_list"] = wrapper_list
+        output = await func(update, context)
+        try:
+            await wrapper_list[0].delete()
+        except:
+            pass
+        return output
 
     return wrapper

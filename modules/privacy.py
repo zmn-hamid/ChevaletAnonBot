@@ -20,10 +20,9 @@ async def privacy_cmd(
     bot: Bot,
 ) -> None:
     """# sends priacy and security help text"""
-    await message.reply_text(
+    await message.reply_html(
         fetch_text("privacy_safety"),
-        parse_mode=PM.HTML,
-        reply_parameters=ReplyParameters(message.message_id, None, True),
+        reply_parameters=ReplyParameters(message.message_id),
     )
 
 

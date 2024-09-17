@@ -3,6 +3,7 @@
 # telegram imports
 from telegram import *
 from telegram.ext import *
+from telegram.error import TimedOut
 
 # project imports
 from config import BOT_TOKEN
@@ -15,8 +16,7 @@ from modules.privacy import privacy_handler
 from modules.help import help_handler, more_links_clbk_handler
 from modules.other_msgs import other_messages_handler
 
-from modules.Global.log import logger
-from modules.Global.jobs import set_commands, renew_connection
+from modules.Global.jobs import set_commands, renew_connection, log_bot_started
 from modules.Global.error_handler import error_handler
 
 
@@ -55,5 +55,8 @@ job_queue.run_once(set_commands, 3)
 job_queue.run_repeating(renew_connection, 8 * 60)
 
 # starting the bot
-logger.info(f"starting bot...")
-application.run_polling()
+job_queue.run_once(log_bot_started, 2)
+try:
+    application.run_polling(timeout=5)
+except TimedOut:
+    print("connection timed out. closing the bot...")

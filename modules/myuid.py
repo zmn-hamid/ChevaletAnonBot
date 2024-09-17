@@ -24,7 +24,7 @@ async def myuid_cmd(
     """
     await message.reply_text(
         userid,
-        reply_parameters=ReplyParameters(message.message_id, None, True),
+        reply_parameters=ReplyParameters(message.message_id),
     )
 
 

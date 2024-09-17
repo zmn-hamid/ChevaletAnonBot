@@ -13,7 +13,7 @@ async def other_messages_template(message: Message):
     """# template for unknown messages"""
     return await message.reply_text(
         "متوجه نشدم. اگه کمک میخوای از /help استفاده کن",
-        reply_parameters=ReplyParameters(message.message_id, None, True),
+        reply_parameters=ReplyParameters(message.message_id),
     )
 
 

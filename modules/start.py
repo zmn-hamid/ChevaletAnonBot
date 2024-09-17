@@ -3,13 +3,13 @@ from telegram import *
 from telegram.ext import *
 from telegram.constants import ParseMode as PM
 from telegram.warnings import PTBUserWarning
-from telegram.error import BadRequest
+from telegram.error import BadRequest, Forbidden
 
 # project imports
 from config import REPORT_CHAT_ID, SUPPORT_ADMIN, DELETION_TIMEOUT
 from modules.Global.database import dbh
 from modules.Global.get_user import get_username, href_user, get_link_username
-from modules.Global.decorators import prep_function
+from modules.Global.decorators import prep_function, delete_notify_on_END
 from modules.Global.fetch_texts import fetch_text
 from modules.Global.jobs import delete_warning, delete_message
 from modules.Global.reply_markups import CANCEL_BUTTON
@@ -60,9 +60,8 @@ async def start_cmd(
 
     if len(split_text) == 1:
         # send start/help text
-        await message.reply_text(
+        await message.reply_html(
             fetch_text("start_help") % (SUPPORT_ADMIN),
-            parse_mode=PM.HTML,
             disable_web_page_preview=True,
             reply_markup=InlineKeyboardMarkup(
                 [
@@ -74,7 +73,7 @@ async def start_cmd(
                     ]
                 ]
             ),
-            reply_parameters=ReplyParameters(message.message_id, None, True),
+            reply_parameters=ReplyParameters(message.message_id),
         )
         return END
 
@@ -87,15 +86,14 @@ async def start_cmd(
             except:
                 await message.reply_text(
                     "لینکت اشتباهه?",
-                    reply_parameters=ReplyParameters(message.message_id, None, True),
+                    reply_parameters=ReplyParameters(message.message_id),
                 )
                 return END
             if dbh.is_blocked(blocker_uid=userid, blocked_uid=target_uid):
                 dbh.remove_block(blocker_uid=userid, blocked_uid=target_uid)
-                await message.reply_text(
+                await message.reply_html(
                     f"این یوزر برات آنبلاک شد:\n{await get_username(target_uid, bot)} | {href_user(target_uid, '')}",
-                    reply_parameters=ReplyParameters(message.message_id, None, True),
-                    parse_mode=PM.HTML,
+                    reply_parameters=ReplyParameters(message.message_id),
                     reply_markup=InlineKeyboardMarkup(
                         [
                             [
@@ -110,7 +108,7 @@ async def start_cmd(
             else:
                 await message.reply_text(
                     "این یوزر اصن برات بلاک نبود",
-                    reply_parameters=ReplyParameters(message.message_id, None, True),
+                    reply_parameters=ReplyParameters(message.message_id),
                 )
             return END
         else:
@@ -122,7 +120,7 @@ async def start_cmd(
             if target_uid == None:
                 await message.reply_text(
                     "این لینک اشتباهه و کار نمیکنه",
-                    reply_parameters=ReplyParameters(message.message_id, None, True),
+                    reply_parameters=ReplyParameters(message.message_id),
                 )
                 return END
 
@@ -130,7 +128,7 @@ async def start_cmd(
             if dbh.is_blocked(blocker_uid=target_uid, blocked_uid=userid):
                 await message.reply_text(
                     "این کاربر بلاکت کرده خخ",
-                    reply_parameters=ReplyParameters(message.message_id, None, True),
+                    reply_parameters=ReplyParameters(message.message_id),
                 )
                 return END
 
@@ -138,7 +136,7 @@ async def start_cmd(
             if dbh.is_banned(target_uid):
                 await message.reply_text(
                     "این کاربر از بات بن شده اصن",
-                    reply_parameters=ReplyParameters(message.message_id, None, True),
+                    reply_parameters=ReplyParameters(message.message_id),
                 )
                 return END
 
@@ -150,15 +148,15 @@ async def start_cmd(
                 await message.reply_text(
                     "میخوای با خودت صحبت کنی؟ :) عب نداره راحت باش"
                 )
-            await message.reply_text(
-                f"در حال ارسال پیام به {dbh.get_name(target_uid)} هستی.",
-                reply_parameters=ReplyParameters(message.message_id, None, True),
-                parse_mode=PM.HTML,
+            await message.reply_html(
+                f"به {dbh.get_name(target_uid)} وصل شدی. پیامتو بفرست",
+                reply_parameters=ReplyParameters(message.message_id),
                 reply_markup=InlineKeyboardMarkup([[CANCEL_BUTTON]]),
             )
             return 0
 
 
+@delete_notify_on_END
 @prep_function
 async def send_msg(
     update: Update,
@@ -181,7 +179,7 @@ async def send_msg(
     if dbh.is_blocked(blocker_uid=target_uid, blocked_uid=userid):
         await message.reply_text(
             "این کاربر بلاکت کرده خخ",
-            reply_parameters=ReplyParameters(message.message_id, None, True),
+            reply_parameters=ReplyParameters(message.message_id),
         )
         return END
 
@@ -191,13 +189,20 @@ async def send_msg(
 
     # sending message to target
     target_cids = dbh.get_cids(target_uid)
-    ## notify user if target has >1 cid
-    ### no target uid means not an answer
-    if not target_mid and len(target_cids) > 1:
-        await bot.send_message(
-            target_uid,
-            f"پیام جدید با لینک {target_cids.index(target_cid) + 1} ({target_cid}):",
-        )
+    cid_idx_text = ""
+    msg_type_text = "پیامِ"
+    ## no target uid means not an answer
+    if target_mid:
+        msg_type_text = "ریپلایِ"
+    elif len(target_cids) > 1:
+        ### notify user if target has >1 cid
+        cid_idx_text = f" با لینک {target_cids.index(target_cid) + 1} ({target_cid})"
+    announce_msg = await bot.send_message(
+        target_uid,
+        f"{msg_type_text} جدید{cid_idx_text}:",
+        reply_parameters=ReplyParameters(target_mid) if target_mid else None,
+    )
+    context.user_data.get("wrapper_list", []).append(announce_msg)
     ## send the message
     reply_markup = InlineKeyboardMarkup(
         [
@@ -216,32 +221,65 @@ async def send_msg(
             ],
         ]
     )
+    ## calculate reply and quote
+    has_quote = message.quote
+    reply_to_chat, reply_to_mid, quote_text, quote_position = None, None, None, None
+    external_reply = message.external_reply
+    if external_reply:
+        reply_to_chat = external_reply.chat.id
+        reply_to_mid = external_reply.message_id
+    elif target_mid:
+        reply_to_chat = target_uid
+        reply_to_mid = target_mid
+    if has_quote:
+        quote_text = message.quote.text
+        quote_position = message.quote.position
     try:
         copied_message_id: MessageId = await message.copy(
             target_uid,
             parse_mode=PM.HTML,
             reply_markup=reply_markup,
-            reply_parameters=(
-                (
-                    ReplyParameters(
-                        target_mid,
-                        allow_sending_without_reply=False,
-                    )
-                )
-                if target_mid
-                else None
+            reply_parameters=ReplyParameters(
+                reply_to_mid,
+                reply_to_chat,
+                quote=quote_text,
+                quote_position=quote_position,
             ),
         )
+    except Forbidden as e:
+        if str(e) == "Forbidden: bot is not a member of the channel chat":
+            await message.reply_html(
+                "چنلی که ازش ریپلای کردی بات رو به خودش اضافه نکرده. اول باید از ادمینش بخوای که اینکارو کنه."
+                "\n\nدوباره پیامتو بفرست.",
+                reply_parameters=ReplyParameters(message.message_id),
+            )
+            return 0
+        else:
+            raise Forbidden(str(e)) from e
     except BadRequest as e:
         if str(e) == "Message to be replied not found":
-            message.reply_text(
-                "پیامی که میخوای جوابشو بدی از چت مخاطبت پاک شده. باید از نو پیام بفرستی بهش\n"
-                "این پیام موقتا تعبیه شده. اگه فک میکنی اشتباه تشخیص دادیم، لطفا به ادمین خبر بده",
-                reply_parameters=ReplyParameters(message.message_id, None, True),
-            )
-            return END
+            if external_reply:
+                await message.reply_html(
+                    "چنلی که ازش ریپلای کردی بات رو به خودش اضافه نکرده. اول باید از ادمینش بخوای که اینکارو کنه."
+                    "\n\nدوباره پیامتو بفرست.",
+                    reply_parameters=ReplyParameters(message.message_id),
+                )
+                return 0
+            else:
+                await message.reply_text(
+                    "پیامی که میخوای جوابشو بدی از چت مخاطبت پاک شده. باید از نو پیام بفرستی بهش\n"
+                    "این پیام موقتا تعبیه شده. اگه فک میکنی اشتباه تشخیص دادیم، لطفا به ادمین خبر بده",
+                    reply_parameters=ReplyParameters(message.message_id),
+                )
+                return END
         elif str(e) == "MESSAGE_ID_INVALID":
             return END
+        elif str(e) == "Quote_text_invalid":
+            await message.reply_text(
+                "پیام اشتباهی رو ریپلای کردی. دوباره امتحان کن",
+                reply_parameters=ReplyParameters(message.message_id),
+            )
+            return 0
         else:
             raise BadRequest(str(e)) from e
     if dbh.get_warning(userid):
@@ -258,7 +296,7 @@ async def send_msg(
                     ],
                 ]
             ),
-            reply_parameters=ReplyParameters(message.message_id, None, True),
+            reply_parameters=ReplyParameters(message.message_id),
         )
         context.application.job_queue.run_once(
             delete_warning, DELETION_TIMEOUT, {"warning_message": warning_message}
@@ -266,7 +304,7 @@ async def send_msg(
     else:
         await message.reply_text(
             "فرستادم بهش",
-            reply_parameters=ReplyParameters(message.message_id, None, True),
+            reply_parameters=ReplyParameters(message.message_id),
         )
 
     # add custom tag and audio tag
@@ -337,7 +375,7 @@ async def answer(
         if dbh.is_blocked(blocker_uid=dbh.get_uid(target_cid), blocked_uid=userid):
             await message.reply_text(
                 "این کاربر بلاکت کرده خخ",
-                reply_parameters=ReplyParameters(message.message_id, None, True),
+                reply_parameters=ReplyParameters(message.message_id),
             )
             return END
 
@@ -345,8 +383,8 @@ async def answer(
         context.user_data["reply_to"] = target_mid
 
         await message.reply_text(
-            f"در حال ارسال جواب هستی",
-            reply_parameters=ReplyParameters(message.message_id, None, True),
+            f"جوابت به این پیام رو بفرست",
+            reply_parameters=ReplyParameters(message.message_id),
             reply_markup=InlineKeyboardMarkup([[CANCEL_BUTTON]]),
         )
         return 0
@@ -481,10 +519,9 @@ async def report(
             target_mid,
             reply_parameters=ReplyParameters(first_message.message_id, None, True),
         )
-        await message.reply_text(
+        await message.reply_html(
             f"ریپورت شد.\nکد پیگیری: <code>{report_id}</code>",
-            reply_parameters=ReplyParameters(message.message_id, None, True),
-            parse_mode=PM.HTML,
+            reply_parameters=ReplyParameters(message.message_id),
         )
 
 
@@ -500,7 +537,7 @@ async def cancel_all(
     context.user_data.clear()
     await message.reply_text(
         "وسط ارسال پیام بودی. کنسلش کردم. دوباره بفرست",
-        reply_parameters=ReplyParameters(message.message_id, None, True),
+        reply_parameters=ReplyParameters(message.message_id),
     )
     return END
 
@@ -552,7 +589,6 @@ async def cancel(
     context.user_data.clear()
     await message.edit_text("چشم بهم بزنی این پیام نیس👋")
     context.application.job_queue.run_once(delete_message, 2, {"message": message})
-    # await message.delete()
     return END
 
 

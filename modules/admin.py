@@ -29,7 +29,6 @@ async def admin_cmd(
     # check if it's admin
     if userid not in ADMINS:
         return await other_messages_template(message)
-    await message.reply_text("<i>*admin detected*</i>", parse_mode=PM.HTML)
 
     # check what's the request
     text = message.text.split()[1:]
@@ -38,14 +37,13 @@ async def admin_cmd(
 
         # help text
         if arg1 == "help":
-            await message.reply_text(fetch_text("admin"), parse_mode=PM.HTML)
+            await message.reply_html(fetch_text("admin"))
 
         # send mass message to users
         elif arg1 == "send-mass-msg":
             if not (len(text) > 1 and text[1] == "YES"):
-                return await message.reply_text(
+                return await message.reply_html(
                     "send <code>/admin send-mass-msg YES</code> if you're sure",
-                    parse_mode=PM.HTML,
                 )
             sent_to = []
 
@@ -110,21 +108,17 @@ async def admin_cmd(
 
         # user hyperlink option
         elif arg1 == "link":
-            return await message.reply_text(
+            return await message.reply_html(
                 await get_link_username(text[1], bot),
-                parse_mode=PM.HTML,
             )
 
         else:
             raise WrongSyntaxErr
     except (IndexError, ValueError, WrongSyntaxErr):
-        return await message.reply_text(
-            "wrong syntax. use <code>/admin help</code>", parse_mode=PM.HTML
-        )
+        return await message.reply_html("wrong syntax. use <code>/admin help</code>")
     except IntegrityError:
-        return await message.reply_text(
-            "wrong value (uid or whatever). use <code>/admin help</code>",
-            parse_mode=PM.HTML,
+        return await message.reply_html(
+            "wrong value (uid or whatever). use <code>/admin help</code>"
         )
     except Exception as e:
         try:

@@ -7,6 +7,14 @@ from modules.Global.log import logger
 from modules.Global.database import dbh
 
 
+async def log_bot_started(context: CallbackContext) -> None:
+    """updates the bot's command menu"""
+    if context.application.bot._initialized:
+        logger.info(f"started @{context.application.bot.username}...")
+    else:
+        context.application.job_queue.run_once(log_bot_started, 0.5)
+
+
 async def renew_connection(context: CallbackContext) -> None:
     """updates the bot's command menu"""
     dbh.connect_db()

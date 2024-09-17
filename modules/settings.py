@@ -84,7 +84,7 @@ async def update_name(
         await bot.delete_message(userid, context.user_data["og_mid"])
     except:
         pass
-    await message.reply_text(
+    await message.reply_html(
         f"انجام شد. اسم جدیدت:\n{dbh.get_name(userid)}\n\n"
         f"میتونی لینک خودتو تست کنی تا ببینی چجوری شده :)",
         parse_mode=PM.HTML,
@@ -193,7 +193,7 @@ async def update_custom_tag(
         await message.reply_text(
             f"تگ جدید نباید بیشتر از {MAX_NAME_LENGTH}تا حرف باشه. دوباره امتحان کن.\n"
             f"نکته: لینک و بولد و اینا یه مقدار به تعداد حرفات اضافه میکنن",
-            reply_parameters=ReplyParameters(message.message_id, None, True),
+            reply_parameters=ReplyParameters(message.message_id),
         )
         return 1
     dbh.set_custom_tag(userid, new_tag)
@@ -201,11 +201,10 @@ async def update_custom_tag(
         await bot.delete_message(userid, context.user_data["og_mid"])
     except:
         pass
-    await message.reply_text(
+    await message.reply_html(
         f"انجام شد. تگ جدیدت:\n{dbh.get_custom_tag(userid)}\n\n"
         f"میتونی لینک خودتو تست کنی تا ببینی چجوری شده :)",
-        parse_mode=PM.HTML,
-        reply_parameters=ReplyParameters(message.message_id, None, True),
+        reply_parameters=ReplyParameters(message.message_id),
         reply_markup=InlineKeyboardMarkup(
             [
                 [SETTINGS_MARKUP["back-to-menu"]],
@@ -277,7 +276,7 @@ async def update_audio_tag(
         await message.reply_text(
             f"تگ جدید نباید بیشتر از {MAX_NAME_LENGTH}تا حرف باشه. دوباره امتحان کن.\n"
             f"نکته: لینک و بولد و اینا یه مقدار به تعداد حرفات اضافه میکنن",
-            reply_parameters=ReplyParameters(message.message_id, None, True),
+            reply_parameters=ReplyParameters(message.message_id),
         )
         return 2
     dbh.set_audio_tag(userid, new_tag)
@@ -285,11 +284,10 @@ async def update_audio_tag(
         await bot.delete_message(userid, context.user_data["og_mid"])
     except:
         pass
-    await message.reply_text(
+    await message.reply_html(
         f"انجام شد. تگ جدیدت:\n{dbh.get_audio_tag(userid)}\n\n"
         f"میتونی لینک خودتو تست کنی تا ببینی چجوری شده :)",
-        parse_mode=PM.HTML,
-        reply_parameters=ReplyParameters(message.message_id, None, True),
+        reply_parameters=ReplyParameters(message.message_id),
         reply_markup=InlineKeyboardMarkup(
             [
                 [SETTINGS_MARKUP["back-to-menu"]],
@@ -390,7 +388,7 @@ async def cancel_all(
     """# cancel other messages sent while in convo"""
     await message.reply_text(
         "در حال تغییر تنظیماتت بودی پس کنسلش کردم. دوباره امتحان کن",
-        reply_parameters=ReplyParameters(message.message_id, None, True),
+        reply_parameters=ReplyParameters(message.message_id),
     )
     context.user_data.clear()
     return END

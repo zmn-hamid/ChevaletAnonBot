@@ -272,7 +272,7 @@ async def update_cid(
             await message.reply_text(
                 "فقط حروف کوچیک و بزرگ انگلیسی، اعداد، آندرلاین و خط تیره مجازه. "
                 "دوباره امتحان کن",
-                reply_parameters=ReplyParameters(message.message_id, None, True),
+                reply_parameters=ReplyParameters(message.message_id),
                 reply_markup=InlineKeyboardMarkup([[CANCEL_BUTTON]]),
             )
             return 0
@@ -283,7 +283,7 @@ async def update_cid(
     if new_cid in all_the_cids:
         await message.reply_text(
             "این آیدی برداشته شده. آیدی دیگه ای بفرس",
-            reply_parameters=ReplyParameters(message.message_id, None, True),
+            reply_parameters=ReplyParameters(message.message_id),
             reply_markup=InlineKeyboardMarkup([[CANCEL_BUTTON]]),
         )
         return 0
@@ -337,7 +337,7 @@ async def what_is_cid(
     bot: Bot,
 ) -> int:
     """# explanation for cid"""
-    await message.reply_text(fetch_text("cid_explanation"), parse_mode=PM.HTML)
+    await message.reply_html(fetch_text("cid_explanation"))
 
 
 @prep_function
@@ -352,7 +352,7 @@ async def others_while_sending(
     context.user_data.clear()
     await message.reply_text(
         "در حال تغییر آیدی بودی پس کنسلش کردم. دوباره بفرست",
-        reply_parameters=ReplyParameters(message.message_id, None, True),
+        reply_parameters=ReplyParameters(message.message_id),
     )
     return ConversationHandler.END
 
