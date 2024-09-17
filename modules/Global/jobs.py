@@ -27,7 +27,8 @@ async def set_commands(context: CallbackContext) -> None:
         [
             ("help", "🆘 کمک!"),
             ("my_links", "🔗 لینک های من"),
-            ("settings", "⚙️ تنظیمات پیام ناشناس"),
+            ("settings", "⚙️ تنظیمات و قابلیت ها"),
+            ("cancel", "❌ کنسل کردن هرکاری که داری انجام میدی"),
         ]
     )
     logger.info("successfully set the commands")

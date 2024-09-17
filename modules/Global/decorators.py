@@ -40,11 +40,7 @@ def prep_function(func) -> Callable:
                 context.user_data.clear()
                 return ConversationHandler.END
 
-            output = await func(update, context, message, userid, bot)
-            # clear userdata
-            if output == ConversationHandler.END:
-                context.user_data.clear()
-            return output
+            return await func(update, context, message, userid, bot)
         except Forbidden as e:
             # bot is blocked by the user
             logger.debug(str(e))

@@ -26,7 +26,13 @@ async def other_messages(
     bot: Bot,
 ) -> None:
     """# for unkown messages"""
-    await other_messages_template(message)
+    if "/cancel" in message.text.split():
+        await message.reply_text(
+            "چیزی واسه کنسل کردن وجود نداره",
+            reply_parameters=ReplyParameters(message.message_id),
+        )
+    else:
+        await other_messages_template(message)
 
 
 other_messages_handler = MessageHandler(filters.ALL, other_messages)
