@@ -19,7 +19,6 @@ def prep_function(func) -> Callable:
         try:
             # only handle updates from private chats
             if update.effective_chat.type in ["channel", "group"]:
-                print(update.channel_post.text)
                 return ConversationHandler.END
 
             message: Message = update.effective_message
