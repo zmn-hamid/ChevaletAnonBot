@@ -373,10 +373,7 @@ async def answer(
 
         # check is blocked by user
         if dbh.is_blocked(blocker_uid=dbh.get_uid(target_cid), blocked_uid=userid):
-            await message.reply_text(
-                "این کاربر بلاکت کرده خخ",
-                reply_parameters=ReplyParameters(message.message_id),
-            )
+            await clbk.answer("این کاربر بلاکت کرده خخ", show_alert=True)
             return END
 
         context.user_data["target_cid"] = target_cid
