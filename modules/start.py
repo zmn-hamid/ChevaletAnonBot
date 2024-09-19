@@ -324,13 +324,14 @@ async def send_msg(
                 edit_method = bot.edit_message_text
                 og_text_html = message.text_html if message.text_html else ""
             await edit_method(
-                caption=og_text_html + "\n" + tag,
+                **{edit_what: og_text_html + "\n" + tag},
                 chat_id=target_uid,
                 message_id=copied_message_id.message_id,
                 parse_mode=PM.HTML,
                 reply_markup=reply_markup,
                 **kwargs,
             )
+            return True
         except:
             pass
 
@@ -342,14 +343,13 @@ async def send_msg(
         )
     elif custom_tag:
         # edit text
-        try:
+        if not await add_tag(
+            custom_tag, "text", link_preview_options=message.link_preview_options
+        ):
             await add_tag(
-                custom_tag, "text", link_preview_options=message.link_preview_options
-            )
-        except:
-            # edit caption if no text
-            await add_tag(
-                custom_tag, "caption", link_preview_options=message.link_preview_options
+                custom_tag,
+                "caption",
+                link_preview_options=message.link_preview_options,
             )
 
     context.user_data.clear()
