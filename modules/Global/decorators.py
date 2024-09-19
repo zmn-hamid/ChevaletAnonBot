@@ -1,7 +1,7 @@
 # telegram imports
 from telegram import *
 from telegram.ext import *
-from telegram.error import Forbidden
+from telegram.error import Forbidden, BadRequest
 
 # project imports
 from modules.Global.log import logger
@@ -76,3 +76,55 @@ def delete_notify_on_END(func) -> Callable:
             return output
 
     return wrapper
+
+
+def handle_target_send(message: Message, external_reply: Message):
+    """decorator for handling sending message to target (in case errors happen)"""
+
+    def tst(func) -> Callable:
+        async def wrapper(*args, **kwargs):
+            try:
+                return await func(*args, **kwargs)
+            except Forbidden as e:
+                if str(e) == "Forbidden: bot is not a member of the channel chat":
+                    await message.reply_html(
+                        "چنلی که ازش ریپلای کردی بات رو به خودش اضافه نکرده. اول باید از ادمینش بخوای که اینکارو کنه."
+                        "\n\nدوباره پیامتو بفرست.",
+                        reply_parameters=ReplyParameters(message.message_id),
+                    )
+                    return "del+0"
+                elif str(e) == "Forbidden: bot was blocked by the user":
+                    await message.reply_html("مخاطبت بات رو بلاک کرد")
+                    return "del+0"
+                else:
+                    raise Forbidden(str(e)) from e
+            except BadRequest as e:
+                if str(e) == "Message to be replied not found":
+                    if external_reply:
+                        await message.reply_html(
+                            "چنلی که ازش ریپلای کردی بات رو به خودش اضافه نکرده. اول باید از ادمینش بخوای که اینکارو کنه."
+                            "\n\nدوباره پیامتو بفرست.",
+                            reply_parameters=ReplyParameters(message.message_id),
+                        )
+                        return "del+0"
+                    else:
+                        await message.reply_text(
+                            "پیامی که میخوای جوابشو بدی از چت مخاطبت پاک شده. باید از نو پیام بفرستی بهش\n"
+                            "این پیام موقتا تعبیه شده. اگه فک میکنی اشتباه تشخیص دادیم، لطفا به ادمین خبر بده",
+                            reply_parameters=ReplyParameters(message.message_id),
+                        )
+                        return "del+e"
+                elif str(e) == "MESSAGE_ID_INVALID":
+                    return "del+e"
+                elif str(e) == "Quote_text_invalid":
+                    await message.reply_text(
+                        "پیام اشتباهی رو ریپلای کردی. دوباره امتحان کن",
+                        reply_parameters=ReplyParameters(message.message_id),
+                    )
+                    return "del+0"
+                else:
+                    raise BadRequest(str(e)) from e
+
+        return wrapper
+
+    return tst

@@ -9,7 +9,11 @@ from telegram.error import BadRequest, Forbidden
 from config import REPORT_CHAT_ID, SUPPORT_ADMIN, DELETION_TIMEOUT
 from modules.Global.database import dbh
 from modules.Global.get_user import get_username, href_user, get_link_username
-from modules.Global.decorators import prep_function, delete_notify_on_END
+from modules.Global.decorators import (
+    prep_function,
+    delete_notify_on_END,
+    handle_target_send,
+)
 from modules.Global.fetch_texts import fetch_text
 from modules.Global.jobs import delete_warning, delete_message
 from modules.Global.reply_markups import CANCEL_BUTTON
@@ -171,6 +175,7 @@ async def send_msg(
     """
     target_cid = context.user_data.get("target_cid")
     target_mid = context.user_data.get("reply_to")  # None when not answer
+    external_reply = message.external_reply
 
     # get target uid
     target_uid = dbh.get_uid(target_cid)
@@ -197,12 +202,21 @@ async def send_msg(
     elif len(target_cids) > 1:
         ### notify user if target has >1 cid
         cid_idx_text = f" با لینک {target_cids.index(target_cid) + 1} ({target_cid})"
-    announce_msg = await bot.send_message(
-        target_uid,
-        f"{msg_type_text} جدید{cid_idx_text}:",
-        reply_parameters=ReplyParameters(target_mid) if target_mid else None,
-    )
-    context.user_data.get("wrapper_list", []).append(announce_msg)
+
+    @handle_target_send(message=message, external_reply=external_reply)
+    async def send_notif():
+        return await bot.send_message(
+            target_uid,
+            f"{msg_type_text} جدید{cid_idx_text}:",
+            reply_parameters=ReplyParameters(target_mid) if target_mid else None,
+        )
+
+    output: Message | str = await send_notif()
+    if type(output) == Message:
+        notify_msg = output
+    else:
+        return output
+    context.user_data.get("wrapper_list", []).append(notify_msg)
     ## send the message
     reply_markup = InlineKeyboardMarkup(
         [
@@ -224,7 +238,6 @@ async def send_msg(
     ## calculate reply and quote
     has_quote = message.quote
     reply_to_chat, reply_to_mid, quote_text, quote_position = None, None, None, None
-    external_reply = message.external_reply
     if external_reply:
         reply_to_chat = external_reply.chat.id
         reply_to_mid = external_reply.message_id
@@ -234,8 +247,11 @@ async def send_msg(
     if has_quote:
         quote_text = message.quote.text
         quote_position = message.quote.position
-    try:
-        copied_message_id: MessageId = await message.copy(
+
+    # send message to target
+    @handle_target_send(message=message, external_reply=external_reply)
+    async def copy_msg_to_target():
+        return await message.copy(
             target_uid,
             parse_mode=PM.HTML,
             reply_markup=reply_markup,
@@ -246,42 +262,14 @@ async def send_msg(
                 quote_position=quote_position,
             ),
         )
-    except Forbidden as e:
-        if str(e) == "Forbidden: bot is not a member of the channel chat":
-            await message.reply_html(
-                "چنلی که ازش ریپلای کردی بات رو به خودش اضافه نکرده. اول باید از ادمینش بخوای که اینکارو کنه."
-                "\n\nدوباره پیامتو بفرست.",
-                reply_parameters=ReplyParameters(message.message_id),
-            )
-            return "del+0"
-        else:
-            raise Forbidden(str(e)) from e
-    except BadRequest as e:
-        if str(e) == "Message to be replied not found":
-            if external_reply:
-                await message.reply_html(
-                    "چنلی که ازش ریپلای کردی بات رو به خودش اضافه نکرده. اول باید از ادمینش بخوای که اینکارو کنه."
-                    "\n\nدوباره پیامتو بفرست.",
-                    reply_parameters=ReplyParameters(message.message_id),
-                )
-                return "del+0"
-            else:
-                await message.reply_text(
-                    "پیامی که میخوای جوابشو بدی از چت مخاطبت پاک شده. باید از نو پیام بفرستی بهش\n"
-                    "این پیام موقتا تعبیه شده. اگه فک میکنی اشتباه تشخیص دادیم، لطفا به ادمین خبر بده",
-                    reply_parameters=ReplyParameters(message.message_id),
-                )
-                return "del+e"
-        elif str(e) == "MESSAGE_ID_INVALID":
-            return "del+e"
-        elif str(e) == "Quote_text_invalid":
-            await message.reply_text(
-                "پیام اشتباهی رو ریپلای کردی. دوباره امتحان کن",
-                reply_parameters=ReplyParameters(message.message_id),
-            )
-            return "del+0"
-        else:
-            raise BadRequest(str(e)) from e
+
+    output: MessageId | str = await copy_msg_to_target()
+    if type(output) == MessageId:
+        copied_message_id: MessageId = output
+    else:
+        return output
+
+    # handle warning and deletion of it
     if dbh.get_warning(userid):
         warning_message = await message.reply_text(
             f"فرستادم بهش. {DELETION_TIMEOUT} ثانیه فرصت داری با دکمه ی زیر پاکش کنی.\n"
@@ -291,7 +279,7 @@ async def send_msg(
                     [
                         InlineKeyboardButton(
                             "پاکش کننن",
-                            callback_data=f"delete|{target_cid}|{copied_message_id.message_id}|{announce_msg.message_id}",
+                            callback_data=f"delete|{target_cid}|{copied_message_id.message_id}|{notify_msg.message_id}",
                         ),
                     ],
                 ]
