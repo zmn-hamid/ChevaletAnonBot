@@ -17,6 +17,7 @@ async def log_bot_started(context: CallbackContext) -> None:
 
 async def renew_connection(context: CallbackContext) -> None:
     """updates the bot's command menu"""
+    dbh.cur.close()
     dbh.connect_db()
     logger.debug("renewed sql connection")
 
