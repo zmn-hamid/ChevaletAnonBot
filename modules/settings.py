@@ -198,6 +198,51 @@ async def warning_clbk(
 
 
 @prep_function
+async def seen_settings_clbk(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    message: Message,
+    userid: str,
+    bot: Bot,
+) -> None:
+    """# warning settings for user"""
+    if (clbk := update.callback_query) and (data := clbk.data):
+
+        async def _seen_text():
+            current = dbh.get_seen_status(userid)
+            await clbk.edit_message_text(
+                fetch_text("settings/seen") % ("فعال" if current else "غیرفعال"),
+                parse_mode=PM.HTML,
+                reply_markup=InlineKeyboardMarkup(
+                    [
+                        [
+                            (
+                                SETTINGS_MARKUP["seen-deactivate"]
+                                if current
+                                else SETTINGS_MARKUP["seen-activate"]
+                            ),
+                        ],
+                        [SETTINGS_MARKUP["back-to-menu"]],
+                    ]
+                ),
+            )
+
+        _, activation_text = data.split("|", 1)
+        if activation_text:
+            if activation_text == "activate":
+                dbh.set_seen_option(userid, True)
+                await clbk.answer("آپشن سین زدن فعال شد")
+                await _seen_text()
+            else:
+                dbh.set_seen_option(userid, False)
+                await clbk.answer("آپشن سین زدن غیرفعال شد")
+                await _seen_text()
+        else:
+            await _seen_text()
+        return END
+
+
+@prep_function
 async def custom_tag(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -483,6 +528,7 @@ settings_handler = ConversationHandler(
         CallbackQueryHandler(audio_tag, r"^audio-tag\|"),
         # other handlers
         CallbackQueryHandler(warning_clbk, r"^warning\|"),
+        CallbackQueryHandler(seen_settings_clbk, r"^seen-settings\|"),
         CallbackQueryHandler(unblock_all_clbk, r"^unblock-all\|"),
         CallbackQueryHandler(unblock_me_clbk, r"^unblock-me\|"),
         CommandHandler("settings", settings_cmd_clbk),

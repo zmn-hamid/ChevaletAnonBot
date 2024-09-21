@@ -15,6 +15,11 @@ SETTINGS_MARKUP = {
             InlineKeyboardButton("📛 تغییر نام نمایشی", callback_data="change-name|"),
         ],
         [
+            InlineKeyboardButton(
+                "👀 نمایش آپشن سین زدن پیام", callback_data="seen-settings|"
+            ),
+        ],
+        [
             InlineKeyboardButton("#️⃣ تگ آهنگ", callback_data="audio-tag|"),
             InlineKeyboardButton("#️⃣ تگ دلخواه", callback_data="custom-tag|"),
         ],
@@ -37,6 +42,12 @@ SETTINGS_MARKUP = {
     ),
     "warning-deactivate": InlineKeyboardButton(
         "❌ غیرفعالسازی", callback_data="warning|deactivate"
+    ),
+    "seen-activate": InlineKeyboardButton(
+        "✅ فعالسازی", callback_data="seen-settings|activate"
+    ),
+    "seen-deactivate": InlineKeyboardButton(
+        "❌ غیرفعالسازی", callback_data="seen-settings|deactivate"
     ),
     "remove-custom-tag": InlineKeyboardButton(
         "🗑 پاک کردن تگ دلخواه", callback_data="rm-custom-tag"

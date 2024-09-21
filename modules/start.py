@@ -7,6 +7,7 @@ from telegram.error import BadRequest, Forbidden
 
 # project imports
 from config import REPORT_CHAT_ID, SUPPORT_ADMIN, DELETION_TIMEOUT
+from modules.Global.log import logger
 from modules.Global.database import dbh
 from modules.Global.get_user import get_username, href_user, get_link_username
 from modules.Global.decorators import (
@@ -26,6 +27,8 @@ from warnings import filterwarnings
 # reply markup buttons
 class BTN:
     REPLY = "⌨️ ارسال جواب"
+    SEEN = "✅ سین بزن"
+    SEEN_DONE = "☑️ سین زدم"
     BLOCK = "🔒 بلاک"
     UNBLOCK = "🔓 آنبلاک"
     REPORT = "⚠️ ریپورت"
@@ -188,7 +191,7 @@ async def send_msg(
         )
         return END
 
-    # get cid from uid for sender
+    # get cid from uid for sender (current user that is sending message)
     # so the reply markup won't have the uid inside it, for extra privacy
     sender_cid = dbh.get_cids(userid)[0]
 
@@ -217,24 +220,31 @@ async def send_msg(
     else:
         return output
     context.user_data.get("wrapper_list", []).append(notify_msg)
-    ## send the message
-    reply_markup = InlineKeyboardMarkup(
+    ## calculate reply_markup
+    reply_markup_keyboard = [
         [
-            [
-                InlineKeyboardButton(
-                    BTN.REPLY,
-                    callback_data=f"answer|{sender_cid}|{message.message_id}",
-                ),
-            ],
-            [
-                InlineKeyboardButton(
-                    BTN.REPORT,
-                    callback_data=f"report|{sender_cid}|{message.message_id}",
-                ),
-                InlineKeyboardButton(BTN.BLOCK, callback_data=f"block|{sender_cid}"),
-            ],
-        ]
-    )
+            InlineKeyboardButton(
+                BTN.REPLY,
+                callback_data=f"answer|{sender_cid}|{message.message_id}",
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                BTN.REPORT,
+                callback_data=f"report|{sender_cid}|{message.message_id}",
+            ),
+            InlineKeyboardButton(BTN.BLOCK, callback_data=f"block|{sender_cid}"),
+        ],
+    ]
+    if dbh.get_seen_status(userid):
+        reply_markup_keyboard[0].insert(
+            0,
+            InlineKeyboardButton(
+                BTN.SEEN,
+                callback_data=f"seen|{sender_cid}|{message.message_id}",
+            ),
+        )
+    reply_markup = InlineKeyboardMarkup(reply_markup_keyboard)
     ## calculate reply and quote
     has_quote = message.quote
     reply_to_chat, reply_to_mid, quote_text, quote_position = None, None, None, None
@@ -376,6 +386,61 @@ async def answer(
 
 
 @prep_function
+async def seen(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    message: Message,
+    userid: str,
+    bot: Bot,
+) -> int:
+    """tells the target that they saw their message (mark as seen)"""
+    if (clbk := update.callback_query) and (data := clbk.data):
+        _, target_cid, target_mid = data.split("|")
+
+        # send seen message
+        @handle_target_send(message=message, external_reply=message.external_reply)
+        async def seen_message():
+            await bot.send_message(
+                dbh.get_uid(target_cid),
+                "این پیامت سین شد",
+                parse_mode=PM.HTML,
+                reply_parameters=ReplyParameters(target_mid),
+            )
+
+        await seen_message()
+
+        # tell it was sent
+        await clbk.answer("بهش گفتم سین زدی")
+
+        # edit message so they can't seen the message again
+        try:
+            await message.edit_reply_markup(
+                InlineKeyboardMarkup(
+                    [
+                        [
+                            (
+                                InlineKeyboardButton(
+                                    button.text, callback_data=button.callback_data
+                                )
+                                if not button.callback_data.startswith("seen")
+                                else InlineKeyboardButton(
+                                    BTN.SEEN_DONE,
+                                    callback_data="alread-seen",
+                                )
+                            )
+                            for button in line
+                        ]
+                        for line in message.reply_markup.inline_keyboard
+                    ]
+                )
+            )
+        except:
+            pass
+
+        return END
+
+
+@prep_function
 async def block(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -420,6 +485,18 @@ async def block(
 
         else:
             await clbk.answer("همین الانش بلاک هست")
+
+
+@prep_function
+async def alread_seen(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    message: Message,
+    userid: str,
+    bot: Bot,
+) -> int:
+    """tell user the message is already seen so avoid doing it again"""
+    await update.callback_query.answer("یبار سین زدم")
 
 
 @prep_function
@@ -599,6 +676,8 @@ async def cancel(
 delete_message_handler = CallbackQueryHandler(delete_msg_clbk, r"^delete\|")
 start_clbk = CommandHandler("start", start_cmd)
 answer_clbk = CallbackQueryHandler(answer, r"^answer\|")
+seen_clbk = CallbackQueryHandler(seen, r"^seen\|")
+already_seen_clbk = CallbackQueryHandler(alread_seen, r"alread-seen")
 report_clbk = CallbackQueryHandler(report, r"^report\|")
 block_clbk = CallbackQueryHandler(block, r"^block\|")
 unblock_clbk = CallbackQueryHandler(unblock, r"^unblock\|")
@@ -607,6 +686,8 @@ start_cmd_handler = ConversationHandler(
     entry_points=[
         start_clbk,
         answer_clbk,
+        seen_clbk,
+        already_seen_clbk,
         report_clbk,
         block_clbk,
         unblock_clbk,
@@ -615,6 +696,8 @@ start_cmd_handler = ConversationHandler(
         0: [
             start_clbk,
             answer_clbk,
+            seen_clbk,
+            already_seen_clbk,
             report_clbk,
             block_clbk,
             unblock_clbk,
