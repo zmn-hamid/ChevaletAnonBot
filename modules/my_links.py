@@ -394,7 +394,7 @@ mylinks_handler = ConversationHandler(
         _what_is_cid,
         _mylinks_clbk,
         CommandHandler("cancel", cancel_cmd),
-        MessageHandler(filters.ALL & filters.COMMAND, others_while_sending),
+        MessageHandler(filters.ALL, others_while_sending),
     ],
     per_user=True,
 )

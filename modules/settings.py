@@ -507,7 +507,7 @@ settings_handler = ConversationHandler(
         _settings_clbk,
         CallbackQueryHandler(settings_cmd_clbk, r"nvm-back-to-menu"),
         CommandHandler("cancel", cancel_cmd),
-        MessageHandler(filters.ALL & filters.COMMAND, cancel_all),
+        MessageHandler(filters.ALL | filters.COMMAND, cancel_all),
     ],
     per_user=True,
 )

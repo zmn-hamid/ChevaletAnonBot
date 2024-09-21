@@ -625,7 +625,7 @@ start_cmd_handler = ConversationHandler(
         delete_message_handler,
         cancel_clbk,
         CommandHandler("cancel", cancel_cmd),
-        MessageHandler(filters.ALL & filters.COMMAND, cancel_all),
+        MessageHandler(filters.ALL, cancel_all),
     ],
     per_user=True,
 )
