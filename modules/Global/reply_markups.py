@@ -11,13 +11,16 @@ SETTINGS_MARKUP = {
             ),
         ],
         [
-            InlineKeyboardButton("⚠️ اخطار پاک سازی پیام", callback_data="warning|"),
-            InlineKeyboardButton("📛 تغییر نام نمایشی", callback_data="change-name|"),
+            InlineKeyboardButton(
+                "👀 نمایش دکمه سین زدن", callback_data="seen-settings|"
+            ),
+            InlineKeyboardButton(
+                "⌨️ ارسال جوابِ راحت تر", callback_data="easier-answer|"
+            ),
         ],
         [
-            InlineKeyboardButton(
-                "👀 نمایش آپشن سین زدن پیام", callback_data="seen-settings|"
-            ),
+            InlineKeyboardButton("⚠️ اخطار پاک سازی پیام", callback_data="warning|"),
+            InlineKeyboardButton("📛 تغییر نام نمایشی", callback_data="change-name|"),
         ],
         [
             InlineKeyboardButton("#️⃣ تگ آهنگ", callback_data="audio-tag|"),

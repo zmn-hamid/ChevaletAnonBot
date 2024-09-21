@@ -45,7 +45,7 @@ async def admin_cmd(
                 return await message.reply_html(
                     "send <code>/admin send-mass-msg YES</code> if you're sure",
                 )
-            sent_to = []
+            failed_to_send = []
 
             # send to users
             dbh.cur.execute(f"SELECT uid FROM {dbh.users_table}")
@@ -53,24 +53,23 @@ async def admin_cmd(
                 uid = item[0]
                 try:
                     await message.reply_to_message.copy(uid)
-                    sent_to.append({"uid": uid, "sent": True})
                 except Exception as e:
-                    sent_to.append({"uid": uid, "sent": False, "reason": str(e)})
+                    failed_to_send.append({"uid": uid, "reason": str(e)})
 
             # send log
-            logfile = "log-mass-msg.txt"
-            with open(logfile, "w") as f:
-                f.write(
-                    "\n".join(
-                        [
-                            f"{item['uid']} | "
-                            f"{'success' if item['sent'] else f'fail | {item.get('reason')}'}"
-                            for item in sent_to
-                        ]
+            if failed_to_send:
+                logfile = "mass-msg-failurs.txt"
+                with open(logfile, "w") as f:
+                    f.write(
+                        "\n".join(
+                            [
+                                f"{item['uid']} | {item.get('reason')}"
+                                for item in failed_to_send
+                            ]
+                        )
                     )
-                )
-            await message.reply_document(open(logfile, "rb"))
-            os.remove(logfile)
+                await message.reply_document(open(logfile, "rb"))
+                os.remove(logfile)
 
         # number of users
         elif arg1 == "user-count":

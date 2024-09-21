@@ -198,6 +198,30 @@ async def warning_clbk(
 
 
 @prep_function
+async def easier_answer_clbk(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    message: Message,
+    userid: str,
+    bot: Bot,
+) -> None:
+    """# unblocks all the blocked users"""
+    if (clbk := update.callback_query) and (data := clbk.data):
+        await clbk.edit_message_text(
+            fetch_text("settings/easier_answer"),
+            parse_mode=PM.HTML,
+            reply_markup=InlineKeyboardMarkup(
+                [
+                    [
+                        SETTINGS_MARKUP["back-to-menu"],
+                    ],
+                ]
+            ),
+        )
+        return END
+
+
+@prep_function
 async def seen_settings_clbk(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -528,6 +552,7 @@ settings_handler = ConversationHandler(
         CallbackQueryHandler(audio_tag, r"^audio-tag\|"),
         # other handlers
         CallbackQueryHandler(warning_clbk, r"^warning\|"),
+        CallbackQueryHandler(easier_answer_clbk, r"^easier-answer\|"),
         CallbackQueryHandler(seen_settings_clbk, r"^seen-settings\|"),
         CallbackQueryHandler(unblock_all_clbk, r"^unblock-all\|"),
         CallbackQueryHandler(unblock_me_clbk, r"^unblock-me\|"),
