@@ -164,18 +164,13 @@ async def start_cmd(
 
 
 @delete_notify_on_END
-@prep_function
-async def send_msg(
+async def send_msg_template(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
     message: Message,
     userid: str,
     bot: Bot,
 ) -> int:
-    """
-    # message sending fallback
-    forwards the given message to the user (without sender)
-    """
     target_cid = context.user_data.get("target_cid")
     target_mid = context.user_data.get("reply_to")  # None when not answer
     external_reply = message.external_reply
@@ -352,6 +347,22 @@ async def send_msg(
 
     context.user_data.clear()
     return END
+
+
+@delete_notify_on_END
+@prep_function
+async def send_msg(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    message: Message,
+    userid: str,
+    bot: Bot,
+) -> int:
+    """
+    # message sending fallback
+    forwards the given message to the user (without sender)
+    """
+    return await send_msg_template(update, context, message, userid, bot)
 
 
 @prep_function

@@ -52,13 +52,15 @@ def prep_function(func) -> Callable:
 def delete_notify_on_END(func) -> Callable:
     """deletes the notify user message that is sent before private messages"""
 
-    async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def wrapper(
+        update: Update, context: ContextTypes.DEFAULT_TYPE, *args, **kwargs
+    ):
         # making a list so whatever added to it in the function
         # will be accessible from here (inside the wrapper)
         # reason: lists are linked to their instances by default
         wrapper_list = []
         context.user_data["wrapper_list"] = wrapper_list
-        output = await func(update, context)
+        output = await func(update, context, *args, **kwargs)
 
         # main
         if output in ["del+0", "del+e"]:
@@ -94,7 +96,7 @@ def handle_target_send(message: Message, external_reply: Message):
                     )
                     return "del+0"
                 elif str(e) == "Forbidden: bot was blocked by the user":
-                    await message.reply_html("مخاطبت بات رو بلاک کرد")
+                    await message.reply_html("مخاطبت بات رو بلاک کرده")
                     return "del+0"
                 else:
                     raise Forbidden(str(e)) from e
@@ -108,9 +110,11 @@ def handle_target_send(message: Message, external_reply: Message):
                         )
                         return "del+0"
                     else:
-                        await message.reply_text(
-                            "پیامی که میخوای جوابشو بدی از چت مخاطبت پاک شده. باید از نو پیام بفرستی بهش\n"
-                            "این پیام موقتا تعبیه شده. اگه فک میکنی اشتباه تشخیص دادیم، لطفا به ادمین خبر بده",
+                        # this was previously recognized as "deleted target message"
+                        # but now after testing, it's probabely caused by blocking the bot
+                        await message.reply_html(
+                            "مخاطبت احتمالا بات رو بلاک کرده. ممکنم هست بخاطر کلیر هیستوری، پیام مدنظرت پاک شده باشه. میتونی لینکشو تست کنی تا ببینی میشه پیام فرستاد یا نه.\n\n"
+                            "<blockquote>بخاطر ویژگیِ تلگرام، تا پیام معمولی نفرستم بهش نمیتونم مطمئن شم بات رو بلاک کرده یا نه</blockquote>",
                             reply_parameters=ReplyParameters(message.message_id),
                         )
                         return "del+e"
