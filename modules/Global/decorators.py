@@ -1,7 +1,7 @@
 # telegram imports
 from telegram import *
 from telegram.ext import *
-from telegram.error import Forbidden, BadRequest
+from telegram.error import Forbidden, BadRequest, TimedOut
 
 # project imports
 from modules.Global.log import logger
@@ -41,6 +41,8 @@ def prep_function(func) -> Callable:
                 return ConversationHandler.END
 
             return await func(update, context, message, userid, bot)
+        except TimedOut:
+            return
         except Forbidden as e:
             # bot is blocked by the user
             logger.debug(str(e))
