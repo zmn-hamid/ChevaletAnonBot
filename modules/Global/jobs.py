@@ -6,6 +6,9 @@ from telegram.ext import *
 from modules.Global.log import logger
 from modules.Global.database import dbh
 
+# global imports
+import os
+
 
 async def log_bot_started(context: CallbackContext) -> None:
     """updates the bot's command menu"""
@@ -50,3 +53,33 @@ async def delete_message(context: CallbackContext) -> None:
         await context.job.data.get("message").delete()
     except:
         pass
+
+
+async def send_mass_msg(context: CallbackContext) -> None:
+    """sends mass msg"""
+    msg: Message = context.job.data.get("message")
+    failed_to_send = []
+
+    # notify
+    await msg.reply_text("starting to send mass msg...")
+
+    # send to users
+    dbh.cur.execute(f"SELECT uid FROM {dbh.users_table}")
+    for item in dbh.cur.fetchall():
+        uid = item[0]
+        try:
+            await msg.reply_to_message.copy(uid)
+        except Exception as e:
+            failed_to_send.append({"uid": uid, "reason": str(e)})
+
+    # send log
+    if failed_to_send:
+        logfile = "mass-msg-failurs.txt"
+        with open(logfile, "w") as f:
+            f.write(
+                "\n".join(
+                    [f"{item['uid']} | {item.get('reason')}" for item in failed_to_send]
+                )
+            )
+        await msg.reply_document(open(logfile, "rb"))
+        os.remove(logfile)

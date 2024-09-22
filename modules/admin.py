@@ -10,6 +10,7 @@ from modules.Global.get_user import get_link_username
 from modules.Global.decorators import prep_function
 from modules.Global.fetch_texts import fetch_text
 from modules.Global.exceptions import WrongSyntaxErr
+from modules.Global.jobs import send_mass_msg
 from modules.other_msgs import other_messages_template
 
 # global imports
@@ -45,31 +46,9 @@ async def admin_cmd(
                 return await message.reply_html(
                     "send <code>/admin send-mass-msg YES</code> if you're sure",
                 )
-            failed_to_send = []
-
-            # send to users
-            dbh.cur.execute(f"SELECT uid FROM {dbh.users_table}")
-            for item in dbh.cur.fetchall():
-                uid = item[0]
-                try:
-                    await message.reply_to_message.copy(uid)
-                except Exception as e:
-                    failed_to_send.append({"uid": uid, "reason": str(e)})
-
-            # send log
-            if failed_to_send:
-                logfile = "mass-msg-failurs.txt"
-                with open(logfile, "w") as f:
-                    f.write(
-                        "\n".join(
-                            [
-                                f"{item['uid']} | {item.get('reason')}"
-                                for item in failed_to_send
-                            ]
-                        )
-                    )
-                await message.reply_document(open(logfile, "rb"))
-                os.remove(logfile)
+            context.application.job_queue.run_once(
+                send_mass_msg, 3, {"message": message}
+            )
 
         # number of users
         elif arg1 == "user-count":
