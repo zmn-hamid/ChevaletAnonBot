@@ -91,6 +91,7 @@ def handle_target_send(message: Message, external_reply: Message):
                 return await func(*args, **kwargs)
             except Forbidden as e:
                 if str(e) == "Forbidden: bot is not a member of the channel chat":
+                    # This part is unnecessary but better to be kept than nothing
                     await message.reply_html(
                         "چنلی که ازش ریپلای کردی بات رو به خودش اضافه نکرده. اول باید از ادمینش بخوای که اینکارو کنه."
                         "\n\nدوباره پیامتو بفرست.",
@@ -105,6 +106,7 @@ def handle_target_send(message: Message, external_reply: Message):
             except BadRequest as e:
                 if str(e) == "Message to be replied not found":
                     if external_reply:
+                        # This part is unnecessary but better to be kept than nothing
                         await message.reply_html(
                             "چنلی که ازش ریپلای کردی بات رو به خودش اضافه نکرده. اول باید از ادمینش بخوای که اینکارو کنه."
                             "\n\nدوباره پیامتو بفرست.",

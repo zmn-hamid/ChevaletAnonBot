@@ -215,6 +215,42 @@ async def send_msg_template(
     else:
         return output
     context.user_data.get("wrapper_list", []).append(notify_msg)
+
+    ## calculate reply and quote
+    reply_to_chat, reply_to_mid, quote_text, quote_position = None, None, None, None
+    if external_reply:
+        reply_to_chat = str(external_reply.chat.id)
+        reply_to_mid = str(external_reply.message_id)
+    elif target_mid:
+        reply_to_chat = target_uid
+        reply_to_mid = target_mid
+    if quote := message.quote:
+        quote_text = quote.text
+        quote_position = quote.position
+
+    ## check if bot is not added then just use inline button
+    inline_replied_to = None
+    if external_reply:
+        try:
+            await bot.get_chat_administrators(reply_to_chat)
+        except:
+            if username := external_reply.chat.username:
+                url = f"https://t.me/{username}/{reply_to_mid}"
+            else:
+                url = f"https://t.me/c/{reply_to_chat[4:]}/{reply_to_mid}"
+
+            # https://t.me/c/2087637952/81
+            # https://t.me/zmn_hamid/1509
+            inline_replied_to = InlineKeyboardButton("ریپلای به این پیام", url=url)
+
+            ### no reply, no quote
+            reply_to_chat, reply_to_mid, quote_text, quote_position = (
+                None,
+                None,
+                None,
+                None,
+            )
+
     ## calculate reply_markup
     reply_markup_keyboard = [
         [
@@ -239,19 +275,9 @@ async def send_msg_template(
                 callback_data=f"seen|{sender_cid}|{message.message_id}",
             ),
         )
+    if inline_replied_to:
+        reply_markup_keyboard.insert(0, [inline_replied_to])
     reply_markup = InlineKeyboardMarkup(reply_markup_keyboard)
-    ## calculate reply and quote
-    has_quote = message.quote
-    reply_to_chat, reply_to_mid, quote_text, quote_position = None, None, None, None
-    if external_reply:
-        reply_to_chat = external_reply.chat.id
-        reply_to_mid = external_reply.message_id
-    elif target_mid:
-        reply_to_chat = target_uid
-        reply_to_mid = target_mid
-    if has_quote:
-        quote_text = message.quote.text
-        quote_position = message.quote.position
 
     # send message to target
     @handle_target_send(message=message, external_reply=external_reply)
@@ -345,6 +371,13 @@ async def send_msg_template(
                 link_preview_options=message.link_preview_options,
             )
 
+    # warn the sender when the message was sent with inline button instead of reply
+    if external_reply and inline_replied_to:
+        await message.reply_text(
+            "ازونجا که بات به چنل مدنظرت اضافه نشده بود، ریپلای رو به صورت دکمه ی شیشه ای برای مخاطبت فرستادم.",
+            reply_parameters=ReplyParameters(message.message_id),
+        )
+
     context.user_data.clear()
     return END
 
@@ -389,7 +422,8 @@ async def answer(
         context.user_data["reply_to"] = target_mid
 
         await message.reply_text(
-            f"جوابت به این پیام رو بفرست",
+            f"جوابت به این پیام رو بفرست\n\n"
+            "خبر خوش: ازین به بعد نیاز نیست حتما از دکمه ی ارسال جواب استفاده کنی. فقط کافیه پیام رو ریپلای کنی و جوابتو بهش بنویسی، مث یه چت معمولی :)",
             reply_parameters=ReplyParameters(message.message_id),
             reply_markup=InlineKeyboardMarkup([[CANCEL_BUTTON]]),
         )
