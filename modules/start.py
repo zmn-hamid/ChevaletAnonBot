@@ -26,6 +26,7 @@ from warnings import filterwarnings
 
 # reply markup buttons
 class BTN:
+    REPLIED_TO = "ریپلای شده به این پیام"
     REPLY = "⌨️ ارسال جواب"
     SEEN = "✅ سین بزن"
     SEEN_DONE = "☑️ سین زدم"
@@ -178,6 +179,14 @@ async def send_msg_template(
     # get target uid
     target_uid = dbh.get_uid(target_cid)
 
+    # check if target_cid was indeed valid
+    if target_uid is None:
+        await message.reply_html(
+            "مخاطبت لینکش رو عوض کرده. باید از نو پیام بفرستی",
+            reply_parameters=ReplyParameters(message.message_id),
+        )
+        return END
+
     # check is blocked by user
     if dbh.is_blocked(blocker_uid=target_uid, blocked_uid=userid):
         await message.reply_text(
@@ -241,7 +250,7 @@ async def send_msg_template(
 
             # https://t.me/c/2087637952/81
             # https://t.me/zmn_hamid/1509
-            inline_replied_to = InlineKeyboardButton("ریپلای به این پیام", url=url)
+            inline_replied_to = InlineKeyboardButton(BTN.REPLIED_TO, url=url)
 
             ### no reply, no quote
             reply_to_chat, reply_to_mid, quote_text, quote_position = (
@@ -421,9 +430,9 @@ async def answer(
         context.user_data["target_cid"] = target_cid
         context.user_data["reply_to"] = target_mid
 
-        await message.reply_text(
+        await message.reply_html(
             f"جوابت به این پیام رو بفرست\n\n"
-            "خبر خوش: ازین به بعد نیاز نیست حتما از دکمه ی ارسال جواب استفاده کنی. فقط کافیه پیام رو ریپلای کنی و جوابتو بهش بنویسی، مث یه چت معمولی :)",
+            "<blockquote>میدونستی ازین به بعد نیاز نیست حتما از دکمه ی ارسال جواب استفاده کنی. فقط کافیه پیام رو ریپلای کنی و جوابتو بهش بنویسی، مث یه چت معمولی :)</blockquote>",
             reply_parameters=ReplyParameters(message.message_id),
             reply_markup=InlineKeyboardMarkup([[CANCEL_BUTTON]]),
         )

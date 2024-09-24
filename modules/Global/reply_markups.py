@@ -4,19 +4,26 @@ SETTINGS_MARKUP = {
     "main-menu-set": [
         [
             InlineKeyboardButton(
-                "🖋 ریپلای به بخشی از پیام", callback_data="reply-quote|"
+                "⌨️ ارسال پیام بدون لینک | ریپلای به کانال",
+                callback_data="easier-answer|",
             ),
-            InlineKeyboardButton(
-                "🖋 ریپلای به پستِ کانال", callback_data="reply-channel|"
-            ),
+            # InlineKeyboardButton(
+            #     "🖋 ریپلای به بخشی از پیام", callback_data="reply-quote|"
+            # ),
+            # InlineKeyboardButton(
+            #     "🖋 ریپلای به پستِ کانال", callback_data="reply-channel|"
+            # ),
         ],
         [
             InlineKeyboardButton(
-                "👀 نمایش دکمه سین زدن", callback_data="seen-settings|"
+                "🖋 ریپلای به بخشی از پیام", callback_data="reply-quote|"
             ),
             InlineKeyboardButton(
-                "⌨️ ارسال جوابِ راحت تر", callback_data="easier-answer|"
+                "👀 نمایش دکمه سین زدن", callback_data="seen-settings|"
             ),
+            # InlineKeyboardButton(
+            #     "⌨️ ارسال جوابِ راحت تر", callback_data="easier-answer|"
+            # ),
         ],
         [
             InlineKeyboardButton("⚠️ اخطار پاک سازی پیام", callback_data="warning|"),

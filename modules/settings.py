@@ -37,30 +37,6 @@ async def settings_cmd_clbk(
 
 
 @prep_function
-async def reply_channel_clbk(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE,
-    message: Message,
-    userid: str,
-    bot: Bot,
-) -> None:
-    """# unblocks all the blocked users"""
-    if (clbk := update.callback_query) and (data := clbk.data):
-        await clbk.edit_message_text(
-            fetch_text("settings/reply_channel"),
-            parse_mode=PM.HTML,
-            reply_markup=InlineKeyboardMarkup(
-                [
-                    [
-                        SETTINGS_MARKUP["back-to-menu"],
-                    ],
-                ]
-            ),
-        )
-        return END
-
-
-@prep_function
 async def reply_quote_clbk(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -545,7 +521,6 @@ _settings_clbk = CallbackQueryHandler(settings_cmd_clbk, r"settings-menu")
 _formatting_clbk = CallbackQueryHandler(what_is_formatting, r"what-is-formatting")
 settings_handler = ConversationHandler(
     entry_points=[
-        CallbackQueryHandler(reply_channel_clbk, r"^reply-channel\|"),
         CallbackQueryHandler(reply_quote_clbk, r"^reply-quote\|"),
         CallbackQueryHandler(change_name, r"^change-name\|"),
         CallbackQueryHandler(custom_tag, r"^custom-tag\|"),
