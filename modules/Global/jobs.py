@@ -23,7 +23,7 @@ async def renew_connection(context: CallbackContext) -> None:
     try:
         dbh.cur.close()
     except:
-        log.info("cursor already closed!")
+        logger.info("cursor already closed!")
     dbh.connect_db()
     logger.debug("renewed sql connection")
 
