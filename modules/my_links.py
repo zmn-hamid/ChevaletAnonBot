@@ -65,7 +65,7 @@ async def add_link_clbk(
             )
 
         # add cid and return links
-        output = dbh.add_cid(userid, generate_cid(), 0)
+        dbh.add_cid(userid, generate_cid(), 0)
         try:
             await clbk.edit_message_text(
                 user_links_text(dbh.get_cids(userid), cid_limit, bot.username),
@@ -138,11 +138,7 @@ async def remove_link_clbk(
             _, chosen_cid, sure = data_split
             if sure == "yes":
                 # delete
-                dbh.cur.execute(
-                    f"DELETE FROM {dbh.cids_table} WHERE "
-                    f'cid="{chosen_cid}" and uid="{userid}"'
-                )
-                dbh.db.commit()
+                dbh.rm_cid(userid, chosen_cid)
                 if len(dbh.get_cids(userid)) < 1:  # < in case set to -1
                     # create new cid
                     dbh.add_cid(userid, generate_cid(), 0)
@@ -277,8 +273,7 @@ async def update_cid(
             return 0
 
     # check if new cid is repetitive
-    dbh.cur.execute(f"SELECT cid FROM {dbh.cids_table}")
-    all_the_cids = [item[0] for item in dbh.cur.fetchall()]
+    all_the_cids = [item[0] for item in dbh.get_all_cids()]
     if new_cid in all_the_cids:
         await message.reply_text(
             "این آیدی برداشته شده. آیدی دیگه ای بفرس",
@@ -288,10 +283,7 @@ async def update_cid(
 
     # update
     try:
-        dbh.cur.execute(
-            f"UPDATE {dbh.cids_table} SET cid=%s WHERE cid='{chosen_cid}'", (new_cid,)
-        )
-        dbh.db.commit()
+        dbh.set_cid(new_cid, chosen_cid)
         cids = dbh.get_cids(userid)
         try:
             await bot.edit_message_text(

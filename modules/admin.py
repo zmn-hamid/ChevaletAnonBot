@@ -52,8 +52,7 @@ async def admin_cmd(
 
         # number of users
         elif arg1 == "user-count":
-            dbh.cur.execute(f"SELECT COUNT(*) FROM {dbh.users_table}")
-            await message.reply_text(f"{dbh.cur.fetchone()[0]} users")
+            await message.reply_text(f"{dbh.user_count()} users")
 
         # user status -> banned cid limit stats
         elif arg1 == "stats":
@@ -77,11 +76,7 @@ async def admin_cmd(
             elif text[1] == "set":
                 uid = text[2]
                 limit = int(text[3])
-                dbh.cur.execute(
-                    f'UPDATE {dbh.users_table} SET cid_limit=%s WHERE uid="{uid}"',
-                    (limit,),
-                )
-                dbh.db.commit()
+                dbh.set_cid_limit(uid, limit)
             return await message.reply_text("done.")
 
         # user hyperlink option

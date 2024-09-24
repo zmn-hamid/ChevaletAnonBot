@@ -100,10 +100,7 @@ async def update_name(
             f"نکته: قالب بندی یه مقدار به تعداد حروفت اضافه میکنه"
         )
         return 0
-    dbh.cur.execute(
-        f'UPDATE {dbh.users_table} SET name=%s WHERE uid="{userid}"', (new_name,)
-    )
-    dbh.db.commit()
+    dbh.set_name(userid, new_name)
     try:
         await bot.delete_message(userid, context.user_data["og_mid"])
     except:
@@ -153,19 +150,11 @@ async def warning_clbk(
         _, activation_text = data.split("|", 1)
         if activation_text:
             if activation_text == "activate":
-                dbh.cur.execute(
-                    f'UPDATE {dbh.users_table} SET warning=%s WHERE uid="{userid}"',
-                    (True,),
-                )
-                dbh.db.commit()
+                dbh.set_warning(userid, True)
                 await clbk.answer("اخطار فعال شد")
                 await _warning_text()
             else:
-                dbh.cur.execute(
-                    f'UPDATE {dbh.users_table} SET warning=%s WHERE uid="{userid}"',
-                    (False,),
-                )
-                dbh.db.commit()
+                dbh.set_warning(userid, False)
                 await clbk.answer("اخطار غیرفعال شد")
                 await _warning_text()
         else:
@@ -422,10 +411,7 @@ async def unblock_all_clbk(
     if (clbk := update.callback_query) and (data := clbk.data):
         _, activation_text = data.split("|", 1)
         if activation_text:
-            dbh.cur.execute(
-                f'DELETE FROM {dbh.blocks_table} WHERE blocker_uid="{userid}"'
-            )
-            dbh.db.commit()
+            dbh.unblock_all(userid)
             await clbk.edit_message_text(
                 "همه با موفقیت آنبلاک شدن",
                 reply_markup=InlineKeyboardMarkup([[SETTINGS_MARKUP["back-to-menu"]]]),

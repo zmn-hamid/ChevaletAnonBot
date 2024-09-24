@@ -16,8 +16,8 @@ from mysql.connector.errors import IntegrityError, OperationalError, Programming
 from typing import List
 
 
-class DBHandler:
-    """# handles the database"""
+class DB_Base:
+    """base for db handler"""
 
     def __init__(self) -> None:
         # table names
@@ -66,6 +66,10 @@ class DBHandler:
                 cid VARCHAR(255) NOT NULL UNIQUE);
             """
         )
+
+
+class DBHandler(DB_Base):
+    """# handles the database"""
 
     def add_user(self, uid: str, name, retry_on_DBError: bool = True) -> bool:
         """
@@ -135,6 +139,13 @@ class DBHandler:
         except IntegrityError:
             return False
 
+    def unblock_all(self, userid: str) -> None:
+        """block or unblock user"""
+        self.cur.execute(
+            f'DELETE FROM {self.blocks_table} WHERE blocker_uid="{userid}"'
+        )
+        self.db.commit()
+
     def is_blocked(self, blocker_uid: str, blocked_uid: str) -> bool:
         """checks if a user is blocked"""
         self.cur.execute(
@@ -178,12 +189,22 @@ class DBHandler:
             try_counter += 1
             return self.add_cid(uid, cid, try_counter)
 
+    def rm_cid(self, uid: str, cid: str) -> bool:
+        self.cur.execute(
+            f'DELETE FROM {self.cids_table} WHERE cid="{cid}" and uid="{uid}"'
+        )
+        self.db.commit()
+
     def get_cids(self, uid: str) -> List[str]:
         """get all the cids of a user"""
         self.cur.execute(
             f'SELECT cid FROM {self.cids_table} WHERE uid="{uid}" ' "ORDER BY id ASC"
         )
         return [item[0] for item in self.cur.fetchall()]
+
+    def get_all_cids(self) -> List[str]:
+        self.cur.execute(f"SELECT cid FROM {self.cids_table}")
+        return self.cur.fetchall()
 
     def get_name(self, uid: str) -> str | None:
         """gets the preview name of a user"""
@@ -232,36 +253,62 @@ class DBHandler:
         self.cur.execute(f'SELECT audio_tag FROM {self.users_table} WHERE uid="{uid}"')
         return self.cur.fetchone()[0]
 
+    def set_name(self, uid: str, name: str) -> None:
+        self.cur.execute(
+            f'UPDATE {self.users_table} SET name=%s WHERE uid="{uid}"', (name,)
+        )
+        self.db.commit()
+
+    def set_cid(self, new_cid: str, cid: str) -> None:
+        self.cur.execute(
+            f"UPDATE {self.cids_table} SET cid=%s WHERE cid='{cid}'", (new_cid,)
+        )
+        self.db.commit()
+
+    def set_cid_limit(self, uid: str, cid_limit: int) -> None:
+        self.cur.execute(
+            f'UPDATE {self.users_table} SET cid_limit=%s WHERE uid="{uid}"',
+            (cid_limit,),
+        )
+        self.db.commit()
+
+    def set_warning(self, uid: str, warning: str) -> None:
+        self.cur.execute(
+            f'UPDATE {self.users_table} SET warning=%s WHERE uid="{uid}"',
+            (warning,),
+        )
+        self.db.commit()
+
     def set_seen_option(self, uid: str, seen_option: bool) -> None:
         """sets seen_option for user"""
         try:
-            dbh.cur.execute(
+            self.cur.execute(
                 f'UPDATE {self.users_table} SET seen_option=%s WHERE uid="{uid}"',
                 (seen_option,),
             )
-            dbh.db.commit()
+            self.db.commit()
         except IntegrityError:
             pass
 
     def set_custom_tag(self, uid: str, custom_tag: str) -> None:
         """sets custom tag for user"""
         try:
-            dbh.cur.execute(
+            self.cur.execute(
                 f'UPDATE {self.users_table} SET custom_tag=%s WHERE uid="{uid}"',
                 (custom_tag,),
             )
-            dbh.db.commit()
+            self.db.commit()
         except IntegrityError:
             pass
 
     def set_audio_tag(self, uid: str, audio_tag: str) -> None:
         """sets audio tag for user"""
         try:
-            dbh.cur.execute(
+            self.cur.execute(
                 f'UPDATE {self.users_table} SET audio_tag=%s WHERE uid="{uid}"',
                 (audio_tag,),
             )
-            dbh.db.commit()
+            self.db.commit()
         except IntegrityError:
             pass
 
@@ -271,6 +318,10 @@ class DBHandler:
             f'SELECT is_banned, cid_limit FROM {self.users_table} WHERE uid="{uid}"'
         )
         return self.cur.fetchone()
+
+    def user_count(self):
+        self.cur.execute(f"SELECT COUNT(*) FROM {self.users_table}")
+        return self.cur.fetchone()[0]
 
 
 dbh = DBHandler()
