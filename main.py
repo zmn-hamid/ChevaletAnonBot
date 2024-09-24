@@ -52,7 +52,7 @@ application.add_error_handler(error_handler)
 job_queue.run_once(set_commands, 3)
 
 # renew sql connection every 8 minutes
-job_queue.run_repeating(renew_connection, 8 * 60)
+job_queue.run_repeating(renew_connection, 30 * 60)
 
 # starting the bot
 job_queue.run_once(log_bot_started, 2)
