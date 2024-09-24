@@ -33,7 +33,7 @@ async def other_messages(
     """# for unkown messages + send without link"""
     # send answer if it's replied to a sent message
     reply = message.reply_to_message
-    if reply and reply.from_user.id == bot.id:
+    if reply and reply.reply_markup and reply.from_user.id == bot.id:
         # check the message has "answer" in callback datas
         for row in reply.reply_markup.inline_keyboard:
             for button in row:
