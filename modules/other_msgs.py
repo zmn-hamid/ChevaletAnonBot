@@ -53,7 +53,9 @@ async def other_messages(
             channel = await bot.get_chat(external_reply.chat.id)
             if description := channel.description:
                 # check if link is in description and if yes, check what's the cid
-                if match := re.search(r"start=([A-Za-z0-9]+)", description):
+                if match := re.search(
+                    r"t.me/Chevalet_bot\?start=([A-Za-z0-9_-]+)", description
+                ):
                     context.user_data["target_cid"] = match.group(1)
                     context.user_data["reply_to"] = None
 

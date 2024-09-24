@@ -180,7 +180,7 @@ async def send_msg_template(
     target_uid = dbh.get_uid(target_cid)
 
     # check if target_cid was indeed valid
-    if target_uid is None:
+    if target_uid == None:
         await message.reply_html(
             "مخاطبت لینکش رو عوض کرده. باید از نو پیام بفرستی",
             reply_parameters=ReplyParameters(message.message_id),
