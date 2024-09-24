@@ -12,7 +12,7 @@ from modules.Global.log import logger
 
 # global imports
 import mysql.connector
-from mysql.connector.errors import IntegrityError, OperationalError
+from mysql.connector.errors import IntegrityError, OperationalError, ProgrammingError
 from typing import List
 
 
@@ -67,7 +67,7 @@ class DBHandler:
             """
         )
 
-    def add_user(self, uid: str, name, retry_on_OperationalError: bool = True) -> bool:
+    def add_user(self, uid: str, name, retry_on_DBError: bool = True) -> bool:
         """
         # adds user to the database
         the defaults:
@@ -93,14 +93,16 @@ class DBHandler:
             )
             self.db.commit()
             return True
-        except OperationalError as e:
-            if retry_on_OperationalError:
+        except (OperationalError, ProgrammingError) as e:
+            if retry_on_DBError:
+                try:
+                    self.cur.close()
+                except:
+                    pass
                 self.connect_db()
-                return self.add_user(
-                    uid=uid, name=name, retry_on_OperationalError=False
-                )
+                return self.add_user(uid=uid, name=name, retry_on_DBError=False)
             else:
-                logger.error(f"OperationalError: {e}")
+                logger.error(f"{e.__class__}: {e}")
                 raise Exception(str(e))
         except IntegrityError:
             return False
