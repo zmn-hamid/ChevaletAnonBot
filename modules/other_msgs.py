@@ -37,7 +37,7 @@ async def other_messages(
         # check the message has "answer" in callback datas
         for row in reply.reply_markup.inline_keyboard:
             for button in row:
-                if (data := button.callback_data).startswith("answer|"):
+                if (data := button.callback_data) and data.startswith("answer|"):
                     _, target_cid, target_mid = data.split("|")
 
                     context.user_data["target_cid"] = target_cid
