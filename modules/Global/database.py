@@ -337,4 +337,3 @@ class DBHandler(DB_Base):
 db_base = DB_Base()
 db_base.connect_db()
 db_base.make_tables()
-dbh = None

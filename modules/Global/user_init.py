@@ -1,5 +1,5 @@
 from telegram import Bot
-from modules.Global.database import dbh as dbh2, DBHandler
+from modules.Global.database import DBHandler
 from modules.Global.cid_gen import generate_cid
 
 

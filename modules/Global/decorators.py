@@ -10,21 +10,47 @@ from modules.Global.user_init import init_user
 
 # global imports
 from typing import Callable
+from mysql.connector.errors import Error as mysql_Error
+from mysql.connector.cursor import MySQLCursor
 
 
 def prep_function(func) -> Callable:
     """prepare user and handle forbidden error"""
 
     async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        # only handle updates from private chats
+        if update.effective_chat.type in ["channel", "group"]:
+            return ConversationHandler.END
         try:
             with db_base.connection_pool.get_connection() as conn:
                 with conn.cursor() as cur:
+                    cur: MySQLCursor
                     # get db
                     dbh = DBHandler(cur, conn)
 
-                    # only handle updates from private chats
-                    if update.effective_chat.type in ["channel", "group"]:
-                        return ConversationHandler.END
+                    # check connection
+                    if not context.user_data.get("no db check") == True:
+                        try:
+                            dbh.user_count()
+                        except mysql_Error as e:
+                            if e.errno in [2013, 2055]:  # Lost connection error
+                                logger.info("Lost connection to MySQL, reconnecting...")
+                                try:
+                                    db_base.connection_pool._remove_connections()
+                                except:
+                                    pass
+                                try:
+                                    cur.close()
+                                except:
+                                    pass
+                                try:
+                                    db_base.connect_db()
+                                    context.user_data["no db check"] = True
+                                    return await wrapper(update, context)
+                                except:
+                                    pass
+                            else:
+                                raise
 
                     message: Message = update.effective_message
                     userid = str(update.effective_user.id)
@@ -36,6 +62,7 @@ def prep_function(func) -> Callable:
                         await message.reply_text(
                             "مشکلی در ساخت لینک ناشناس بوجود اومد. دوباره تلاش کن و اگه موفق نشدی، قبل از استفاده از بات با پشتیبانی تماس بگیر"
                         )
+                        context.user_data.clear()
                         return ConversationHandler.END
 
                     if dbh.is_banned(userid):
@@ -45,6 +72,7 @@ def prep_function(func) -> Callable:
                         context.user_data.clear()
                         return ConversationHandler.END
 
+                    context.user_data["no db check"] = False
                     return await func(update, context, message, userid, bot, dbh)
         except TimedOut:
             return
@@ -107,7 +135,7 @@ def handle_target_send(message: Message, external_reply: Message):
                     await message.reply_html("مخاطبت بات رو بلاک کرده")
                     return "del+0"
                 else:
-                    raise Forbidden(str(e)) from e
+                    raise
             except BadRequest as e:
                 if str(e) == "Message to be replied not found":
                     if external_reply:
@@ -136,7 +164,7 @@ def handle_target_send(message: Message, external_reply: Message):
                     )
                     return "del+0"
                 else:
-                    raise BadRequest(str(e)) from e
+                    raise
 
         return wrapper
 

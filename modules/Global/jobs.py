@@ -5,6 +5,8 @@ from telegram.ext import *
 # project imports
 from modules.Global.log import logger
 from modules.Global.database import DBHandler, db_base
+from mysql.connector.errors import Error as mysql_Error
+from mysql.connector.cursor import MySQLCursor
 
 # global imports
 import os
@@ -46,6 +48,33 @@ async def delete_message(context: CallbackContext) -> None:
         await context.job.data.get("message").delete()
     except:
         pass
+
+
+async def check_connection(context: CallbackContext) -> None:
+    """check connection to db and reconnect if needed"""
+    try:
+        with db_base.connection_pool.get_connection() as conn:
+            with conn.cursor() as cur:
+                dbh = DBHandler(cur, conn)
+                try:
+                    dbh.user_count()
+                except mysql_Error as e:
+                    if e.errno in [2013, 2055]:  # Lost connection error
+                        logger.info("Lost connection to MySQL, reconnecting...")
+                        try:
+                            db_base.connection_pool._remove_connections()
+                        except:
+                            pass
+                        try:
+                            cur.close()
+                        except:
+                            pass
+                        try:
+                            db_base.connect_db()
+                        except:
+                            pass
+    except Exception as e:
+        logger.error(f"error while checking connection: {e}")
 
 
 async def send_mass_msg(context: CallbackContext) -> None:
