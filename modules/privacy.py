@@ -4,6 +4,7 @@ from telegram.ext import *
 from telegram.constants import ParseMode as PM
 
 # project imports
+from modules.Global.database import DBHandler
 from modules.Global.decorators import prep_function
 from modules.Global.fetch_texts import fetch_text
 
@@ -18,6 +19,7 @@ async def privacy_cmd(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> None:
     """# sends priacy and security help text"""
     await message.reply_html(

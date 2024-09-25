@@ -7,6 +7,7 @@ from telegram.error import TimedOut
 
 # project imports
 from config import BOT_TOKEN
+
 from modules.start import start_cmd_handler, delete_message_handler
 from modules.my_links import mylinks_handler
 from modules.admin import admin_handler
@@ -16,7 +17,7 @@ from modules.privacy import privacy_handler
 from modules.help import help_handler, more_links_clbk_handler
 from modules.other_msgs import other_messages_handler
 
-from modules.Global.jobs import set_commands, renew_connection, log_bot_started
+from modules.Global.jobs import set_commands, log_bot_started
 from modules.Global.error_handler import error_handler
 
 
@@ -40,7 +41,7 @@ for handler in [
     admin_handler,
     # myuid
     myuid_handler,
-    # other messages
+    # # other messages
     other_messages_handler,
 ]:
     application.add_handler(handler)
@@ -50,9 +51,6 @@ application.add_error_handler(error_handler)
 
 # updating the bot's command menu
 job_queue.run_once(set_commands, 3)
-
-# renew sql connection every 8 minutes
-job_queue.run_repeating(renew_connection, 30 * 60)
 
 # starting the bot
 job_queue.run_once(log_bot_started, 2)

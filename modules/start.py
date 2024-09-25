@@ -3,12 +3,11 @@ from telegram import *
 from telegram.ext import *
 from telegram.constants import ParseMode as PM
 from telegram.warnings import PTBUserWarning
-from telegram.error import BadRequest, Forbidden
 
 # project imports
 from config import REPORT_CHAT_ID, SUPPORT_ADMIN, DELETION_TIMEOUT
 from modules.Global.log import logger
-from modules.Global.database import dbh
+from modules.Global.database import DBHandler
 from modules.Global.get_user import get_username, href_user, get_link_username
 from modules.Global.decorators import (
     prep_function,
@@ -52,6 +51,7 @@ async def start_cmd(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> None | int:
     """
     # Start command
@@ -161,6 +161,7 @@ async def send_msg_template(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> int:
     target_cid = context.user_data.get("target_cid")
     target_mid = context.user_data.get("reply_to")  # None when not answer
@@ -389,12 +390,13 @@ async def send_msg(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> int:
     """
     # message sending fallback
     forwards the given message to the user (without sender)
     """
-    return await send_msg_template(update, context, message, userid, bot)
+    return await send_msg_template(update, context, message, userid, bot, dbh)
 
 
 @prep_function
@@ -404,6 +406,7 @@ async def answer(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> int:
     """
     # asnwer callback
@@ -436,6 +439,7 @@ async def seen(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> int:
     """tells the target that they saw their message (mark as seen)"""
     if (clbk := update.callback_query) and (data := clbk.data):
@@ -491,6 +495,7 @@ async def block(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> int:
     """
     # block using message button
@@ -538,6 +543,7 @@ async def alread_seen(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> int:
     """tell user the message is already seen so avoid doing it again"""
     await update.callback_query.answer("یبار سین زدم")
@@ -550,6 +556,7 @@ async def unblock(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> int:
     """
     # unblock using message button
@@ -597,6 +604,7 @@ async def report(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> int:
     """
     # reports the message to admins
@@ -638,6 +646,7 @@ async def cancel_all(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> int:
     """# cancel if other messages sent"""
     context.user_data.clear()
@@ -655,6 +664,7 @@ async def cancel_cmd(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> int:
     """# cancel if other messages sent"""
     context.user_data.clear()
@@ -672,6 +682,7 @@ async def delete_msg_clbk(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> int:
     """# delete the sent message on undo"""
     if (clbk := update.callback_query) and (data := clbk.data):
@@ -709,6 +720,7 @@ async def cancel(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> int:
     """# cancel"""
     context.user_data.clear()

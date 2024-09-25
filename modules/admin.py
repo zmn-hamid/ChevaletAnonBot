@@ -5,7 +5,7 @@ from telegram.constants import ParseMode as PM
 
 # project imports
 from config import ADMINS
-from modules.Global.database import dbh
+from modules.Global.database import DBHandler
 from modules.Global.get_user import get_link_username
 from modules.Global.decorators import prep_function
 from modules.Global.fetch_texts import fetch_text
@@ -25,6 +25,7 @@ async def admin_cmd(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> None:
     """# admin messages handler"""
     # check if it's admin

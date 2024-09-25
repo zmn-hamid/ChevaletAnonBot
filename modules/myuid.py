@@ -3,6 +3,7 @@ from telegram import *
 from telegram.ext import *
 
 # project imports
+from modules.Global.database import DBHandler
 from modules.Global.decorators import prep_function
 
 # end conversation
@@ -16,6 +17,7 @@ async def myuid_cmd(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> None:
     """
     # returns user id

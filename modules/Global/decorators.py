@@ -5,7 +5,7 @@ from telegram.error import Forbidden, BadRequest, TimedOut
 
 # project imports
 from modules.Global.log import logger
-from modules.Global.database import dbh
+from modules.Global.database import DBHandler, db_base
 from modules.Global.user_init import init_user
 
 # global imports
@@ -17,30 +17,35 @@ def prep_function(func) -> Callable:
 
     async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
-            # only handle updates from private chats
-            if update.effective_chat.type in ["channel", "group"]:
-                return ConversationHandler.END
+            with db_base.connection_pool.get_connection() as conn:
+                with conn.cursor() as cur:
+                    # get db
+                    dbh = DBHandler(cur, conn)
 
-            message: Message = update.effective_message
-            userid = str(update.effective_user.id)
-            bot = update.get_bot()
+                    # only handle updates from private chats
+                    if update.effective_chat.type in ["channel", "group"]:
+                        return ConversationHandler.END
 
-            # initialize user
-            output = await init_user(userid, bot)
-            if output == False:
-                await message.reply_text(
-                    "مشکلی در ساخت لینک ناشناس بوجود اومد. دوباره تلاش کن و اگه موفق نشدی، قبل از استفاده از بات با پشتیبانی تماس بگیر"
-                )
-                return ConversationHandler.END
+                    message: Message = update.effective_message
+                    userid = str(update.effective_user.id)
+                    bot = update.get_bot()
 
-            if dbh.is_banned(userid):
-                await message.reply_text(
-                    "از بات بن شدی. اگه فک میکنی این یه اشتباهه با ادمین صحبت کن"
-                )
-                context.user_data.clear()
-                return ConversationHandler.END
+                    # initialize user
+                    output = await init_user(userid, bot, dbh)
+                    if output == False:
+                        await message.reply_text(
+                            "مشکلی در ساخت لینک ناشناس بوجود اومد. دوباره تلاش کن و اگه موفق نشدی، قبل از استفاده از بات با پشتیبانی تماس بگیر"
+                        )
+                        return ConversationHandler.END
 
-            return await func(update, context, message, userid, bot)
+                    if dbh.is_banned(userid):
+                        await message.reply_text(
+                            "از بات بن شدی. اگه فک میکنی این یه اشتباهه با ادمین صحبت کن"
+                        )
+                        context.user_data.clear()
+                        return ConversationHandler.END
+
+                    return await func(update, context, message, userid, bot, dbh)
         except TimedOut:
             return
         except Forbidden as e:

@@ -11,8 +11,9 @@ from config import (
 from modules.Global.log import logger
 
 # global imports
-import mysql.connector
-from mysql.connector.errors import IntegrityError, OperationalError, ProgrammingError
+from mysql.connector.pooling import PooledMySQLConnection, MySQLConnectionPool
+from mysql.connector.cursor import MySQLCursor
+from mysql.connector.errors import IntegrityError
 from typing import List
 
 
@@ -25,53 +26,67 @@ class DB_Base:
         self.blocks_table = "blocks"
         self.cids_table = "cids"
 
-        # init runs
-        self.connect_db()
-        self.make_tables()
+        self.connection_pool: MySQLConnectionPool
+
+        # # init runs
+        # self.connect_db()
+        # self.make_tables()
 
     def connect_db(self) -> None:
         """connects to database"""
-        self.db = mysql.connector.connect(
-            host="localhost", user=DB_USER, password=DB_PASS, database=DB_NAME
+        self.connection_pool = MySQLConnectionPool(
+            pool_name="mypool",
+            pool_size=5,
+            pool_reset_session=True,
+            host="localhost",
+            database=DB_NAME,
+            user=DB_USER,
+            password=DB_PASS,
         )
-        self.cur = self.db.cursor()
 
     def make_tables(self) -> None:
         """creates the tables if they don't exist"""
-        self.cur.execute(
-            f"""CREATE TABLE IF NOT EXISTS {self.users_table} (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                uid VARCHAR(255) NOT NULL,
-                name VARCHAR(255) NOT NULL,
-                is_banned BOOLEAN NOT NULL,
-                warning BOOLEAN NOT NULL,
-                seen_option BOOLEAN NOT NULL,
-                cid_limit INT NOT NULL,
-                custom_tag VARCHAR(255),
-                audio_tag VARCHAR(255));
-            """
-        )
-        self.cur.execute(
-            f"""CREATE TABLE IF NOT EXISTS {self.blocks_table} (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                blocker_uid VARCHAR(255) NOT NULL,
-                blocked_uid VARCHAR(255) NOT NULL,
-                CONSTRAINT unique_pair UNIQUE (blocker_uid, blocked_uid));
-            """
-        )
-        self.cur.execute(
-            f"""CREATE TABLE IF NOT EXISTS {self.cids_table} (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                uid VARCHAR(255) NOT NULL,
-                cid VARCHAR(255) NOT NULL UNIQUE);
-            """
-        )
+        with self.connection_pool.get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    f"""CREATE TABLE IF NOT EXISTS {self.users_table} (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        uid VARCHAR(255) NOT NULL,
+                        name VARCHAR(255) NOT NULL,
+                        is_banned BOOLEAN NOT NULL,
+                        warning BOOLEAN NOT NULL,
+                        seen_option BOOLEAN NOT NULL,
+                        cid_limit INT NOT NULL,
+                        custom_tag VARCHAR(255),
+                        audio_tag VARCHAR(255));
+                    """
+                )
+                cur.execute(
+                    f"""CREATE TABLE IF NOT EXISTS {self.blocks_table} (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        blocker_uid VARCHAR(255) NOT NULL,
+                        blocked_uid VARCHAR(255) NOT NULL,
+                        CONSTRAINT unique_pair UNIQUE (blocker_uid, blocked_uid));
+                    """
+                )
+                cur.execute(
+                    f"""CREATE TABLE IF NOT EXISTS {self.cids_table} (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        uid VARCHAR(255) NOT NULL,
+                        cid VARCHAR(255) NOT NULL UNIQUE);
+                    """
+                )
 
 
 class DBHandler(DB_Base):
     """# handles the database"""
 
-    def add_user(self, uid: str, name, retry_on_DBError: bool = True) -> bool:
+    def __init__(self, cur: MySQLCursor, conn: PooledMySQLConnection) -> None:
+        super().__init__()
+        self.cur = cur
+        self.db = conn
+
+    def add_user(self, uid: str, name) -> bool:
         """
         # adds user to the database
         the defaults:
@@ -96,18 +111,8 @@ class DBHandler(DB_Base):
                 ),
             )
             self.db.commit()
+
             return True
-        except (OperationalError, ProgrammingError) as e:
-            if retry_on_DBError:
-                try:
-                    self.cur.close()
-                except:
-                    pass
-                self.connect_db()
-                return self.add_user(uid=uid, name=name, retry_on_DBError=False)
-            else:
-                logger.error(f"{e.__class__}: {e}")
-                raise Exception(str(e))
         except IntegrityError:
             return False
 
@@ -194,6 +199,11 @@ class DBHandler(DB_Base):
             f'DELETE FROM {self.cids_table} WHERE cid="{cid}" and uid="{uid}"'
         )
         self.db.commit()
+
+    def get_all_uids(self, uid: str, cid: str) -> List[List[str]]:
+        """returns all the uids"""
+        self.cur.execute(f"SELECT uid FROM {db_base.users_table}")
+        return self.cur.fetchall()
 
     def get_cids(self, uid: str) -> List[str]:
         """get all the cids of a user"""
@@ -324,4 +334,7 @@ class DBHandler(DB_Base):
         return self.cur.fetchone()[0]
 
 
-dbh = DBHandler()
+db_base = DB_Base()
+db_base.connect_db()
+db_base.make_tables()
+dbh = None

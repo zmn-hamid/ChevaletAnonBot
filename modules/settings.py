@@ -5,7 +5,7 @@ from telegram.constants import ParseMode as PM
 
 # project imports
 from config import MAX_NAME_LENGTH
-from modules.Global.database import dbh
+from modules.Global.database import DBHandler
 from modules.Global.decorators import prep_function
 from modules.Global.fetch_texts import fetch_text
 from modules.Global.reply_markups import SETTINGS_MARKUP
@@ -22,6 +22,7 @@ async def settings_cmd_clbk(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> None:
     """sends settings help text"""
     if update.callback_query:
@@ -43,6 +44,7 @@ async def reply_quote_clbk(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> None:
     """# unblocks all the blocked users"""
     if (clbk := update.callback_query) and (data := clbk.data):
@@ -67,6 +69,7 @@ async def change_name(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> int:
     """# sends changing name help text"""
     if (clbk := update.callback_query) and (data := clbk.data):
@@ -91,6 +94,7 @@ async def update_name(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> int:
     """# updates user's preview name"""
     new_name = message.text_html
@@ -124,6 +128,7 @@ async def warning_clbk(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> None:
     """# warning settings for user"""
     if (clbk := update.callback_query) and (data := clbk.data):
@@ -169,6 +174,7 @@ async def easier_answer_clbk(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> None:
     """# unblocks all the blocked users"""
     if (clbk := update.callback_query) and (data := clbk.data):
@@ -193,6 +199,7 @@ async def seen_settings_clbk(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> None:
     """# warning settings for user"""
     if (clbk := update.callback_query) and (data := clbk.data):
@@ -238,6 +245,7 @@ async def custom_tag(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> int:
     """
     # custom tag help text
@@ -267,6 +275,7 @@ async def update_custom_tag(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> int:
     """# updates user's custom tag"""
     new_tag = message.text_html
@@ -302,6 +311,7 @@ async def remove_custom_tag(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> int:
     """# removes the custom tag of user"""
     dbh.set_custom_tag(userid, None)
@@ -323,6 +333,7 @@ async def audio_tag(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> int:
     """# audio tag help text"""
     if (clbk := update.callback_query) and (data := clbk.data):
@@ -350,6 +361,7 @@ async def update_audio_tag(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> int:
     """# updates user's audio tag"""
     new_tag = message.text_html
@@ -385,6 +397,7 @@ async def remove_audio_tag(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> int:
     """# removes user audio tag"""
     dbh.set_audio_tag(userid, None)
@@ -406,6 +419,7 @@ async def unblock_all_clbk(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> None:
     """# unblocks all the blocked users"""
     if (clbk := update.callback_query) and (data := clbk.data):
@@ -444,6 +458,7 @@ async def unblock_me_clbk(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> None:
     """# unblock me help text"""
     msg: Message = await message.reply_text(
@@ -462,6 +477,7 @@ async def cancel_all(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> int:
     """# cancel other messages sent while in convo"""
     await message.reply_text(
@@ -479,6 +495,7 @@ async def cancel_cmd(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> int:
     """# cancel if other messages sent"""
     context.user_data.clear()
@@ -496,6 +513,7 @@ async def what_is_formatting(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> int:
     """# sends help text for what is text formatting"""
     await update.callback_query.answer(

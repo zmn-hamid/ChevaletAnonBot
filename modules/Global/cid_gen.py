@@ -1,6 +1,3 @@
-# project imports
-from modules.Global.database import dbh
-
 # global imports
 from shortuuid import ShortUUID as suid
 import time, random, string

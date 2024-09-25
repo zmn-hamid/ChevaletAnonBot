@@ -5,6 +5,7 @@ from telegram.constants import ParseMode as PM
 
 # project imports
 from config import SUPPORT_ADMIN
+from modules.Global.database import DBHandler
 from modules.Global.decorators import prep_function
 from modules.Global.fetch_texts import fetch_text
 
@@ -16,6 +17,7 @@ async def help_cmd(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> None:
     """# sends priacy and security help text"""
     await message.reply_html(
@@ -32,6 +34,7 @@ async def more_links_clbk(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> None:
     """sends more links help text"""
     if (clbk := update.callback_query) and (data := clbk.data):

@@ -5,7 +5,7 @@ from telegram.ext import *
 # project imports
 from modules.start import send_msg_template
 from modules.Global.decorators import prep_function
-from modules.Global.database import dbh
+from modules.Global.database import DBHandler
 
 # global imports
 import re
@@ -29,6 +29,7 @@ async def other_messages(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> None:
     """# for unkown messages + send without link"""
     # send answer if it's replied to a sent message
@@ -43,7 +44,7 @@ async def other_messages(
                     context.user_data["target_cid"] = target_cid
                     context.user_data["reply_to"] = target_mid
 
-                    await send_msg_template(update, context, message, userid, bot)
+                    await send_msg_template(update, context, message, userid, bot, dbh)
                     return END
 
     # send to channel if replied to
@@ -59,7 +60,7 @@ async def other_messages(
                     context.user_data["target_cid"] = match.group(1)
                     context.user_data["reply_to"] = None
 
-                    await send_msg_template(update, context, message, userid, bot)
+                    await send_msg_template(update, context, message, userid, bot, dbh)
                     return END
                 else:
                     return await message.reply_text(

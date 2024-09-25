@@ -6,7 +6,7 @@ from telegram.warnings import PTBUserWarning
 
 # project imports
 from config import SELLER_ADMIN, MAX_CID_LENGTH, MIN_CID_LENGTH, ALLOWED_CID_CHARS
-from modules.Global.database import dbh
+from modules.Global.database import DBHandler
 from modules.Global.decorators import prep_function
 from modules.Global.get_user import user_links_text, get_user_links
 from modules.Global.cid_gen import generate_cid
@@ -31,6 +31,7 @@ async def my_links_cmd(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> None:
     """# returns users cids"""
     if update.callback_query:
@@ -53,6 +54,7 @@ async def add_link_clbk(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> None:
     """# adds a cid"""
     if clbk := update.callback_query:
@@ -85,6 +87,7 @@ async def remove_link_clbk(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> None:
     """# removes a cid"""
     if (clbk := update.callback_query) and (data := clbk.data):
@@ -195,6 +198,7 @@ async def change_link_clbk(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> int:
     """# change cid selection"""
     if (clbk := update.callback_query) and (data := clbk.data):
@@ -249,6 +253,7 @@ async def update_cid(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> int:
     """# changes the cid"""
     new_cid = message.text
@@ -325,6 +330,7 @@ async def what_is_cid(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> int:
     """# explanation for cid"""
     await message.reply_html(fetch_text("cid_explanation"))
@@ -337,6 +343,7 @@ async def others_while_sending(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> int:
     """# if other messages sent"""
     context.user_data.clear()
@@ -354,6 +361,7 @@ async def cancel_cmd(
     message: Message,
     userid: str,
     bot: Bot,
+    dbh: DBHandler,
 ) -> int:
     """# cancel if other messages sent"""
     context.user_data.clear()
