@@ -89,7 +89,7 @@ async def send_mass_msg(context: CallbackContext) -> None:
             await msg.reply_text("starting to send mass msg...")
 
             # send to users
-            for item in dbh:
+            for item in dbh.get_all_uids():
                 uid = item[0]
                 try:
                     await msg.reply_to_message.copy(uid)
@@ -110,3 +110,6 @@ async def send_mass_msg(context: CallbackContext) -> None:
                     )
                 await msg.reply_document(open(logfile, "rb"))
                 os.remove(logfile)
+
+            # notify
+            await msg.reply_text("sent the message to everyone...")

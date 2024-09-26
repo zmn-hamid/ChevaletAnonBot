@@ -200,9 +200,9 @@ class DBHandler(DB_Base):
         )
         self.db.commit()
 
-    def get_all_uids(self, uid: str, cid: str) -> List[List[str]]:
+    def get_all_uids(self) -> List[List[str]]:
         """returns all the uids"""
-        self.cur.execute(f"SELECT uid FROM {db_base.users_table}")
+        self.cur.execute(f"SELECT uid FROM {self.users_table}")
         return self.cur.fetchall()
 
     def get_cids(self, uid: str) -> List[str]:

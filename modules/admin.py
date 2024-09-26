@@ -47,6 +47,7 @@ async def admin_cmd(
                 return await message.reply_html(
                     "send <code>/admin send-mass-msg YES</code> if you're sure",
                 )
+            await message.reply_text("queued for 3 seconds later...")
             context.application.job_queue.run_once(
                 send_mass_msg, 3, {"message": message}
             )
