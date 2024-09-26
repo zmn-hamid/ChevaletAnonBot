@@ -112,4 +112,4 @@ async def send_mass_msg(context: CallbackContext) -> None:
                 os.remove(logfile)
 
             # notify
-            await msg.reply_text("sent the message to everyone...")
+            await msg.reply_text("sent the message to everyone.")
