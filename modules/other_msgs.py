@@ -1,6 +1,7 @@
 # telegram imports
 from telegram import *
 from telegram.ext import *
+from telegram.error import Forbidden
 
 # project imports
 from modules.start import send_msg_template
@@ -52,31 +53,56 @@ async def other_messages(
     if external_reply:
         try:
             channel = await bot.get_chat(external_reply.chat.id)
-            if description := channel.description:
-                # check if link is in description and if yes, check what's the cid
-                if match := re.search(
-                    r"t.me/Chevalet_bot\?start=([A-Za-z0-9_-]+)", description
-                ):
-                    context.user_data["target_cid"] = match.group(1)
-                    context.user_data["reply_to"] = None
-
-                    await send_msg_template(update, context, message, userid, bot, dbh)
-                    return END
-                else:
-                    return await message.reply_text(
-                        "چنل مد نظرت لینک ناشناسشو تو بایو نذاشته",
-                        reply_parameters=ReplyParameters(message.message_id),
-                    )
-            else:
-                return await message.reply_text(
-                    "چنل مد نظرت بایو نداره",
-                    reply_parameters=ReplyParameters(message.message_id),
-                )
-        except:
+        except Forbidden:
             return await message.reply_text(
                 "چنل مد نظرت پرایوته",
                 reply_parameters=ReplyParameters(message.message_id),
             )
+        bio = channel.description
+        pin = channel.pinned_message
+        pattern = rf"t.me/{bot.username}\?start=([A-Za-z0-9_-]+)"
+        target_cid: str = None
+        # check if link is in description and if yes, check what's the cid
+        if bio and (match := re.search(pattern, bio)):
+            target_cid = match.group(1)
+
+        elif pin and (entities := pin.entities):
+            for entt in entities:
+                entt: MessageEntity
+                if entt.url and (match := re.search(pattern, entt.url)):
+                    target_cid = match.group(1)
+
+        elif pin and (entities := pin.caption_entities):
+            for entt in entities:
+                entt: MessageEntity
+                if entt.url and (match := re.search(pattern, entt.url)):
+                    target_cid = match.group(1)
+
+        elif (
+            pin
+            and (reply_markup := pin.reply_markup)
+            and (inline_keyboard := reply_markup.inline_keyboard)
+        ):
+            for row in inline_keyboard:
+                for col in row:
+                    if col.url and (match := re.search(pattern, col.url)):
+                        target_cid = match.group(1)
+
+        else:
+            return await message.reply_text(
+                "چنل مدنظرت لینک ناشناسی توی بایو یا پیام پین شده ش نذاشته",
+                reply_parameters=ReplyParameters(message.message_id),
+            )
+
+        if not target_cid:
+            return await message.reply_text(
+                "لینک ناشناسی توی بایو (یا پیامِ پین شده) ی چنل مدنظرت پیدا نکردم",
+                reply_parameters=ReplyParameters(message.message_id),
+            )
+        context.user_data["target_cid"] = target_cid
+        context.user_data["reply_to"] = None
+        await send_msg_template(update, context, message, userid, bot, dbh)
+        return END
 
     # other messages
     if message.text and "/cancel" in message.text.split():
