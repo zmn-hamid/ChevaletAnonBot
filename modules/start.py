@@ -190,32 +190,6 @@ async def send_msg_template(
     # so the reply markup won't have the uid inside it, for extra privacy
     sender_cid = dbh.get_cids(userid)[0]
 
-    # sending message to target
-    target_cids = dbh.get_cids(target_uid)
-    cid_idx_text = ""
-    msg_type_text = "پیامِ"
-    ## no target uid means not an answer
-    if target_mid:
-        msg_type_text = "ریپلایِ"
-    elif len(target_cids) > 1:
-        ### notify user if target has >1 cid
-        cid_idx_text = f" با لینک {target_cids.index(target_cid) + 1} ({target_cid})"
-
-    @handle_target_send(message=message, external_reply=external_reply)
-    async def send_notif():
-        return await bot.send_message(
-            target_uid,
-            f"{msg_type_text} جدید{cid_idx_text}:",
-            reply_parameters=ReplyParameters(target_mid) if target_mid else None,
-        )
-
-    output: Message | str = await send_notif()
-    if type(output) == Message:
-        notify_msg = output
-    else:
-        return output
-    context.user_data.get("wrapper_list", []).append(notify_msg)
-
     ## calculate reply and quote
     reply_to_chat, reply_to_mid, quote_text, quote_position = None, None, None, None
     if external_reply:
@@ -250,6 +224,41 @@ async def send_msg_template(
                 None,
                 None,
             )
+
+    # sending notif to target
+    target_cids = dbh.get_cids(target_uid)
+
+    @handle_target_send(message=message, external_reply=external_reply)
+    async def send_notif():
+        cid_idx_text = ""
+        msg_type_text = "پیامِ"
+        # no target uid means not an answer
+        if target_mid:
+            msg_type_text = "ریپلایِ"
+        elif len(target_cids) > 1:
+            ## notify user if target has >1 cid
+            cid_idx_text = (
+                f" با لینک {target_cids.index(target_cid) + 1} ({target_cid})"
+            )
+        # sending notify
+        return await bot.send_message(
+            target_uid,
+            f"{msg_type_text} جدید{cid_idx_text}:",
+            reply_parameters=(ReplyParameters(target_mid) if target_mid else None),
+        )
+
+    notify_msg: Message = None
+    if (len(target_cids) > 1 and not target_mid) or (
+        target_mid and message.external_reply
+    ):
+        notify_msg: Message = await send_notif()
+        reply_to_chat, reply_to_mid, quote_text, quote_position = (
+            None,
+            notify_msg.message_id,
+            None,
+            None,
+        )
+        context.user_data.get("wrapper_list", []).append(notify_msg)
 
     ## calculate reply_markup
     reply_markup_keyboard = [
@@ -310,7 +319,9 @@ async def send_msg_template(
                     [
                         InlineKeyboardButton(
                             "پاکش کننن",
-                            callback_data=f"delete|{target_cid}|{copied_message_id.message_id}|{notify_msg.message_id}",
+                            callback_data=f"delete|{target_cid}|"
+                            f"{copied_message_id.message_id}|"
+                            f"{notify_msg.message_id if notify_msg else None}",
                         ),
                     ],
                 ]
@@ -689,8 +700,16 @@ async def delete_msg_clbk(
         _, target_cid, copied_message_id, announce_mid = data.split("|")
         # delete the sent message
         try:
-            await bot.delete_messages(
-                dbh.get_uid(target_cid), [copied_message_id, announce_mid]
+            await bot.delete_message(
+                dbh.get_uid(target_cid),
+                copied_message_id,
+            )
+        except:
+            pass
+        try:
+            await bot.delete_message(
+                dbh.get_uid(target_cid),
+                announce_mid,
             )
         except:
             pass

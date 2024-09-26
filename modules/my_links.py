@@ -110,6 +110,7 @@ async def remove_link_clbk(
                     + [[MYLINKS_MARKUP["back-to-menu"]]]
                 ),
                 parse_mode=PM.HTML,
+                disable_web_page_preview=True,
             )
 
         elif len(data_split) == 2:
@@ -188,6 +189,7 @@ async def remove_link_clbk(
                         + [[MYLINKS_MARKUP["back-to-menu"]]]
                     ),
                     parse_mode=PM.HTML,
+                    disable_web_page_preview=True,
                 )
 
 

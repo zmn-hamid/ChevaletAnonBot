@@ -35,18 +35,25 @@ async def other_messages(
     """# for unkown messages + send without link"""
     # send answer if it's replied to a sent message
     reply = message.reply_to_message
-    if reply and reply.reply_markup and reply.from_user.id == bot.id:
-        # check the message has "answer" in callback datas
-        for row in reply.reply_markup.inline_keyboard:
-            for button in row:
-                if (data := button.callback_data) and data.startswith("answer|"):
-                    _, target_cid, target_mid = data.split("|")
+    if reply:
+        if reply.reply_markup and reply.from_user.id == bot.id:
+            # check the message has "answer" in callback datas
+            for row in reply.reply_markup.inline_keyboard:
+                for button in row:
+                    if (data := button.callback_data) and data.startswith("answer|"):
+                        _, target_cid, target_mid = data.split("|")
 
-                    context.user_data["target_cid"] = target_cid
-                    context.user_data["reply_to"] = target_mid
+                        context.user_data["target_cid"] = target_cid
+                        context.user_data["reply_to"] = target_mid
 
-                    await send_msg_template(update, context, message, userid, bot, dbh)
-                    return END
+                        await send_msg_template(
+                            update, context, message, userid, bot, dbh
+                        )
+                        return END
+        return await message.reply_text(
+            "اگه میخوای جواب بدی، باید خود پیام ناشناس رو ریپلای کنی. اونی که زیرش دکمه های شیشه ای هست",
+            reply_parameters=ReplyParameters(message.message_id),
+        )
 
     # send to channel if replied to
     external_reply = message.external_reply
