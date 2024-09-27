@@ -142,12 +142,9 @@ async def start_cmd(
             context.user_data["target_cid"] = target_cid
             context.user_data["reply_to"] = None
 
-            if target_uid == userid:
-                await message.reply_text(
-                    "میخوای با خودت صحبت کنی؟ :) عب نداره راحت باش"
-                )
             await message.reply_html(
                 (
+                    f'{"میخوای با خودت صحبت کنی؟ :) عب نداره راحت باش." if target_uid == userid else ''}\n'
                     f"به {dbh.get_name(target_uid)} وصل شدی. پیامتو بفرست\n\n"
                     f"<blockquote>میدونستی میتونی بدون استفاده از لینک، فقط با ریپلای کردن به کانال پیام بدی؟ منوی قابلیت ها و تنظیمات رو چک کن ؛)</blockquote>"
                 ),
