@@ -50,10 +50,15 @@ async def delete_message(context: CallbackContext) -> None:
     """deletes the warning message"""
     try:
         msg: Message = context.job.data.get("message")
-        await msg.delete()
         try:
             txtsplt = msg.reply_to_message.text.split(" ")
             if len(txtsplt) == 2 and txtsplt[0] == "/start":
+                delete_reply = True
+        except:
+            pass
+        await msg.delete()
+        try:
+            if delete_reply:
                 await msg.reply_to_message.delete()
         except:
             pass
