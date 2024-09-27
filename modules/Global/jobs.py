@@ -3,10 +3,11 @@ from telegram import *
 from telegram.ext import *
 
 # project imports
+from config import DELETION_TEXT
 from modules.Global.log import logger
 from modules.Global.database import DBHandler, db_base
 from mysql.connector.errors import Error as mysql_Error
-from mysql.connector.cursor import MySQLCursor
+from telegram.constants import ParseMode as PM
 
 # global imports
 import os
@@ -37,7 +38,10 @@ async def delete_warning(context: CallbackContext) -> None:
     """deletes the warning message"""
     try:
         msg: Message = context.job.data.get("warning_message")
-        await msg.edit_text("فرستادم بهش")
+        await msg.edit_text(
+            msg.text_html.removesuffix(DELETION_TEXT),
+            parse_mode=PM.HTML,
+        )
     except:
         pass
 

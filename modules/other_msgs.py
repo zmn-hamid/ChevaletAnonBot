@@ -108,7 +108,9 @@ async def other_messages(
             )
         context.user_data["target_cid"] = target_cid
         context.user_data["reply_to"] = None
+        context.user_data["channel_reply"] = True
         await send_msg_template(update, context, message, userid, bot, dbh)
+        context.user_data["channel_reply"] = None
         return END
 
     # other messages

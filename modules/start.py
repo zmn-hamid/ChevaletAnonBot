@@ -5,7 +5,7 @@ from telegram.constants import ParseMode as PM
 from telegram.warnings import PTBUserWarning
 
 # project imports
-from config import REPORT_CHAT_ID, SUPPORT_ADMIN, DELETION_TIMEOUT
+from config import REPORT_CHAT_ID, SUPPORT_ADMIN, DELETION_TIMEOUT, DELETION_TEXT
 from modules.Global.log import logger
 from modules.Global.database import DBHandler
 from modules.Global.get_user import get_username, href_user, get_link_username
@@ -147,7 +147,10 @@ async def start_cmd(
                     "میخوای با خودت صحبت کنی؟ :) عب نداره راحت باش"
                 )
             await message.reply_html(
-                f"به {dbh.get_name(target_uid)} وصل شدی. پیامتو بفرست",
+                (
+                    f"به {dbh.get_name(target_uid)} وصل شدی. پیامتو بفرست\n\n"
+                    f"<blockquote>میدونستی میتونی بدون استفاده از لینک، فقط با ریپلای کردن به کانال پیام بدی؟ منوی قابلیت ها و تنظیمات رو چک کن ؛)</blockquote>"
+                ),
                 reply_parameters=ReplyParameters(message.message_id),
                 reply_markup=InlineKeyboardMarkup([[CANCEL_BUTTON]]),
             )
@@ -165,6 +168,7 @@ async def send_msg_template(
 ) -> int:
     target_cid = context.user_data.get("target_cid")
     target_mid = context.user_data.get("reply_to")  # None when not answer
+    was_channel_reply = context.user_data.get("channel_reply")
     external_reply = message.external_reply
 
     # get target uid
@@ -310,10 +314,13 @@ async def send_msg_template(
         return output
 
     # handle warning and deletion of it
+    if was_channel_reply:
+        sent_text = f"فرستادم به {dbh.get_name(target_uid)}."
+    else:
+        sent_text = f"فرستادم بهش."
     if dbh.get_warning(userid):
-        warning_message = await message.reply_text(
-            f"فرستادم بهش. {DELETION_TIMEOUT} ثانیه فرصت داری با دکمه ی زیر پاکش کنی.\n"
-            "غیرفعال‌سازیِ اخطار توی ستینگه",
+        warning_message = await message.reply_html(
+            f"{sent_text}\n{DELETION_TEXT}",
             reply_markup=InlineKeyboardMarkup(
                 [
                     [
@@ -333,7 +340,7 @@ async def send_msg_template(
         )
     else:
         await message.reply_text(
-            "فرستادم بهش",
+            sent_text,
             reply_parameters=ReplyParameters(message.message_id),
         )
 

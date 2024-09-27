@@ -19,3 +19,7 @@ MAX_TRY_ADD_CID = 5
 DELETION_TIMEOUT = 10
 DEFAULT_AUDIO_TAG = "[ناشناس]"
 ALLOWED_CID_CHARS = string.ascii_letters + string.digits + "_-"
+DELETION_TEXT = (
+    f"{DELETION_TIMEOUT} ثانیه فرصت داری با دکمه ی زیر پاکش کنی.\n"
+    "<blockquote>غیرفعال‌سازیِ اخطار توی منوی تنظیماته</blockquote>"
+)
