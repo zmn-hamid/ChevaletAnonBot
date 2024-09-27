@@ -320,7 +320,12 @@ async def send_msg_template(
         sent_text = f"فرستادم بهش."
     if dbh.get_warning(userid):
         warning_message = await message.reply_html(
-            f"{sent_text}\n{DELETION_TEXT}",
+            (
+                f"{sent_text}\n"
+                f'{"<blockquote>ازونجا که بات به چنل مدنظرت اضافه نشده بود، ریپلای رو به صورت دکمه ی شیشه ای برای مخاطبت فرستادم</blockquote>\n"
+                if external_reply and inline_replied_to
+                else ""}' f"{DELETION_TEXT}"
+            ),
             reply_markup=InlineKeyboardMarkup(
                 [
                     [
@@ -388,13 +393,6 @@ async def send_msg_template(
                 "caption",
                 link_preview_options=message.link_preview_options,
             )
-
-    # warn the sender when the message was sent with inline button instead of reply
-    if external_reply and inline_replied_to:
-        await message.reply_text(
-            "ازونجا که بات به چنل مدنظرت اضافه نشده بود، ریپلای رو به صورت دکمه ی شیشه ای برای مخاطبت فرستادم.",
-            reply_parameters=ReplyParameters(message.message_id),
-        )
 
     context.user_data.clear()
     return END
