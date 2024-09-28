@@ -62,9 +62,10 @@ async def add_link_clbk(
         cid_limit = dbh.get_cid_limit(userid)
         current_cid_count = len(dbh.get_cids(userid))
         if current_cid_count >= cid_limit:
-            return await message.reply_text(
+            await message.reply_text(
                 f"به حد مجازت رسیدی. برای لینکهای بیشتر به ادمین پیام بده: @{SELLER_ADMIN}"
             )
+            return ConversationHandler.END
 
         # add cid and return links
         dbh.add_cid(userid, generate_cid(), 0)
