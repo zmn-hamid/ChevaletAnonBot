@@ -56,6 +56,7 @@ class DB_Base:
                         is_banned BOOLEAN NOT NULL,
                         warning BOOLEAN NOT NULL,
                         seen_option BOOLEAN NOT NULL,
+                        wpp BOOLEAN NOT NULL,
                         cid_limit INT NOT NULL,
                         custom_tag VARCHAR(255),
                         audio_tag VARCHAR(255));
@@ -94,17 +95,22 @@ class DBHandler(DB_Base):
         - full name
         - not banned
         - not notifying the cid (source)
+        - no seen option
+        - with webpage preview
         - 2 max cids
+        - no custom tag
+        - audio tag: [ناشناس]
         """
         try:
             self.cur.execute(
-                f"INSERT INTO {self.users_table} VALUES (NULL, %s, %s, %s, %s, %s, %s, %s, %s)",
+                f"INSERT INTO {self.users_table} VALUES (NULL, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                 (
                     str(uid),
                     str(name)[:MAX_NAME_LENGTH],
                     False,
                     True,
                     False,
+                    True,
                     DEFAULT_CID_LIMIT,
                     None,
                     DEFAULT_AUDIO_TAG,
@@ -251,6 +257,11 @@ class DBHandler(DB_Base):
         )
         return self.cur.fetchone()[0]
 
+    def get_wpp(self, uid: str) -> bool:
+        """getes the webpage preview state of user"""
+        self.cur.execute(f'SELECT wpp FROM {self.users_table} WHERE uid="{uid}"')
+        return self.cur.fetchone()[0]
+
     def get_custom_tag(self, uid: str) -> str | None:
         """gets user's custom tag"""
         self.cur.execute(
@@ -295,6 +306,17 @@ class DBHandler(DB_Base):
             self.cur.execute(
                 f'UPDATE {self.users_table} SET seen_option=%s WHERE uid="{uid}"',
                 (seen_option,),
+            )
+            self.db.commit()
+        except IntegrityError:
+            pass
+
+    def set_wpp(self, uid: str, wpp: bool) -> None:
+        """sets wpp for user"""
+        try:
+            self.cur.execute(
+                f'UPDATE {self.users_table} SET wpp=%s WHERE uid="{uid}"',
+                (wpp,),
             )
             self.db.commit()
         except IntegrityError:

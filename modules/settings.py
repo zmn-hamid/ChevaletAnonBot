@@ -122,6 +122,52 @@ async def update_name(
 
 
 @prep_function
+async def wpp_clbk(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    message: Message,
+    userid: str,
+    bot: Bot,
+    dbh: DBHandler,
+) -> None:
+    """# warning settings for user"""
+    if (clbk := update.callback_query) and (data := clbk.data):
+
+        async def _wpp_text():
+            wpp = dbh.get_wpp(userid)
+            await clbk.edit_message_text(
+                fetch_text("settings/wpp") % ("حالت پیشفرض" if wpp else "غیرفعال"),
+                parse_mode=PM.HTML,
+                reply_markup=InlineKeyboardMarkup(
+                    [
+                        [
+                            (
+                                SETTINGS_MARKUP["wpp-deactivate"]
+                                if wpp
+                                else SETTINGS_MARKUP["wpp-activate"]
+                            ),
+                        ],
+                        [SETTINGS_MARKUP["back-to-menu"]],
+                    ]
+                ),
+            )
+
+        _, activation_text = data.split("|", 1)
+        if activation_text:
+            if activation_text == "activate":
+                dbh.set_wpp(userid, True)
+                await clbk.answer("پیشنمایش به حالتِ پیشفرض تبدیل شد")
+                await _wpp_text()
+            else:
+                dbh.set_wpp(userid, False)
+                await clbk.answer("پیشنمایش غیرفعال شد")
+                await _wpp_text()
+        else:
+            await _wpp_text()
+        return END
+
+
+@prep_function
 async def warning_clbk(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -530,6 +576,7 @@ settings_handler = ConversationHandler(
         CallbackQueryHandler(custom_tag, r"^custom-tag\|"),
         CallbackQueryHandler(audio_tag, r"^audio-tag\|"),
         # other handlers
+        CallbackQueryHandler(wpp_clbk, r"^wpp\|"),
         CallbackQueryHandler(warning_clbk, r"^warning\|"),
         CallbackQueryHandler(easier_answer_clbk, r"^easier-answer\|"),
         CallbackQueryHandler(seen_settings_clbk, r"^seen-settings\|"),

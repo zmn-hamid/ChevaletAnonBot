@@ -7,12 +7,6 @@ SETTINGS_MARKUP = {
                 "⌨️ ارسال پیام بدون لینک | ریپلای به کانال",
                 callback_data="easier-answer|",
             ),
-            # InlineKeyboardButton(
-            #     "🖋 ریپلای به بخشی از پیام", callback_data="reply-quote|"
-            # ),
-            # InlineKeyboardButton(
-            #     "🖋 ریپلای به پستِ کانال", callback_data="reply-channel|"
-            # ),
         ],
         [
             InlineKeyboardButton(
@@ -21,13 +15,13 @@ SETTINGS_MARKUP = {
             InlineKeyboardButton(
                 "👀 نمایش دکمه سین زدن", callback_data="seen-settings|"
             ),
-            # InlineKeyboardButton(
-            #     "⌨️ ارسال جوابِ راحت تر", callback_data="easier-answer|"
-            # ),
         ],
         [
             InlineKeyboardButton("⚠️ اخطار پاک سازی پیام", callback_data="warning|"),
             InlineKeyboardButton("📛 تغییر نام نمایشی", callback_data="change-name|"),
+        ],
+        [
+            InlineKeyboardButton("🔗 تنظیمات پیشنمایشِ لینک", callback_data="wpp|"),
         ],
         [
             InlineKeyboardButton("#️⃣ تگ آهنگ", callback_data="audio-tag|"),
@@ -46,6 +40,12 @@ SETTINGS_MARKUP = {
     ),
     "nvm-back-to-menu": InlineKeyboardButton(
         "↪️ بیخیالش برگرد منوی اصلی", callback_data="settings-menu"
+    ),
+    "wpp-activate": InlineKeyboardButton(
+        "✅ برگشت به حالت پیشفرض", callback_data="wpp|activate"
+    ),
+    "wpp-deactivate": InlineKeyboardButton(
+        "❌ غیرفعال سازی اجباری", callback_data="wpp|deactivate"
     ),
     "warning-activate": InlineKeyboardButton(
         "✅ فعالسازی", callback_data="warning|activate"

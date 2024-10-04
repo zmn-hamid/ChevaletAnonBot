@@ -306,9 +306,24 @@ async def send_msg_template(
 
     output: MessageId | str = await copy_msg_to_target()
     if type(output) == MessageId:
-        copied_message_id: MessageId = output
+        copied_message_id: MessageId = output.message_id
     else:
         return output
+    
+    # removing the link preview if needed
+    if not dbh.get_wpp(target_uid):
+        try:
+            if message.text:
+                await bot.edit_message_text(
+                    message.text_html,
+                    chat_id=target_uid,
+                    message_id=copied_message_id,
+                    parse_mode=PM.HTML, 
+                    reply_markup=reply_markup,
+                    disable_web_page_preview=True,
+                )
+        except:
+            pass
 
     # handle warning and deletion of it
     if was_channel_reply:
@@ -329,7 +344,7 @@ async def send_msg_template(
                         InlineKeyboardButton(
                             "پاکش کننن",
                             callback_data=f"delete|{target_cid}|"
-                            f"{copied_message_id.message_id}|"
+                            f"{copied_message_id}|"
                             f"{notify_msg.message_id if notify_msg else None}",
                         ),
                     ],
@@ -365,7 +380,7 @@ async def send_msg_template(
             await edit_method(
                 **{edit_what: og_text_html + "\n" + tag},
                 chat_id=target_uid,
-                message_id=copied_message_id.message_id,
+                message_id=copied_message_id,
                 parse_mode=PM.HTML,
                 reply_markup=reply_markup,
                 **kwargs,
