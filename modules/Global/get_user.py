@@ -38,4 +38,5 @@ async def get_username(userid: str, bot: Bot) -> str:
 
 
 async def get_link_username(userid: str, bot: Bot) -> str:
+    """returns `u_UID_ | _USERNAME_`"""
     return f"{href_user(userid)} | {await get_username(userid, bot)}"

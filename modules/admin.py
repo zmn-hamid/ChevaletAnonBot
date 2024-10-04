@@ -52,6 +52,20 @@ async def admin_cmd(
                 send_mass_msg, 3, {"message": message}
             )
 
+        elif arg1 == "send-msg":
+            target_uid = text[1]
+            if not (len(text) > 2 and text[2] == "YES"):
+                return await message.reply_html(
+                    f"send <code>/admin send-msg {target_uid} YES</code> if you're sure",
+                )
+            try:
+                await message.reply_to_message.copy(target_uid)
+                await message.reply_html(
+                    f"sent to {await get_link_username(target_uid, bot)}"
+                )
+            except Exception as e:
+                await message.reply_text(f"failed to send: {e}")
+
         # number of users
         elif arg1 == "user-count":
             await message.reply_text(f"{dbh.user_count()} users")

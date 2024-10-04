@@ -1,5 +1,6 @@
 <code>/admin help</code>: to get help
 <code>/admin send-mass-msg</code>: send mass message to users / reply the message you want to send to all the users
+<code>/admin send-msg UID</code>: send message to one user / reply the message you want to send
 <code>/admin user-count</code>: to get the number of users
 <code>/admin stats UID</code>: to get the status of the user
    -> ban status, max number of cid's allowed
