@@ -532,36 +532,41 @@ async def block(
         _, target_cid = data.split("|")
         target_uid = dbh.get_uid(target_cid)
 
-        if dbh.add_block(userid, target_uid):
-            await message.edit_reply_markup(
-                InlineKeyboardMarkup(
-                    [
+        async def _add_block():
+            try:
+                await message.edit_reply_markup(
+                    InlineKeyboardMarkup(
                         [
-                            (
-                                InlineKeyboardButton(
-                                    button.text, callback_data=button.callback_data
+                            [
+                                (
+                                    InlineKeyboardButton(
+                                        button.text, callback_data=button.callback_data
+                                    )
+                                    if not button.callback_data.startswith("block")
+                                    else InlineKeyboardButton(
+                                        BTN.UNBLOCK,
+                                        callback_data=button.callback_data.replace(
+                                            "block", "unblock"
+                                        ),
+                                    )
                                 )
-                                if not button.callback_data.startswith("block")
-                                else InlineKeyboardButton(
-                                    BTN.UNBLOCK,
-                                    callback_data=button.callback_data.replace(
-                                        "block", "unblock"
-                                    ),
-                                )
-                            )
-                            for button in line
+                                for button in line
+                            ]
+                            for line in message.reply_markup.inline_keyboard
                         ]
-                        for line in message.reply_markup.inline_keyboard
-                    ]
+                    )
                 )
-            )
+            except:
+                pass
+        if dbh.add_block(userid, target_uid):
+            await _add_block()
             if userid == target_uid:
                 await clbk.answer("یه تراپی برو💀👍")
             else:
                 await clbk.answer("با موفقیت بلاک شد.")
-
         else:
             await clbk.answer("همین الانش بلاک هست")
+            await _add_block()
 
 
 @prep_function
@@ -593,36 +598,41 @@ async def unblock(
         _, target_cid = data.split("|")
         target_uid = dbh.get_uid(target_cid)
 
-        if dbh.remove_block(userid, target_uid):
-            await message.edit_reply_markup(
-                InlineKeyboardMarkup(
-                    [
+        async def _remove_block():
+            try:
+                await message.edit_reply_markup(
+                    InlineKeyboardMarkup(
                         [
-                            (
-                                InlineKeyboardButton(
-                                    button.text, callback_data=button.callback_data
+                            [
+                                (
+                                    InlineKeyboardButton(
+                                        button.text, callback_data=button.callback_data
+                                    )
+                                    if not button.callback_data.startswith("unblock")
+                                    else InlineKeyboardButton(
+                                        BTN.BLOCK,
+                                        callback_data=button.callback_data.replace(
+                                            "unblock", "block"
+                                        ),
+                                    )
                                 )
-                                if not button.callback_data.startswith("unblock")
-                                else InlineKeyboardButton(
-                                    BTN.BLOCK,
-                                    callback_data=button.callback_data.replace(
-                                        "unblock", "block"
-                                    ),
-                                )
-                            )
-                            for button in line
+                                for button in line
+                            ]
+                            for line in message.reply_markup.inline_keyboard
                         ]
-                        for line in message.reply_markup.inline_keyboard
-                    ]
+                    )
                 )
-            )
+            except:
+                pass
+        if dbh.remove_block(userid, target_uid):
+            await _remove_block()
             if userid == target_uid:
                 await clbk.answer("خوبه پس تراپی جواب داد🥹")
             else:
                 await clbk.answer("با موفقیت آنبلاک شد.")
-
         else:
             await clbk.answer("همین الانش بلاک نیس")
+            await _remove_block()
 
 
 @prep_function
