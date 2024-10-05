@@ -2,6 +2,7 @@
 from telegram import *
 from telegram.ext import *
 from telegram.error import Forbidden
+from telegram.constants import MessageEntityType as MET
 
 # project imports
 from modules.start import send_msg_template
@@ -67,23 +68,40 @@ async def other_messages(
             )
         bio = channel.description
         pin = channel.pinned_message
-        pattern = rf"t.me/{bot.username}\?start=([A-Za-z0-9_-]+)"
+        pattern = rf"t.me/{bot.username.lower()}\?start=([A-Za-z0-9_-]+)"
         target_cid: str = None
         # check if link is in description and if yes, check what's the cid
-        if bio and (match := re.search(pattern, bio)):
-            target_cid = match.group(1)
+        if bio and (match := re.search(pattern, bio.lower())):
+            offset, end = match.span(1)
+            target_cid = bio[offset:end]
 
         elif pin and (entities := pin.entities):
             for entt in entities:
                 entt: MessageEntity
-                if entt.url and (match := re.search(pattern, entt.url)):
-                    target_cid = match.group(1)
+                if entt.type == MET.URL and (
+                    match := re.search(
+                        pattern,
+                        (
+                            url := pin.text[entt.offset : entt.offset + entt.length]
+                        ).lower(),
+                    )
+                ):
+                    offset, end = match.span(1)
+                    target_cid = url[offset:end]
 
         elif pin and (entities := pin.caption_entities):
             for entt in entities:
                 entt: MessageEntity
-                if entt.url and (match := re.search(pattern, entt.url)):
-                    target_cid = match.group(1)
+                if entt.type == MET.URL and (
+                    match := re.search(
+                        pattern,
+                        (
+                            url := pin.caption[entt.offset : entt.offset + entt.length]
+                        ).lower(),
+                    )
+                ):
+                    offset, end = match.span(1)
+                    target_cid = url[offset:end]
 
         elif (
             pin
@@ -92,8 +110,9 @@ async def other_messages(
         ):
             for row in inline_keyboard:
                 for col in row:
-                    if col.url and (match := re.search(pattern, col.url)):
-                        target_cid = match.group(1)
+                    if col.url and (match := re.search(pattern, col.url.lower())):
+                        offset, end = match.span(1)
+                        target_cid = col.url[offset:end]
 
         else:
             return await message.reply_text(
