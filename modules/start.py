@@ -204,19 +204,15 @@ async def send_msg_template(
         quote_position = quote.position
 
     ## check if bot is not added then just use inline button
-    inline_replied_to = None
+    replied_to_link = ''
     if external_reply:
         try:
             await bot.get_chat_administrators(reply_to_chat)
         except:
             if username := external_reply.chat.username:
-                url = f"https://t.me/{username}/{reply_to_mid}"
+                replied_to_link = f"https://t.me/{username}/{reply_to_mid}"
             else:
-                url = f"https://t.me/c/{reply_to_chat[4:]}/{reply_to_mid}"
-
-            # https://t.me/c/2087637952/81
-            # https://t.me/zmn_hamid/1509
-            inline_replied_to = InlineKeyboardButton(BTN.REPLIED_TO, url=url)
+                replied_to_link = f"https://t.me/c/{reply_to_chat[4:]}/{reply_to_mid}"
 
             ### no reply, no quote
             reply_to_chat, reply_to_mid, quote_text, quote_position = (
@@ -225,41 +221,6 @@ async def send_msg_template(
                 None,
                 None,
             )
-
-    # sending notif to target
-    target_cids = dbh.get_cids(target_uid)
-
-    @handle_target_send(message=message, external_reply=external_reply)
-    async def send_notif():
-        cid_idx_text = ""
-        msg_type_text = "پیامِ"
-        # no target uid means not an answer
-        if target_mid:
-            msg_type_text = "ریپلایِ"
-        elif len(target_cids) > 1:
-            ## notify user if target has >1 cid
-            cid_idx_text = (
-                f" با لینک {target_cids.index(target_cid) + 1} ({target_cid})"
-            )
-        # sending notify
-        return await bot.send_message(
-            target_uid,
-            f"{msg_type_text} جدید{cid_idx_text}:",
-            reply_parameters=(ReplyParameters(target_mid) if target_mid else None),
-        )
-
-    notify_msg: Message = None
-    if (len(target_cids) > 1 and not target_mid) or (
-        target_mid and message.external_reply
-    ):
-        notify_msg: Message = await send_notif()
-        reply_to_chat, reply_to_mid, quote_text, quote_position = (
-            None,
-            notify_msg.message_id,
-            None,
-            None,
-        )
-        context.user_data.get("wrapper_list", []).append(notify_msg)
 
     ## calculate reply_markup
     reply_markup_keyboard = [
@@ -277,6 +238,7 @@ async def send_msg_template(
             InlineKeyboardButton(BTN.BLOCK, callback_data=f"block|{sender_cid}"),
         ],
     ]
+    ## if seen option is activated
     if dbh.get_seen_status(userid):
         reply_markup_keyboard[0].insert(
             0,
@@ -285,8 +247,44 @@ async def send_msg_template(
                 callback_data=f"seen|{sender_cid}|{message.message_id}",
             ),
         )
-    if inline_replied_to:
-        reply_markup_keyboard.insert(0, [inline_replied_to])
+
+    # sending notif to target
+    target_cids = dbh.get_cids(target_uid)
+
+    @handle_target_send(message=message, external_reply=external_reply)
+    async def send_notif() -> Message | None:
+        # no target uid means not an answer
+        if target_mid:
+            return await bot.send_message(
+                target_uid,
+                "جواب جدید:",
+                reply_parameters=(ReplyParameters(target_mid) if target_mid else None),
+            )
+        elif len(target_cids) > 1:
+            ## notify user if target has >1 cid
+            reply_markup_keyboard.append(
+                [
+                    InlineKeyboardButton(
+                        f"ارسال شده با لینک {target_cids.index(target_cid) + 1} ({target_cid})",
+                        callback_data='no-callback'
+                    )
+                ]
+            )
+
+    notify_msg: Message = None
+    if (len(target_cids) > 1 and not target_mid) or (
+        target_mid and message.external_reply
+    ):
+        if notify_msg := await send_notif():
+            reply_to_chat, reply_to_mid, quote_text, quote_position = (
+                None,
+                notify_msg.message_id,
+                None,
+                None,
+            )
+            context.user_data.get("wrapper_list", []).append(notify_msg)
+
+    # making reply_markup
     reply_markup = InlineKeyboardMarkup(reply_markup_keyboard)
 
     # send message to target
@@ -309,7 +307,7 @@ async def send_msg_template(
         copied_message_id: MessageId = output.message_id
     else:
         return output
-    
+
     # removing the link preview if needed
     if not dbh.get_wpp(target_uid):
         try:
@@ -334,9 +332,7 @@ async def send_msg_template(
         warning_message = await message.reply_html(
             (
                 f"{sent_text}\n"
-                f'{"<blockquote>ازونجا که بات به چنل مدنظرت اضافه نشده بود، ریپلای رو به صورت دکمه ی شیشه ای برای مخاطبت فرستادم</blockquote>\n"
-                if external_reply and inline_replied_to
-                else ""}' f"{DELETION_TEXT}"
+                f"{DELETION_TEXT}"
             ),
             reply_markup=InlineKeyboardMarkup(
                 [
@@ -361,7 +357,7 @@ async def send_msg_template(
             reply_parameters=ReplyParameters(message.message_id),
         )
 
-    # add custom tag and audio tag
+    # add reply's tag, custom tag and audio tag
     custom_tag = dbh.get_custom_tag(target_uid)
 
     async def add_tag(tag: str, edit_what: str, **kwargs) -> None:
@@ -386,24 +382,37 @@ async def send_msg_template(
                 **kwargs,
             )
             return True
-        except:
+        except Exception as e:
             pass
 
+    if replied_to_link:
+        replied_to_link = f'<a href="{replied_to_link}">🔸 ریپلای به این پیام</a>\n'
     if message.audio and not custom_tag:
         await add_tag(
-            dbh.get_audio_tag(target_uid),
+            replied_to_link + dbh.get_audio_tag(target_uid),
             "caption",
             show_caption_above_media=message.show_caption_above_media,
         )
     elif custom_tag:
         # edit text
         if not await add_tag(
-            custom_tag, "text", link_preview_options=message.link_preview_options
+            replied_to_link + custom_tag, "text", link_preview_options=message.link_preview_options
         ):
             await add_tag(
-                custom_tag,
+                replied_to_link + custom_tag,
                 "caption",
                 link_preview_options=message.link_preview_options,
+            )
+    else:
+        if not await add_tag(
+            replied_to_link,
+            "text",
+            show_caption_above_media=message.show_caption_above_media,
+        ):
+            await add_tag(
+                f'<a href="{replied_to_link}">- ریپلای به این پیام</a>',
+                "caption",
+                show_caption_above_media=message.show_caption_above_media,
             )
 
     context.user_data.clear()
