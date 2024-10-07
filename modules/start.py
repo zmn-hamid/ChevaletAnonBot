@@ -386,22 +386,22 @@ async def send_msg_template(
             pass
 
     if replied_to_link:
-        replied_to_link = f'\n<blockquote><a href="{replied_to_link}">ریپلای به این پیام</a></blockquote>'
+        replied_to_link = f'<blockquote><a href="{replied_to_link}">ریپلای به این پیام</a></blockquote>'
     if message.audio and not custom_tag:
         await add_tag(
-            dbh.get_audio_tag(target_uid) + replied_to_link,
+            dbh.get_audio_tag(target_uid) +'\n'+ replied_to_link,
             "caption",
             show_caption_above_media=message.show_caption_above_media,
         )
     elif custom_tag:
         # edit text
         if not await add_tag(
-            custom_tag + replied_to_link,
+            custom_tag +'\n'+ replied_to_link,
             "text",
             link_preview_options=message.link_preview_options,
         ):
             await add_tag(
-                custom_tag + replied_to_link,
+                custom_tag +'\n'+ replied_to_link,
                 "caption",
                 show_caption_above_media=message.show_caption_above_media,
             )

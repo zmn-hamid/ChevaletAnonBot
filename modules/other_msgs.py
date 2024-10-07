@@ -61,7 +61,8 @@ async def other_messages(
     if external_reply:
         try:
             channel = await bot.get_chat(external_reply.chat.id)
-        except Forbidden:
+        except Forbidden as e:
+            print(e)
             return await message.reply_text(
                 "چنل مد نظرت پرایوته و بات بهش اضافه نشده",
                 reply_parameters=ReplyParameters(message.message_id),
