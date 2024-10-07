@@ -386,7 +386,7 @@ async def send_msg_template(
             pass
 
     if replied_to_link:
-        replied_to_link = f'<a href="{replied_to_link}">🔸 ریپلای به این پیام</a>\n'
+        replied_to_link = f'<a href="{replied_to_link}">░ ریپلای به این پیام</a>\n'
     if message.audio and not custom_tag:
         await add_tag(
             replied_to_link + dbh.get_audio_tag(target_uid),
