@@ -18,5 +18,5 @@
 
 
 <blockquote>پشتیبانی: @%s
-مدیریت: <a href="t.me/Chevalet_Studio">Chevalet Studio</a>
+مدیریت: <a href="t.me/chevalet_studio">Chevalet Studio</a>
 برنامه‌نویس: @zmn_hamid</blockquote>

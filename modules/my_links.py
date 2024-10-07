@@ -24,6 +24,32 @@ filterwarnings(
 )
 
 
+async def my_links_template(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    message: Message,
+    userid: str,
+    bot: Bot,
+    dbh: DBHandler,
+) -> None:
+    if update.callback_query:
+        method = update.callback_query.edit_message_text
+    else:
+        method = message.reply_text
+    user_cids = dbh.get_cids(userid)
+    await method(
+        user_links_text(user_cids, dbh.get_cid_limit(userid), bot.username)
+        + (
+            "<blockquote>راستی یادت نره به کانالمون سر بزنی:\n@chevalet_studio</blockquote>"
+            if len(user_cids) > 2
+            else ""
+        ),
+        reply_markup=InlineKeyboardMarkup(MYLINKS_MARKUP["default-set"]),
+        parse_mode=PM.HTML,
+        disable_web_page_preview=True,
+    )
+
+
 @prep_function
 async def my_links_cmd(
     update: Update,
@@ -32,18 +58,9 @@ async def my_links_cmd(
     userid: str,
     bot: Bot,
     dbh: DBHandler,
-) -> None:
+) -> int:
     """# returns users cids"""
-    if update.callback_query:
-        method = update.callback_query.edit_message_text
-    else:
-        method = message.reply_text
-    await method(
-        user_links_text(dbh.get_cids(userid), dbh.get_cid_limit(userid), bot.username),
-        reply_markup=InlineKeyboardMarkup(MYLINKS_MARKUP["default-set"]),
-        parse_mode=PM.HTML,
-        disable_web_page_preview=True,
-    )
+    await my_links_template(update, context, message, userid, bot, dbh)
     return ConversationHandler.END
 
 
@@ -69,15 +86,7 @@ async def add_link_clbk(
 
         # add cid and return links
         dbh.add_cid(userid, generate_cid(), 0)
-        try:
-            await clbk.edit_message_text(
-                user_links_text(dbh.get_cids(userid), cid_limit, bot.username),
-                reply_markup=InlineKeyboardMarkup(MYLINKS_MARKUP["default-set"]),
-                parse_mode=PM.HTML,
-                disable_web_page_preview=True,
-            )
-        except:
-            pass
+        await my_links_template(update, context, message, userid, bot, dbh)
         await clbk.answer("added a new link")
 
 
