@@ -401,16 +401,16 @@ async def send_msg_template(
             await add_tag(
                 replied_to_link + custom_tag,
                 "caption",
-                link_preview_options=message.link_preview_options,
+                show_caption_above_media=message.show_caption_above_media,
             )
-    else:
+    elif replied_to_link:
         if not await add_tag(
             replied_to_link,
             "text",
-            show_caption_above_media=message.show_caption_above_media,
+            link_preview_options=message.link_preview_options,
         ):
             await add_tag(
-                f'<a href="{replied_to_link}">- ریپلای به این پیام</a>',
+                replied_to_link,
                 "caption",
                 show_caption_above_media=message.show_caption_above_media,
             )
