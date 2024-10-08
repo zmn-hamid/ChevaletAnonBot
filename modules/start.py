@@ -334,6 +334,11 @@ async def seen(
     if (clbk := update.callback_query) and (data := clbk.data):
         _, target_cid, target_mid = data.split("|")
 
+        # check is blocked by user
+        if dbh.is_blocked(blocker_uid=dbh.get_uid(target_cid), blocked_uid=userid):
+            await clbk.answer("این کاربر بلاکت کرده خخ", show_alert=True)
+            return END
+
         # send seen message
         @handle_target_send(message=message, external_reply=message.external_reply)
         async def seen_message():
