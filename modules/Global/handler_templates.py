@@ -303,10 +303,11 @@ async def is_answer(
                     if (data := button.callback_data) and data.startswith("answer|"):
                         _, target_cid, target_mid = data.split("|")
                         return target_cid, target_mid
-        return await message.reply_text(
+        await message.reply_text(
             "اگه میخوای جواب بدی، باید خود پیام ناشناس رو ریپلای کنی. اونی که زیرش دکمه های شیشه ای هست",
             reply_parameters=ReplyParameters(message.message_id),
         )
+        return False
     return False
 
 
