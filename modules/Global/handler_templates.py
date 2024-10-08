@@ -307,7 +307,7 @@ async def is_answer(
             "اگه میخوای جواب بدی، باید خود پیام ناشناس رو ریپلای کنی. اونی که زیرش دکمه های شیشه ای هست",
             reply_parameters=ReplyParameters(message.message_id),
         )
-        return False
+        return END
     return False
 
 
@@ -405,16 +405,20 @@ async def check_if_autoreply(
     dbh: DBHandler,
 ):
     # send answer if it's replied to a sent message
-    if (output := await is_answer(message, bot)) != False:
+    output = await is_answer(message, bot)
+    if type(output) == int:
+        return output
+    if output:
         context.user_data["target_cid"], context.user_data["reply_to"] = output
         context.user_data["channel_reply"] = None
         await send_msg_template(update, context, message, userid, bot, dbh)
         return END
 
     # send to channel if replied to
-    elif (
-        output := await is_reply_to_channel(update, context, message, userid, bot, dbh)
-    ) != False:
+    output = await is_reply_to_channel(update, context, message, userid, bot, dbh)
+    if type(output) == int:
+        return output
+    if output:
         context.user_data["target_cid"], context.user_data["reply_to"] = output
         context.user_data["channel_reply"] = True
         await send_msg_template(update, context, message, userid, bot, dbh)
