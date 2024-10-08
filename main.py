@@ -8,7 +8,7 @@ from telegram.error import TimedOut
 # project imports
 from config import BOT_TOKEN
 
-from modules.start import start_cmd_handler, delete_message_handler
+from modules.start import start_cmd_handler, delete_message_handler, media_group_handler
 from modules.my_links import mylinks_handler
 from modules.admin import admin_handler
 from modules.myuid import myuid_handler
@@ -28,6 +28,7 @@ job_queue = application.job_queue
 for handler in [
     # start help
     start_cmd_handler,
+    media_group_handler,
     delete_message_handler,
     help_handler,
     more_links_clbk_handler,

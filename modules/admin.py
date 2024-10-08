@@ -11,7 +11,7 @@ from modules.Global.decorators import prep_function
 from modules.Global.fetch_texts import fetch_text
 from modules.Global.exceptions import WrongSyntaxErr
 from modules.Global.jobs import send_mass_msg
-from modules.other_msgs import other_messages_template
+from modules.Global.handler_templates import other_messages_template
 
 # global imports
 import os

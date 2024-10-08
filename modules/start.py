@@ -1,7 +1,9 @@
 # telegram imports
 from telegram import *
+from telegram import Update
 from telegram.ext import *
 from telegram.constants import ParseMode as PM
+from telegram.ext._utils.types import FilterDataDict
 from telegram.warnings import PTBUserWarning
 
 # project imports
@@ -17,10 +19,13 @@ from modules.Global.decorators import (
 from modules.Global.fetch_texts import fetch_text
 from modules.Global.jobs import delete_warning, delete_message
 from modules.Global.reply_markups import CANCEL_BUTTON
+from modules.Global.handler_templates import other_messages_template, _warning_handle
 
 # global imports
 from shortuuid import uuid
 from warnings import filterwarnings
+from typing import Optional, Union
+import time
 
 
 # reply markup buttons
@@ -42,6 +47,58 @@ filterwarnings(
 
 # end conversation
 END = ConversationHandler.END
+EXPIRE_AFTER = 1 # seconds
+
+
+@prep_function
+async def handle_media(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    message: Message,
+    userid: str,
+    bot: Bot,
+    dbh: DBHandler,
+) -> None | int:
+    """handles sent medias"""
+    # check if the media is handled ok
+    if not (expiration:=context.user_data.get('group_expiration')):
+        await other_messages_template(message)
+
+    # check if expired
+    if time.time() - expiration >= EXPIRE_AFTER:
+        await message.reply_text('دیر شد. توی یه پیام جدید بفرست')
+        context.user_data.clear()
+
+    # add new media
+    context.user_data["group_msgs"].append(message.message_id)
+    context.user_data['group_expiration'] = time.time() + EXPIRE_AFTER
+
+    # send and shit
+    target_cid = context.user_data['group_target_cid']
+    target_uid = dbh.get_uid(target_cid)
+    if len(context.user_data["group_msgs"]) >= 2:
+        # delete the previously sent
+        if context.user_data["sent_medias"]:
+            await bot.delete_messages(target_uid, context.user_data["sent_medias"])
+            context.user_data["sent_medias"] = []
+        # send new ones
+        sent_messages = await bot.copy_messages(target_uid, userid, context.user_data["group_msgs"])
+        # add for future deletion
+        context.user_data["sent_medias"] += [sent_msg.message_id for sent_msg in sent_messages]
+
+        # handle warning and deletion of it
+        sent_medias = context.user_data["sent_medias"]
+        notify_msg: Message = context.user_data["group_notify_msg"]
+        warning_message = await _warning_handle(
+            context.user_data["group_was_channel_reply"],
+            dbh,
+            target_uid,
+            userid,
+            message,
+            f"{target_cid}|{'|'.join(list(map(str, sent_medias)))}|{notify_msg.message_id if notify_msg else None}",
+            context,
+        )
+        context.user_data["sent_medias"].append(warning_message.message_id)
 
 
 @prep_function
@@ -284,8 +341,28 @@ async def send_msg_template(
             )
             context.user_data.get("wrapper_list", []).append(notify_msg)
 
-    # making reply_markup
+    # making reply_markup and parameters
     reply_markup = InlineKeyboardMarkup(reply_markup_keyboard)
+
+    # handle group medias
+    if media_group_id := message.media_group_id:
+        if context.user_data.get("media_group_id") != media_group_id:
+            context.user_data["group_msgs"] = []
+            context.user_data["media_group_id"] = media_group_id
+        context.user_data["group_msgs"].append(message.message_id)
+        context.user_data["group_expiration"] = (
+            time.time() + EXPIRE_AFTER
+        )  # expire after EXPIRE_AFTER seconds
+        # clear on end
+        context.user_data["target_cid"] = None
+        context.user_data["reply_to"] = None
+        context.user_data["channel_reply"] = None
+        # specify parameters for media sending
+        context.user_data["group_target_cid"] = target_cid
+        context.user_data["group_was_channel_reply"] = was_channel_reply
+        context.user_data["group_notify_msg"] = notify_msg
+        context.user_data["group_reply_markup"] = reply_markup
+        return END
 
     # send message to target
     @handle_target_send(message=message, external_reply=external_reply)
@@ -322,40 +399,16 @@ async def send_msg_template(
                 )
         except:
             pass
-
-    # handle warning and deletion of it
-    if was_channel_reply:
-        sent_text = f"فرستادم به {dbh.get_name(target_uid)}."
-    else:
-        sent_text = f"فرستادم بهش."
-    if dbh.get_warning(userid):
-        warning_message = await message.reply_html(
-            (
-                f"{sent_text}\n"
-                f"{DELETION_TEXT}"
-            ),
-            reply_markup=InlineKeyboardMarkup(
-                [
-                    [
-                        InlineKeyboardButton(
-                            "پاکش کننن",
-                            callback_data=f"delete|{target_cid}|"
-                            f"{copied_message_id}|"
-                            f"{notify_msg.message_id if notify_msg else None}",
-                        ),
-                    ],
-                ]
-            ),
-            reply_parameters=ReplyParameters(message.message_id),
-        )
-        context.application.job_queue.run_once(
-            delete_warning, DELETION_TIMEOUT, {"warning_message": warning_message}
-        )
-    else:
-        await message.reply_text(
-            sent_text,
-            reply_parameters=ReplyParameters(message.message_id),
-        )
+    
+    await _warning_handle(
+        was_channel_reply,
+        dbh,
+        target_uid,
+        userid,
+        message,
+        f"{target_cid}|{copied_message_id}|{notify_msg.message_id if notify_msg else None}",
+        context,
+    )
 
     # add reply's tag, custom tag and audio tag
     custom_tag = dbh.get_custom_tag(target_uid)
@@ -735,22 +788,16 @@ async def delete_msg_clbk(
 ) -> int:
     """# delete the sent message on undo"""
     if (clbk := update.callback_query) and (data := clbk.data):
-        _, target_cid, copied_message_id, announce_mid = data.split("|")
+        _, target_cid, *to_be_deleted = data.split("|")
         # delete the sent message
-        try:
-            await bot.delete_message(
-                dbh.get_uid(target_cid),
-                copied_message_id,
-            )
-        except:
-            pass
-        try:
-            await bot.delete_message(
-                dbh.get_uid(target_cid),
-                announce_mid,
-            )
-        except:
-            pass
+        for tbd in to_be_deleted:
+            try:
+                await bot.delete_message(
+                    dbh.get_uid(target_cid),
+                    tbd
+                )
+            except:
+                pass
         # delete the message so it won't fuck up
         ## save reply_to
         reply_mid = message.reply_to_message.message_id
@@ -786,6 +833,11 @@ async def cancel(
     return END
 
 
+class FilterMediaGroups(filters.MessageFilter):
+    def check_update(self, update: Update) -> Optional[Union[bool, FilterDataDict]]:
+        return bool(update.message and update.message.media_group_id)
+
+
 delete_message_handler = CallbackQueryHandler(delete_msg_clbk, r"^delete\|")
 start_clbk = CommandHandler("start", start_cmd)
 answer_clbk = CallbackQueryHandler(answer, r"^answer\|")
@@ -795,6 +847,7 @@ report_clbk = CallbackQueryHandler(report, r"^report\|")
 block_clbk = CallbackQueryHandler(block, r"^block\|")
 unblock_clbk = CallbackQueryHandler(unblock, r"^unblock\|")
 cancel_clbk = CallbackQueryHandler(cancel, r"cancel")
+media_group_handler = MessageHandler(FilterMediaGroups(), handle_media)
 start_cmd_handler = ConversationHandler(
     entry_points=[
         start_clbk,
@@ -815,7 +868,7 @@ start_cmd_handler = ConversationHandler(
             block_clbk,
             unblock_clbk,
             MessageHandler(filters.ALL & (~filters.COMMAND), send_msg),
-        ],
+        ]
     },
     fallbacks=[
         delete_message_handler,

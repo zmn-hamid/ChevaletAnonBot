@@ -8,20 +8,13 @@ from telegram.constants import MessageEntityType as MET
 from modules.start import send_msg_template
 from modules.Global.decorators import prep_function
 from modules.Global.database import DBHandler
+from modules.Global.handler_templates import other_messages_template
 
 # global imports
 import re
 
 # end conversation
 END = ConversationHandler.END
-
-
-async def other_messages_template(message: Message):
-    """# template for unknown messages"""
-    return await message.reply_text(
-        "متوجه نشدم. اگه کمک میخوای از /help استفاده کن",
-        reply_parameters=ReplyParameters(message.message_id),
-    )
 
 
 @prep_function
@@ -34,6 +27,10 @@ async def other_messages(
     dbh: DBHandler,
 ) -> None:
     """# for unkown messages + send without link"""
+    # import json
+
+    # print(json.dumps(update.to_dict(), indent=2, ensure_ascii=False))
+    # print("0000000000")
     # send answer if it's replied to a sent message
     reply = message.reply_to_message
     if reply:

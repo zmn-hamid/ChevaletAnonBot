@@ -22,6 +22,8 @@ def prep_function(func) -> Callable:
         if update.effective_chat.type in ["channel", "group"]:
             return ConversationHandler.END
         try:
+            context.user_data.setdefault("media_msgs", [])
+            context.user_data.setdefault("sent_medias", [])
             with db_base.connection_pool.get_connection() as conn:
                 with conn.cursor() as cur:
                     cur: MySQLCursor
