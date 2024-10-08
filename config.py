@@ -23,3 +23,4 @@ DELETION_TEXT = (
     f"{DELETION_TIMEOUT} ثانیه فرصت داری با دکمه ی زیر پاکش کنی.\n"
     "<blockquote>غیرفعال‌سازیِ اخطار توی منوی تنظیماته</blockquote>"
 )
+EXPIRE_AFTER = 0.3  # seconds

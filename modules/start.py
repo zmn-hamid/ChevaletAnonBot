@@ -2,12 +2,12 @@
 from telegram import *
 from telegram import Update
 from telegram.ext import *
-from telegram.constants import ParseMode as PM
-from telegram.ext._utils.types import FilterDataDict
+from telegram.constants import ParseMode as PM, MessageType
 from telegram.warnings import PTBUserWarning
+from telegram.helpers import effective_message_type
 
 # project imports
-from config import REPORT_CHAT_ID, SUPPORT_ADMIN, DELETION_TIMEOUT, DELETION_TEXT
+from config import REPORT_CHAT_ID, SUPPORT_ADMIN, EXPIRE_AFTER
 from modules.Global.log import logger
 from modules.Global.database import DBHandler
 from modules.Global.get_user import get_username, href_user, get_link_username
@@ -17,26 +17,22 @@ from modules.Global.decorators import (
     handle_target_send,
 )
 from modules.Global.fetch_texts import fetch_text
-from modules.Global.jobs import delete_warning, delete_message
-from modules.Global.reply_markups import CANCEL_BUTTON
-from modules.Global.handler_templates import other_messages_template, _warning_handle
+from modules.Global.jobs import delete_message
+from modules.Global.reply_markups import CANCEL_BUTTON, MSG_BTN as BTN
+from modules.Global.handler_templates import (
+    FilterMediaGroups,
+    other_messages_template,
+    send_msg_template,
+    check_if_autoreply,
+    _warning_handle,
+    add_tag,
+)
 
 # global imports
 from shortuuid import uuid
 from warnings import filterwarnings
-from typing import Optional, Union
+from typing import List
 import time
-
-
-# reply markup buttons
-class BTN:
-    REPLIED_TO = "ریپلای شده به این پیام"
-    REPLY = "⌨️ ارسال جواب"
-    SEEN = "✅ سین بزن"
-    SEEN_DONE = "☑️ سین زدم"
-    BLOCK = "🔒 بلاک"
-    UNBLOCK = "🔓 آنبلاک"
-    REPORT = "⚠️ ریپورت"
 
 
 # ignore the per_message error
@@ -44,10 +40,8 @@ filterwarnings(
     action="ignore", message=r".*CallbackQueryHandler", category=PTBUserWarning
 )
 
-
 # end conversation
 END = ConversationHandler.END
-EXPIRE_AFTER = 1 # seconds
 
 
 @prep_function
@@ -60,45 +54,111 @@ async def handle_media(
     dbh: DBHandler,
 ) -> None | int:
     """handles sent medias"""
+    # check if it's reply to channel or message (auto reply)
+    if (
+        (context.user_data.get("group_msgs") in [None, []]) or
+        (message.media_group_id != context.user_data.get("media_group_id"))
+    ):
+        context.user_data.clear()
+        output = await check_if_autoreply(update, context, message, userid, bot, dbh)
+        if type(output) == int:
+            return output
+        else:
+            return other_messages_template(message)
+
     # check if the media is handled ok
-    if not (expiration:=context.user_data.get('group_expiration')):
-        await other_messages_template(message)
+    if (
+        (expiration := context.user_data.get("group_expiration")) in [None, []]
+        or context.user_data.get("group_msgs") in [None, []]
+    ):
+        return await other_messages_template(message)
 
     # check if expired
     if time.time() - expiration >= EXPIRE_AFTER:
-        await message.reply_text('دیر شد. توی یه پیام جدید بفرست')
         context.user_data.clear()
+        return await message.reply_text(
+            'دیر شد. توی یه پیام جدید بفرست',
+            reply_parameters=ReplyParameters(message.message_id, userid),
+        )
 
     # add new media
-    context.user_data["group_msgs"].append(message.message_id)
-    context.user_data['group_expiration'] = time.time() + EXPIRE_AFTER
+    context.user_data["group_msgs"].append(message)
 
-    # send and shit
+    # vars
     target_cid = context.user_data['group_target_cid']
     target_uid = dbh.get_uid(target_cid)
-    if len(context.user_data["group_msgs"]) >= 2:
-        # delete the previously sent
-        if context.user_data["sent_medias"]:
-            await bot.delete_messages(target_uid, context.user_data["sent_medias"])
-            context.user_data["sent_medias"] = []
-        # send new ones
-        sent_messages = await bot.copy_messages(target_uid, userid, context.user_data["group_msgs"])
-        # add for future deletion
-        context.user_data["sent_medias"] += [sent_msg.message_id for sent_msg in sent_messages]
+    msgs: List[Message] = context.user_data["group_msgs"] # it's >2 now so we can go on
+    reply_markup = context.user_data["group_reply_markup"]
 
-        # handle warning and deletion of it
-        sent_medias = context.user_data["sent_medias"]
-        notify_msg: Message = context.user_data["group_notify_msg"]
-        warning_message = await _warning_handle(
-            context.user_data["group_was_channel_reply"],
-            dbh,
+    # delete the previously sent
+    if context.user_data["sent_medias"]:
+        await bot.delete_messages(target_uid, context.user_data["sent_medias"])
+        context.user_data["sent_medias"] = []
+    # send new ones
+    sent_messages = await bot.copy_messages(target_uid, userid, [msg.message_id for msg in msgs])
+    # add for future deletion
+    context.user_data["sent_medias"] += [sent_msg.message_id for sent_msg in sent_messages]
+
+    # send tags
+    ## calculate which message(s) to tag
+    message_idxs_for_tags = []
+    media_type = effective_message_type(msgs[0])
+    tag = dbh.get_audio_tag(target_uid) if media_type == MessageType.AUDIO else dbh.get_custom_tag(target_uid)
+    def _mark_all():
+        '''marks all of the messages to be add tags to them'''
+        return [{"idx": idx, "msg": msg} for idx, msg in enumerate(msgs)]
+    if media_type in [MessageType.PHOTO, MessageType.VIDEO]:
+        for idx, msg in enumerate(msgs):
+            if msg.caption_html:
+                if message_idxs_for_tags:
+                    # there's already one message marked to get tag
+                    # so just give all of them tags
+                    message_idxs_for_tags = _mark_all()
+                    break
+                message_idxs_for_tags.append({'idx':idx, 'msg': msg})
+        if not message_idxs_for_tags:
+            # means there's only one message marked to get tag
+            message_idxs_for_tags.append({"idx": 0, "msg": msgs[0]})
+    else:
+        message_idxs_for_tags = _mark_all()
+    ## send
+    for msg_idx in message_idxs_for_tags:
+        msg: Message = msg_idx["msg"]
+        await add_tag(
+            tag,
+            "caption",
+            bot,
+            msg,
             target_uid,
-            userid,
-            message,
-            f"{target_cid}|{'|'.join(list(map(str, sent_medias)))}|{notify_msg.message_id if notify_msg else None}",
-            context,
+            context.user_data["sent_medias"][msg_idx["idx"]],
+            reply_markup,
+            show_caption_above_media=msg.show_caption_above_media,
         )
-        context.user_data["sent_medias"].append(warning_message.message_id)
+
+    # send reply markups
+    markup_msg = await bot.send_message(
+        target_uid,
+        "<blockquote>برای جواب دادن و اینجور چیزا، ازین پیام استفاده کن</blockquote>",
+        parse_mode=PM.HTML,
+        reply_parameters=ReplyParameters(sent_messages[0].message_id, target_uid),
+        reply_markup=reply_markup,
+    )
+    context.user_data["sent_medias"] += [markup_msg.message_id]
+
+    # handle warning and deletion of it
+    sent_medias = context.user_data["sent_medias"]
+    notify_msg: Message = context.user_data["group_notify_msg"]
+    warning_message = await _warning_handle(
+        context.user_data["group_was_channel_reply"],
+        dbh,
+        target_uid,
+        userid,
+        message,
+        f"{target_cid}|{'|'.join(list(map(str, sent_medias)))}|{markup_msg.message_id}|{notify_msg.message_id if notify_msg else None}",
+        context,
+    )
+    context.user_data["sent_medias"].append(warning_message.message_id)
+    context.user_data["group_expiration"] = time.time() + EXPIRE_AFTER
 
 
 @prep_function
@@ -209,269 +269,6 @@ async def start_cmd(
                 reply_markup=InlineKeyboardMarkup([[CANCEL_BUTTON]]),
             )
             return 0
-
-
-@delete_notify_on_END
-async def send_msg_template(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE,
-    message: Message,
-    userid: str,
-    bot: Bot,
-    dbh: DBHandler,
-) -> int:
-    target_cid = context.user_data.get("target_cid")
-    target_mid = context.user_data.get("reply_to")  # None when not answer
-    was_channel_reply = context.user_data.get("channel_reply")
-    external_reply = message.external_reply
-
-    # get target uid
-    target_uid = dbh.get_uid(target_cid)
-
-    # check if target_cid was indeed valid
-    if target_uid == None:
-        await message.reply_html(
-            "مخاطبت لینکش رو عوض کرده. باید از نو پیام بفرستی",
-            reply_parameters=ReplyParameters(message.message_id),
-        )
-        return END
-
-    # check is blocked by user
-    if dbh.is_blocked(blocker_uid=target_uid, blocked_uid=userid):
-        await message.reply_text(
-            "این کاربر بلاکت کرده خخ",
-            reply_parameters=ReplyParameters(message.message_id),
-        )
-        return END
-
-    # get cid from uid for sender (current user that is sending message)
-    # so the reply markup won't have the uid inside it, for extra privacy
-    sender_cid = dbh.get_cids(userid)[0]
-
-    ## calculate reply and quote
-    reply_to_chat, reply_to_mid, quote_text, quote_position = None, None, None, None
-    if external_reply:
-        reply_to_chat = str(external_reply.chat.id)
-        reply_to_mid = str(external_reply.message_id)
-    elif target_mid:
-        reply_to_chat = target_uid
-        reply_to_mid = target_mid
-    if quote := message.quote:
-        quote_text = quote.text
-        quote_position = quote.position
-
-    ## check if bot is not added then just use inline button
-    replied_to_link = ''
-    if external_reply:
-        try:
-            await bot.get_chat_administrators(reply_to_chat)
-        except:
-            if username := external_reply.chat.username:
-                replied_to_link = f"https://t.me/{username}/{reply_to_mid}"
-            else:
-                replied_to_link = f"https://t.me/c/{reply_to_chat[4:]}/{reply_to_mid}"
-
-            ### no reply, no quote
-            reply_to_chat, reply_to_mid, quote_text, quote_position = (
-                None,
-                None,
-                None,
-                None,
-            )
-
-    ## calculate reply_markup
-    reply_markup_keyboard = [
-        [
-            InlineKeyboardButton(
-                BTN.REPLY,
-                callback_data=f"answer|{sender_cid}|{message.message_id}",
-            ),
-        ],
-        [
-            InlineKeyboardButton(
-                BTN.REPORT,
-                callback_data=f"report|{sender_cid}|{message.message_id}",
-            ),
-            InlineKeyboardButton(BTN.BLOCK, callback_data=f"block|{sender_cid}"),
-        ],
-    ]
-    ## if seen option is activated
-    if dbh.get_seen_status(userid):
-        reply_markup_keyboard[0].insert(
-            0,
-            InlineKeyboardButton(
-                BTN.SEEN,
-                callback_data=f"seen|{sender_cid}|{message.message_id}",
-            ),
-        )
-
-    # sending notif to target
-    target_cids = dbh.get_cids(target_uid)
-
-    @handle_target_send(message=message, external_reply=external_reply)
-    async def send_notif() -> Message | None:
-        # no target uid means not an answer
-        if target_mid:
-            return await bot.send_message(
-                target_uid,
-                "جواب جدید:",
-                reply_parameters=(ReplyParameters(target_mid) if target_mid else None),
-            )
-        elif len(target_cids) > 1:
-            ## notify user if target has >1 cid
-            reply_markup_keyboard.append(
-                [
-                    InlineKeyboardButton(
-                        f"ارسال شده با لینک {target_cids.index(target_cid) + 1} ({target_cid})",
-                        callback_data='no-callback'
-                    )
-                ]
-            )
-
-    notify_msg: Message = None
-    if (len(target_cids) > 1 and not target_mid) or (
-        target_mid and message.external_reply
-    ):
-        if notify_msg := await send_notif():
-            reply_to_chat, reply_to_mid, quote_text, quote_position = (
-                None,
-                notify_msg.message_id,
-                None,
-                None,
-            )
-            context.user_data.get("wrapper_list", []).append(notify_msg)
-
-    # making reply_markup and parameters
-    reply_markup = InlineKeyboardMarkup(reply_markup_keyboard)
-
-    # handle group medias
-    if media_group_id := message.media_group_id:
-        if context.user_data.get("media_group_id") != media_group_id:
-            context.user_data["group_msgs"] = []
-            context.user_data["media_group_id"] = media_group_id
-        context.user_data["group_msgs"].append(message.message_id)
-        context.user_data["group_expiration"] = (
-            time.time() + EXPIRE_AFTER
-        )  # expire after EXPIRE_AFTER seconds
-        # clear on end
-        context.user_data["target_cid"] = None
-        context.user_data["reply_to"] = None
-        context.user_data["channel_reply"] = None
-        # specify parameters for media sending
-        context.user_data["group_target_cid"] = target_cid
-        context.user_data["group_was_channel_reply"] = was_channel_reply
-        context.user_data["group_notify_msg"] = notify_msg
-        context.user_data["group_reply_markup"] = reply_markup
-        return END
-
-    # send message to target
-    @handle_target_send(message=message, external_reply=external_reply)
-    async def copy_msg_to_target():
-        return await message.copy(
-            target_uid,
-            parse_mode=PM.HTML,
-            reply_markup=reply_markup,
-            reply_parameters=ReplyParameters(
-                reply_to_mid,
-                reply_to_chat,
-                quote=quote_text,
-                quote_position=quote_position,
-            ),
-        )
-
-    output: MessageId | str = await copy_msg_to_target()
-    if type(output) == MessageId:
-        copied_message_id: MessageId = output.message_id
-    else:
-        return output
-
-    # removing the link preview if needed
-    if not dbh.get_wpp(target_uid):
-        try:
-            if message.text:
-                await bot.edit_message_text(
-                    message.text_html,
-                    chat_id=target_uid,
-                    message_id=copied_message_id,
-                    parse_mode=PM.HTML, 
-                    reply_markup=reply_markup,
-                    disable_web_page_preview=True,
-                )
-        except:
-            pass
-    
-    await _warning_handle(
-        was_channel_reply,
-        dbh,
-        target_uid,
-        userid,
-        message,
-        f"{target_cid}|{copied_message_id}|{notify_msg.message_id if notify_msg else None}",
-        context,
-    )
-
-    # add reply's tag, custom tag and audio tag
-    custom_tag = dbh.get_custom_tag(target_uid)
-
-    async def add_tag(tag: str, edit_what: str, **kwargs) -> None:
-        """
-        # base function for adding tag to text or caption
-
-        `edit_what` is either `caption` or `text`
-        """
-        try:
-            if edit_what == "caption":
-                edit_method = bot.edit_message_caption
-                og_text_html = message.caption_html if message.caption_html else ""
-            else:
-                edit_method = bot.edit_message_text
-                og_text_html = message.text_html if message.text_html else ""
-            await edit_method(
-                **{edit_what: og_text_html + "\n" + tag},
-                chat_id=target_uid,
-                message_id=copied_message_id,
-                parse_mode=PM.HTML,
-                reply_markup=reply_markup,
-                **kwargs,
-            )
-            return True
-        except Exception as e:
-            pass
-
-    if replied_to_link:
-        replied_to_link = f'<blockquote><a href="{replied_to_link}">ریپلای به این پیام</a></blockquote>'
-    if message.audio and not custom_tag:
-        await add_tag(
-            dbh.get_audio_tag(target_uid) +'\n'+ replied_to_link,
-            "caption",
-            show_caption_above_media=message.show_caption_above_media,
-        )
-    elif custom_tag:
-        # edit text
-        if not await add_tag(
-            custom_tag +'\n'+ replied_to_link,
-            "text",
-            link_preview_options=message.link_preview_options,
-        ):
-            await add_tag(
-                custom_tag +'\n'+ replied_to_link,
-                "caption",
-                show_caption_above_media=message.show_caption_above_media,
-            )
-    elif replied_to_link:
-        if not await add_tag(
-            replied_to_link,
-            "text",
-            link_preview_options=message.link_preview_options,
-        ):
-            await add_tag(
-                replied_to_link,
-                "caption",
-                show_caption_above_media=message.show_caption_above_media,
-            )
-
-    context.user_data.clear()
-    return END
 
 
 @delete_notify_on_END
@@ -831,11 +628,6 @@ async def cancel(
     await message.edit_text("چشم بهم بزنی این پیام نیس👋")
     context.application.job_queue.run_once(delete_message, 2, {"message": message})
     return END
-
-
-class FilterMediaGroups(filters.MessageFilter):
-    def check_update(self, update: Update) -> Optional[Union[bool, FilterDataDict]]:
-        return bool(update.message and update.message.media_group_id)
 
 
 delete_message_handler = CallbackQueryHandler(delete_msg_clbk, r"^delete\|")

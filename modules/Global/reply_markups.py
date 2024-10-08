@@ -107,3 +107,13 @@ MYLINKS_MARKUP = {
 }
 
 CANCEL_BUTTON = InlineKeyboardButton("بیخیالش", callback_data="cancel")
+
+
+class MSG_BTN:
+    REPLIED_TO = "ریپلای شده به این پیام"
+    REPLY = "⌨️ ارسال جواب"
+    SEEN = "✅ سین بزن"
+    SEEN_DONE = "☑️ سین زدم"
+    BLOCK = "🔒 بلاک"
+    UNBLOCK = "🔓 آنبلاک"
+    REPORT = "⚠️ ریپورت"
