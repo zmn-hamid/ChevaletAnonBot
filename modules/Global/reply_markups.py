@@ -9,6 +9,12 @@ SETTINGS_MARKUP = {
             ),
         ],
         [
+            InlineKeyboardButton("🔗 پیشنمایشِ لینک", callback_data="wpp|"),
+            InlineKeyboardButton(
+                "👌 ارسال پیامهای پیوسته", callback_data="media-settings|"
+            ),
+        ],
+        [
             InlineKeyboardButton(
                 "🖋 ریپلای به بخشی از پیام", callback_data="reply-quote|"
             ),
@@ -19,9 +25,6 @@ SETTINGS_MARKUP = {
         [
             InlineKeyboardButton("⚠️ اخطار پاک سازی پیام", callback_data="warning|"),
             InlineKeyboardButton("📛 تغییر نام نمایشی", callback_data="change-name|"),
-        ],
-        [
-            InlineKeyboardButton("🔗 تنظیمات پیشنمایشِ لینک", callback_data="wpp|"),
         ],
         [
             InlineKeyboardButton("#️⃣ تگ آهنگ", callback_data="audio-tag|"),

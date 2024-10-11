@@ -38,6 +38,32 @@ async def settings_cmd_clbk(
 
 
 @prep_function
+async def media_settings_clbk(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    message: Message,
+    userid: str,
+    bot: Bot,
+    dbh: DBHandler,
+) -> None:
+    """# unblocks all the blocked users"""
+    if (clbk := update.callback_query) and (data := clbk.data):
+        await clbk.edit_message_text(
+            fetch_text("settings/media_settings"),
+            parse_mode=PM.HTML,
+            reply_markup=InlineKeyboardMarkup(
+                [
+                    [
+                        [SETTINGS_MARKUP["formatting"]],
+                        SETTINGS_MARKUP["back-to-menu"],
+                    ],
+                ]
+            ),
+        )
+        return END
+
+
+@prep_function
 async def reply_quote_clbk(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -572,6 +598,7 @@ _formatting_clbk = CallbackQueryHandler(what_is_formatting, r"what-is-formatting
 settings_handler = ConversationHandler(
     entry_points=[
         CallbackQueryHandler(reply_quote_clbk, r"^reply-quote\|"),
+        CallbackQueryHandler(media_settings_clbk, r"^media-settings\|"),
         CallbackQueryHandler(change_name, r"^change-name\|"),
         CallbackQueryHandler(custom_tag, r"^custom-tag\|"),
         CallbackQueryHandler(audio_tag, r"^audio-tag\|"),
