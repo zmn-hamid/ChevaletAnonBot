@@ -54,7 +54,7 @@ async def media_settings_clbk(
             reply_markup=InlineKeyboardMarkup(
                 [
                     [
-                        [SETTINGS_MARKUP["formatting"]],
+                        SETTINGS_MARKUP["formatting"],
                         SETTINGS_MARKUP["back-to-menu"],
                     ],
                 ]
