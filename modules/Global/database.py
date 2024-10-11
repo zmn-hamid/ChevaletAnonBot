@@ -202,7 +202,7 @@ class DBHandler(DB_Base):
 
     def rm_cid(self, uid: str, cid: str) -> bool:
         self.cur.execute(
-            f'DELETE FROM {self.cids_table} WHERE cid="{cid}" and uid="{uid}"'
+            f'DELETE FROM {self.cids_table} WHERE BINARY cid="{cid}" and uid="{uid}"'
         )
         self.db.commit()
 
@@ -214,7 +214,7 @@ class DBHandler(DB_Base):
     def get_cids(self, uid: str) -> List[str]:
         """get all the cids of a user"""
         self.cur.execute(
-            f'SELECT cid FROM {self.cids_table} WHERE uid="{uid}" ' "ORDER BY id ASC"
+            f"SELECT cid FROM {self.cids_table} WHERE uid='{uid}' ORDER BY id ASC"
         )
         return [item[0] for item in self.cur.fetchall()]
 
@@ -233,7 +233,7 @@ class DBHandler(DB_Base):
 
     def get_uid(self, cid: str) -> str | None:
         """gets the uid based on a cid"""
-        self.cur.execute(f'SELECT uid FROM {self.cids_table} WHERE cid="{cid}"')
+        self.cur.execute(f'SELECT uid FROM {self.cids_table} WHERE BINARY cid "{cid}"')
         output = self.cur.fetchall()
         if len(output):
             return output[0][0]

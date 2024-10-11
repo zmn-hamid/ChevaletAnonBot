@@ -55,9 +55,8 @@ async def handle_media(
 ) -> None | int:
     """handles sent medias"""
     # check if it's reply to channel or message (auto reply)
-    if (
-        (context.user_data.get("group_msgs") in [None, []]) or
-        (message.media_group_id != context.user_data.get("media_group_id"))
+    if (context.user_data.get("group_msgs") in [None, []]) or (
+        message.media_group_id != context.user_data.get("media_group_id")
     ):
         context.user_data.clear()
         output = await check_if_autoreply(update, context, message, userid, bot, dbh)
@@ -67,17 +66,17 @@ async def handle_media(
             return other_messages_template(message)
 
     # check if the media is handled ok
-    if (
-        (expiration := context.user_data.get("group_expiration")) in [None, []]
-        or context.user_data.get("group_msgs") in [None, []]
-    ):
+    if (expiration := context.user_data.get("group_expiration")) in [
+        None,
+        [],
+    ] or context.user_data.get("group_msgs") in [None, []]:
         return await other_messages_template(message)
 
     # check if expired
     if time.time() - expiration >= EXPIRE_AFTER:
         context.user_data.clear()
         return await message.reply_text(
-            'دیر شد. توی یه پیام جدید بفرست',
+            "دیر شد. توی یه پیام جدید بفرست",
             reply_parameters=ReplyParameters(message.message_id, userid),
         )
 
@@ -85,9 +84,9 @@ async def handle_media(
     context.user_data["group_msgs"].append(message)
 
     # vars
-    target_cid = context.user_data['group_target_cid']
+    target_cid = context.user_data["group_target_cid"]
     target_uid = dbh.get_uid(target_cid)
-    msgs: List[Message] = context.user_data["group_msgs"] # it's >2 now so we can go on
+    msgs: List[Message] = context.user_data["group_msgs"]  # it's >2 now so we can go on
     reply_markup = context.user_data["group_reply_markup"]
 
     # delete the previously sent
@@ -95,18 +94,28 @@ async def handle_media(
         await bot.delete_messages(target_uid, context.user_data["sent_medias"])
         context.user_data["sent_medias"] = []
     # send new ones
-    sent_messages = await bot.copy_messages(target_uid, userid, [msg.message_id for msg in msgs])
+    sent_messages = await bot.copy_messages(
+        target_uid, userid, [msg.message_id for msg in msgs]
+    )
     # add for future deletion
-    context.user_data["sent_medias"] += [sent_msg.message_id for sent_msg in sent_messages]
+    context.user_data["sent_medias"] += [
+        sent_msg.message_id for sent_msg in sent_messages
+    ]
 
     # send tags
     ## calculate which message(s) to tag
     message_idxs_for_tags = []
     media_type = effective_message_type(msgs[0])
-    tag = dbh.get_audio_tag(target_uid) if media_type == MessageType.AUDIO else dbh.get_custom_tag(target_uid)
+    tag = (
+        dbh.get_audio_tag(target_uid)
+        if media_type == MessageType.AUDIO
+        else dbh.get_custom_tag(target_uid)
+    )
+
     def _mark_all():
-        '''marks all of the messages to be add tags to them'''
+        """marks all of the messages to be add tags to them"""
         return [{"idx": idx, "msg": msg} for idx, msg in enumerate(msgs)]
+
     if media_type in [MessageType.PHOTO, MessageType.VIDEO]:
         for idx, msg in enumerate(msgs):
             if msg.caption_html:
@@ -115,7 +124,7 @@ async def handle_media(
                     # so just give all of them tags
                     message_idxs_for_tags = _mark_all()
                     break
-                message_idxs_for_tags.append({'idx':idx, 'msg': msg})
+                message_idxs_for_tags.append({"idx": idx, "msg": msg})
         if not message_idxs_for_tags:
             # means there's only one message marked to get tag
             message_idxs_for_tags.append({"idx": 0, "msg": msgs[0]})
@@ -424,6 +433,7 @@ async def block(
                 )
             except:
                 pass
+
         if dbh.add_block(userid, target_uid):
             await _add_block()
             if userid == target_uid:
@@ -490,6 +500,7 @@ async def unblock(
                 )
             except:
                 pass
+
         if dbh.remove_block(userid, target_uid):
             await _remove_block()
             if userid == target_uid:
@@ -594,10 +605,7 @@ async def delete_msg_clbk(
         # delete the sent message
         for tbd in to_be_deleted:
             try:
-                await bot.delete_message(
-                    dbh.get_uid(target_cid),
-                    tbd
-                )
+                await bot.delete_message(dbh.get_uid(target_cid), tbd)
             except:
                 pass
         # delete the message so it won't fuck up

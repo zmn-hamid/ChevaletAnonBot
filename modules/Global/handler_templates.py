@@ -150,8 +150,6 @@ async def send_msg_template(
     if len(target_cids) > 1 and not target_mid:
         # means it's not an answer, is a new message
         # also the user has more than one cid
-        if str(userid) == "84581926":
-            logger.info(f"{target_uid} | {target_cids} | {target_cid}")
         reply_markup_keyboard.append(
             [
                 InlineKeyboardButton(
