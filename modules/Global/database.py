@@ -214,7 +214,7 @@ class DBHandler(DB_Base):
     def get_cids(self, uid: str) -> List[str]:
         """get all the cids of a user"""
         self.cur.execute(
-            f"SELECT cid FROM {self.cids_table} WHERE uid='{uid}' ORDER BY id ASC"
+            f'SELECT cid FROM {self.cids_table} WHERE uid="{uid}" ORDER BY id ASC'
         )
         return [item[0] for item in self.cur.fetchall()]
 
