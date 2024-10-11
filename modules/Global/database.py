@@ -233,7 +233,7 @@ class DBHandler(DB_Base):
 
     def get_uid(self, cid: str) -> str | None:
         """gets the uid based on a cid"""
-        self.cur.execute(f'SELECT uid FROM {self.cids_table} WHERE BINARY cid "{cid}"')
+        self.cur.execute(f'SELECT uid FROM {self.cids_table} WHERE BINARY cid="{cid}"')
         output = self.cur.fetchall()
         if len(output):
             return output[0][0]
