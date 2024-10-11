@@ -63,7 +63,7 @@ async def handle_media(
         if type(output) == int:
             return output
         else:
-            return other_messages_template(message)
+            return await other_messages_template(message)
 
     # check if the media is handled ok
     if (expiration := context.user_data.get("group_expiration")) in [
