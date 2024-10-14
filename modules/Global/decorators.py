@@ -4,13 +4,14 @@ from telegram.ext import *
 from telegram.error import Forbidden, BadRequest, TimedOut
 
 # project imports
+from config import ERROR_CHAT_ID
 from modules.Global.log import logger
 from modules.Global.database import DBHandler, db_base
 from modules.Global.user_init import init_user
 
 # global imports
 from typing import Callable
-from mysql.connector.errors import Error as mysql_Error
+from mysql.connector.errors import Error as mysql_Error, InterfaceError
 from mysql.connector.cursor import MySQLCursor
 
 
@@ -76,6 +77,29 @@ def prep_function(func) -> Callable:
 
                     context.user_data["no db check"] = False
                     return await func(update, context, message, userid, bot, dbh)
+        except mysql_Error as e:
+            try:
+                await message.reply_text(
+                    "مشکلی برای سرور به وجود آمده. به پشتیبانی خبردادیم، لطفا صبر کنید"
+                )
+            except:
+                pass
+            try:
+                await bot.send_message(
+                    ERROR_CHAT_ID, f"MYSQL ERROR: {e} -> errno: {e.errno}"
+                )
+            except:
+                try:
+                    await bot.send_message(ERROR_CHAT_ID, f"MYSQL ERROR2: {e}")
+                except:
+                    try:
+                        await bot.send_message(
+                            ERROR_CHAT_ID, f"MYSQL ERROR3: COULDN'T EVEN SEND THE ERROR"
+                        )
+                        logger.error(f"ERRORRR -> {e}")
+                    except:
+                        pass
+
         except TimedOut:
             return
         except Forbidden as e:
