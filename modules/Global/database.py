@@ -28,16 +28,11 @@ class DB_Base:
 
         self.connection_pool: MySQLConnectionPool
 
-        # # init runs
-        # self.connect_db()
-        # self.make_tables()
-
     def connect_db(self) -> None:
         """connects to database"""
         self.connection_pool = MySQLConnectionPool(
             pool_name="mypool",
-            pool_size=5,
-            pool_reset_session=True,
+            pool_size=30,
             host="localhost",
             database=DB_NAME,
             user=DB_USER,

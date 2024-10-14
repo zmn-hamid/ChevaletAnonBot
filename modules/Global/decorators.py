@@ -80,7 +80,7 @@ def prep_function(func) -> Callable:
         except mysql_Error as e:
             try:
                 await message.reply_text(
-                    "مشکلی برای سرور به وجود آمده. به پشتیبانی خبردادیم، لطفا صبر کنید"
+                    "مشکلی برای دیتابیس به وجود آمده. به پشتیبانی خبردادیم، لطفا صبر کنید و دوباره تلاش کنید"
                 )
             except:
                 pass
@@ -106,6 +106,15 @@ def prep_function(func) -> Callable:
             # bot is blocked by the user
             logger.debug(str(e))
             return ConversationHandler.END
+        finally:
+            try:
+                conn.close()
+            except:
+                pass
+            try:
+                cur.close()
+            except:
+                pass
 
     return wrapper
 
