@@ -157,7 +157,7 @@ async def handle_media(
     # handle warning and deletion of it
     sent_medias = context.user_data["sent_medias"]
     notify_msg: Message = context.user_data["group_notify_msg"]
-    warning_message = await _warning_handle(
+    if warning_message := await _warning_handle(
         context.user_data["group_was_channel_reply"],
         dbh,
         target_uid,
@@ -165,8 +165,8 @@ async def handle_media(
         message,
         f"{target_cid}|{'|'.join(list(map(str, sent_medias)))}|{markup_msg.message_id}|{notify_msg.message_id if notify_msg else None}",
         context,
-    )
-    context.user_data["sent_medias"].append(warning_message.message_id)
+    ):
+        context.user_data["sent_medias"].append(warning_message.message_id)
     context.user_data["group_expiration"] = time.time() + EXPIRE_AFTER
 
 

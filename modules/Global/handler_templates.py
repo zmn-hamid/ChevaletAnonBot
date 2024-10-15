@@ -460,12 +460,12 @@ async def _warning_handle(
         context.application.job_queue.run_once(
             delete_warning, DELETION_TIMEOUT, {"warning_message": warning_message}
         )
+        return warning_message
     else:
         await message.reply_text(
             sent_text,
             reply_parameters=ReplyParameters(message.message_id),
         )
-    return warning_message
 
 
 async def add_tag(
