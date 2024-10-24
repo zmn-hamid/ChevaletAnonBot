@@ -23,7 +23,6 @@ def prep_function(func) -> Callable:
         if (
             update == None
             or update.effective_chat.type in ["channel", "group"]
-            or not update.message
             or update.edited_message
         ):
             return ConversationHandler.END
