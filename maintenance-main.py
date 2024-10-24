@@ -16,7 +16,11 @@ async def bot_under_maintainance(
 ) -> None:
     """# to handle maintainance"""
     try:
-        await update.message.reply_html("بات در حال آپدیت شدنه. لطفا یکم صبر کن🫶")
+        if update.message and str(update.effective_chat.type) not in [
+            "channel",
+            "group",
+        ]:
+            await update.message.reply_html("بات در حال آپدیت شدنه. لطفا یکم صبر کن🫶")
     except:
         pass
 
