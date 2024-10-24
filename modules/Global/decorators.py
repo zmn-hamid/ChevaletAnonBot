@@ -21,9 +21,10 @@ def prep_function(func) -> Callable:
     async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # only handle updates from private chats
         if (
-            update is None
-            and update.effective_chat.type in ["channel", "group"]
-            and not update.message
+            update == None
+            or update.effective_chat.type in ["channel", "group"]
+            or not update.message
+            or update.edited_message
         ):
             return ConversationHandler.END
         try:
