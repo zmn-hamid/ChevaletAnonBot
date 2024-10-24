@@ -20,7 +20,11 @@ def prep_function(func) -> Callable:
 
     async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # only handle updates from private chats
-        if update.effective_chat.type in ["channel", "group"]:
+        if (
+            update is None
+            and update.effective_chat.type in ["channel", "group"]
+            and not update.message
+        ):
             return ConversationHandler.END
         try:
             context.user_data.setdefault("media_msgs", [])

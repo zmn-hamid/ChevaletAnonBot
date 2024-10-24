@@ -19,6 +19,8 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
     async def inner():
         try:
+            if update is None:
+                return
             # error code
             code = uuid()
 
