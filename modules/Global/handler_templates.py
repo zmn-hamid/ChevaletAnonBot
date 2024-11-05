@@ -54,6 +54,20 @@ async def send_msg_template(
     external_reply = message.external_reply
     context.user_data.clear()
 
+    # check if replied to another new message to cancel sending to the previous
+    # : is used for when pressed the answer button but replied to another one
+    if (
+        target_mid
+        and (_output := await is_answer(message, bot))
+        and list(_output) != [target_cid, target_mid]
+    ):
+        await message.reply_html(
+            "در حال ارسال پیام به یکی دیگه بودی. کنسلش کردم. "
+            "دوباره ریپلای بزن به فردی که میخواستی",
+            reply_parameters=ReplyParameters(message.message_id),
+        )
+        return END
+
     # get target uid
     target_uid = dbh.get_uid(target_cid)
 
@@ -213,6 +227,7 @@ async def send_msg_template(
     if type(output) == MessageId:
         copied_message_id: MessageId = output.message_id
     else:
+        context.user_data.clear()
         return output
 
     # removing the link preview if needed
@@ -406,8 +421,8 @@ async def check_if_autoreply(
 ):
     # send answer if it's replied to a sent message
     output = await is_answer(message, bot)
-    if type(output) == int:
-        return output
+    if output == END:
+        return END
     if output:
         context.user_data["target_cid"], context.user_data["reply_to"] = output
         context.user_data["channel_reply"] = None
@@ -416,8 +431,8 @@ async def check_if_autoreply(
 
     # send to channel if replied to
     output = await is_reply_to_channel(update, context, message, userid, bot, dbh)
-    if type(output) == int:
-        return output
+    if output == END:
+        return END
     if output:
         context.user_data["target_cid"], context.user_data["reply_to"] = output
         context.user_data["channel_reply"] = True
