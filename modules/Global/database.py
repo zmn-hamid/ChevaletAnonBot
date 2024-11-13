@@ -172,11 +172,14 @@ class DBHandler(DB_Base):
     def ban_action(self, uid: str, ban: bool) -> None:
         """ban or unban user"""
         ban_translation = "TRUE" if ban else "FALSE"
+        try:
+            self.add_user(uid, "-")
+        except:
+            pass
+
         self.cur.execute(
-            f"INSERT INTO {self.users_table} VALUES (NULL, %s, %s) "
-            f"ON CONFLICT (uid) DO UPDATE "
-            f"SET is_banned=EXCLUDED.is_banned",
-            (str(uid), ban_translation),
+            f'UPDATE {self.users_table} SET is_banned=%s WHERE uid="{uid}"',
+            (ban_translation,),
         )
         self.db.commit()
 
