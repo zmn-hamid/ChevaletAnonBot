@@ -381,6 +381,17 @@ class DBHandler(DB_Base):
         )
         return self.cur.fetchone()[0]
 
+    def get_all_reports(self):
+        self.cur.execute(f"SELECT reported_id FROM {self.reports_table}")
+        _reports = [item[0] for item in self.cur.fetchall()]
+        reports = {}
+        for r in _reports:
+            if r in reports.keys():
+                reports[r] += 1
+            else:
+                reports[r] = 1
+        return reports
+
 
 db_base = DB_Base()
 db_base.connect_db()

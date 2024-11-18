@@ -118,7 +118,17 @@ async def admin_cmd(
                         f"deleted {delete_count} instance(s) of report: {report_id}"
                     )
             elif text[1] == "get":
-                await message.reply_text(dbh.get_report_id(report_id))
+                if report_id == "all":
+                    sep = " | "
+                    reports = []
+                    for key, val in dbh.get_all_reports().items():
+                        if len(text := sep.join(reports)) > 3900:
+                            await message.reply_text(text)
+                        reports.append(f"{key} ({val})")
+                    if reports:
+                        await message.reply_text(sep.join(reports))
+                else:
+                    await message.reply_text(dbh.get_report_id(report_id))
 
         else:
             raise WrongSyntaxErr
