@@ -52,6 +52,7 @@ async def admin_cmd(
                 send_mass_msg, 7, {"message": message}
             )
 
+        # send msg to specific user | used for reports mostly
         elif arg1 == "send-msg":
             target_uid = text[1]
             if not (len(text) > 2 and text[2] == "YES"):
@@ -100,6 +101,24 @@ async def admin_cmd(
             return await message.reply_html(
                 await get_link_username(text[1], bot),
             )
+
+        # report id handling
+        elif arg1 == "report":
+            report_id = text[2]
+            if text[1] == "add":
+                await message.reply_text(
+                    f"added {report_id}\ncounter: {dbh.add_report_id(report_id)}"
+                )
+            elif text[1] == "del":
+                delete_count = dbh.del_report_id(report_id)
+                if delete_count == 0:
+                    await message.reply_text("this report didn't exist")
+                else:
+                    await message.reply_text(
+                        f"deleted {delete_count} instance(s) of report: {report_id}"
+                    )
+            elif text[1] == "get":
+                await message.reply_text(dbh.get_report_id(report_id))
 
         else:
             raise WrongSyntaxErr

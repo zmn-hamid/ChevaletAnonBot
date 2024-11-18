@@ -9,3 +9,6 @@
 <code>/admin cid get UID</code>: to get the cid limit of a user
 <code>/admin cid set UID LIMIT</code>: to set the cid limit of a user | LIMIT is int
 <code>/admin link UID</code>: to get the user in a hyperlinked format
+<code>/admin report add REPORT_ID</code>: add REPORT_ID to database
+<code>/admin report del REPORT_ID</code>: del all the REPORT_ID from database
+<code>/admin report get REPORT_ID</code>: get count of REPORT_ID in database

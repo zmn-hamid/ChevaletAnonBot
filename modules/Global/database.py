@@ -25,6 +25,7 @@ class DB_Base:
         self.users_table = "users"
         self.blocks_table = "blocks"
         self.cids_table = "cids"
+        self.reports_table = "reports"
 
         self.connection_pool: MySQLConnectionPool
 
@@ -70,6 +71,12 @@ class DB_Base:
                         id INT AUTO_INCREMENT PRIMARY KEY,
                         uid VARCHAR(255) NOT NULL,
                         cid VARCHAR(255) NOT NULL UNIQUE);
+                    """
+                )
+                cur.execute(
+                    f"""CREATE TABLE IF NOT EXISTS {self.reports_table} (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        reported_id VARCHAR(255) NOT NULL);
                     """
                 )
 
@@ -350,6 +357,28 @@ class DBHandler(DB_Base):
 
     def user_count(self):
         self.cur.execute(f"SELECT COUNT(*) FROM {self.users_table}")
+        return self.cur.fetchone()[0]
+
+    def add_report_id(self, report_id: str):
+        self.cur.execute(
+            f"INSERT INTO {self.reports_table} VALUES (NULL, %s)", (str(report_id),)
+        )
+        self.db.commit()
+        return self.get_report_id(report_id)
+
+    def del_report_id(self, report_id: str):
+        count = self.get_report_id(report_id)
+        if count:
+            self.cur.execute(
+                f'DELETE FROM {self.reports_table} WHERE reported_id="{report_id}"'
+            )
+            self.db.commit()
+        return count
+
+    def get_report_id(self, report_id: str):
+        self.cur.execute(
+            f'SELECT COUNT(*) FROM {self.reports_table} WHERE reported_id="{report_id}"'
+        )
         return self.cur.fetchone()[0]
 
 
