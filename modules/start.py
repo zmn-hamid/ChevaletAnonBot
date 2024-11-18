@@ -5,6 +5,7 @@ from telegram.ext import *
 from telegram.constants import ParseMode as PM, MessageType
 from telegram.warnings import PTBUserWarning
 from telegram.helpers import effective_message_type
+from telegram.error import TelegramError
 
 # project imports
 from config import REPORT_CHAT_ID, SUPPORT_ADMIN, EXPIRE_AFTER
@@ -534,7 +535,7 @@ async def report(
         report_id = uuid()
 
         # report to REPORT CHANNEL
-        first_message = await context.bot.send_message(
+        first_message = await bot.send_message(
             REPORT_CHAT_ID,
             f"id: <code>{report_id}</code>\n"
             f"reporter: {await get_link_username(userid, bot)}\n"
@@ -542,12 +543,23 @@ async def report(
             f"message:",
             parse_mode=PM.HTML,
         )
-        await context.bot.copy_message(
-            REPORT_CHAT_ID,
-            target_uid,
-            target_mid,
-            reply_parameters=ReplyParameters(first_message.message_id, None, True),
-        )
+        try:
+            await bot.copy_message(
+                REPORT_CHAT_ID,
+                target_uid,
+                target_mid,
+                reply_parameters=ReplyParameters(first_message.message_id, None, True),
+            )
+        except TelegramError:
+            second_message = await message.copy(
+                REPORT_CHAT_ID,
+                reply_parameters=ReplyParameters(first_message.message_id),
+            )
+            await bot.send_message(
+                REPORT_CHAT_ID,
+                "این پیام از چت گیرنده کپی شد. ممکنه تهش تگ دلخواه داشته باشه",
+                reply_parameters=ReplyParameters(second_message.message_id),
+            )
         await message.reply_html(
             f"ریپورت شد.\nکد پیگیری: <code>{report_id}</code>",
             reply_parameters=ReplyParameters(message.message_id),
