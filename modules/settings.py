@@ -25,6 +25,7 @@ async def settings_cmd_clbk(
     dbh: DBHandler,
 ) -> None:
     """sends settings help text"""
+    await update.callback_query.answer()
     if update.callback_query:
         method = message.edit_text
     else:
@@ -47,6 +48,7 @@ async def media_settings_clbk(
     dbh: DBHandler,
 ) -> None:
     """# unblocks all the blocked users"""
+    await update.callback_query.answer()
     if (clbk := update.callback_query) and (data := clbk.data):
         await clbk.edit_message_text(
             fetch_text("settings/media_settings"),
@@ -73,6 +75,7 @@ async def reply_quote_clbk(
     dbh: DBHandler,
 ) -> None:
     """# unblocks all the blocked users"""
+    await update.callback_query.answer()
     if (clbk := update.callback_query) and (data := clbk.data):
         await clbk.edit_message_text(
             fetch_text("settings/reply_quote"),
@@ -98,6 +101,7 @@ async def change_name(
     dbh: DBHandler,
 ) -> int:
     """# sends changing name help text"""
+    await update.callback_query.answer()
     if (clbk := update.callback_query) and (data := clbk.data):
         msg = await clbk.edit_message_text(
             fetch_text("settings/change_name") % (dbh.get_name(userid)),
@@ -157,6 +161,7 @@ async def wpp_clbk(
     dbh: DBHandler,
 ) -> None:
     """# warning settings for user"""
+    await update.callback_query.answer()
     if (clbk := update.callback_query) and (data := clbk.data):
 
         async def _wpp_text():
@@ -203,6 +208,7 @@ async def warning_clbk(
     dbh: DBHandler,
 ) -> None:
     """# warning settings for user"""
+    await update.callback_query.answer()
     if (clbk := update.callback_query) and (data := clbk.data):
 
         async def _warning_text():
@@ -249,6 +255,7 @@ async def easier_answer_clbk(
     dbh: DBHandler,
 ) -> None:
     """# unblocks all the blocked users"""
+    await update.callback_query.answer()
     if (clbk := update.callback_query) and (data := clbk.data):
         await clbk.edit_message_text(
             fetch_text("settings/easier_answer"),
@@ -274,6 +281,7 @@ async def seen_settings_clbk(
     dbh: DBHandler,
 ) -> None:
     """# warning settings for user"""
+    await update.callback_query.answer()
     if (clbk := update.callback_query) and (data := clbk.data):
 
         async def _seen_text():
@@ -322,6 +330,7 @@ async def custom_tag(
     """
     # custom tag help text
     """
+    await update.callback_query.answer()
     if (clbk := update.callback_query) and (data := clbk.data):
         user_custom_tag = dbh.get_custom_tag(userid)
         msg = await clbk.edit_message_text(
@@ -408,6 +417,7 @@ async def audio_tag(
     dbh: DBHandler,
 ) -> int:
     """# audio tag help text"""
+    await update.callback_query.answer()
     if (clbk := update.callback_query) and (data := clbk.data):
         user_audio_tag = dbh.get_audio_tag(userid)
         msg = await clbk.edit_message_text(
@@ -494,6 +504,7 @@ async def unblock_all_clbk(
     dbh: DBHandler,
 ) -> None:
     """# unblocks all the blocked users"""
+    await update.callback_query.answer()
     if (clbk := update.callback_query) and (data := clbk.data):
         _, activation_text = data.split("|", 1)
         if activation_text:

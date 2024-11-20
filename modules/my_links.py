@@ -33,6 +33,7 @@ async def my_links_template(
     dbh: DBHandler,
 ) -> None:
     if update.callback_query:
+        await update.callback_query.answer()
         method = update.callback_query.edit_message_text
     else:
         method = message.reply_text
@@ -74,6 +75,7 @@ async def add_link_clbk(
     dbh: DBHandler,
 ) -> None:
     """# adds a cid"""
+    await update.callback_query.answer()
     if clbk := update.callback_query:
         # check if user has reached limit
         cid_limit = dbh.get_cid_limit(userid)
@@ -100,6 +102,7 @@ async def remove_link_clbk(
     dbh: DBHandler,
 ) -> None:
     """# removes a cid"""
+    await update.callback_query.answer()
     if (clbk := update.callback_query) and (data := clbk.data):
         data_split = data.split("|")
         cids = dbh.get_cids(userid)
@@ -213,6 +216,7 @@ async def change_link_clbk(
     dbh: DBHandler,
 ) -> int:
     """# change cid selection"""
+    await update.callback_query.answer()
     if (clbk := update.callback_query) and (data := clbk.data):
         data_split = data.split("|")
         cids = dbh.get_cids(userid)
@@ -345,6 +349,7 @@ async def what_is_cid(
     dbh: DBHandler,
 ) -> int:
     """# explanation for cid"""
+    await update.callback_query.answer()
     await message.reply_html(fetch_text("cid_explanation"))
 
 
