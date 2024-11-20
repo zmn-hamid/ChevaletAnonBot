@@ -25,8 +25,8 @@ async def settings_cmd_clbk(
     dbh: DBHandler,
 ) -> None:
     """sends settings help text"""
-    await update.callback_query.answer()
     if update.callback_query:
+        await update.callback_query.answer()
         method = message.edit_text
     else:
         method = message.reply_text
