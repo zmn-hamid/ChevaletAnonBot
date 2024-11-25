@@ -58,7 +58,8 @@ async def send_msg_template(
     # : is used for when pressed the answer button but replied to another one
     if (
         target_mid
-        and (_output := await is_answer(message, bot))
+        and (_output := await is_answer(message, bot, False))
+        and (_output != END)
         and list(_output) != [target_cid, target_mid]
     ):
         await message.reply_html(
@@ -308,6 +309,7 @@ async def send_msg_template(
 async def is_answer(
     message: Message,
     bot: Bot,
+    _warn_wrong_reply: bool = True,
 ):
     reply = message.reply_to_message
     if reply:
@@ -318,10 +320,11 @@ async def is_answer(
                     if (data := button.callback_data) and data.startswith("answer|"):
                         _, target_cid, target_mid = data.split("|")
                         return target_cid, target_mid
-        await message.reply_text(
-            "اگه میخوای جواب بدی، باید خود پیام ناشناس رو ریپلای کنی. اونی که زیرش دکمه های شیشه ای هست",
-            reply_parameters=ReplyParameters(message.message_id),
-        )
+        if _warn_wrong_reply:
+            await message.reply_text(
+                "اگه میخوای جواب بدی، باید خود پیام ناشناس رو ریپلای کنی. اونی که زیرش دکمه های شیشه ای هست",
+                reply_parameters=ReplyParameters(message.message_id),
+            )
         return END
     return False
 

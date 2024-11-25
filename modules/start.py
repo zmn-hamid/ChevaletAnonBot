@@ -540,6 +540,7 @@ async def report(
             f"id: <code>{report_id}</code>\n"
             f"reporter: {await get_link_username(userid, bot)}\n"
             f"reported: {await get_link_username(target_uid, bot)}\n"
+            f"\n----------------\n❇️ COPY: <code>{target_uid}</code>\n------------\n"
             f"message:",
             parse_mode=PM.HTML,
         )
