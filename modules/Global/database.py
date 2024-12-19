@@ -38,6 +38,7 @@ class DB_Base:
             database=DB_NAME,
             user=DB_USER,
             password=DB_PASS,
+            collation="utf8mb4_general_ci",
         )
 
     def make_tables(self) -> None:
