@@ -73,9 +73,9 @@ def prep_function(func) -> Callable:
                         return ConversationHandler.END
 
                     if dbh.is_banned(userid):
-                        await message.reply_text(
-                            "از بات بن شدی. اگه فک میکنی این یه اشتباهه با ادمین صحبت کن"
-                        )
+                        # await message.reply_text(
+                        #     "از بات بن شدی. اگه فک میکنی این یه اشتباهه با ادمین صحبت کن"
+                        # )
                         context.user_data.clear()
                         return ConversationHandler.END
 

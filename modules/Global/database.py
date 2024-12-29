@@ -56,7 +56,8 @@ class DB_Base:
                         wpp BOOLEAN NOT NULL,
                         cid_limit INT NOT NULL,
                         custom_tag VARCHAR(255),
-                        audio_tag VARCHAR(255));
+                        audio_tag VARCHAR(255),
+                        chevaletid VARCHAR(255));
                     """
                 )
                 cur.execute(
