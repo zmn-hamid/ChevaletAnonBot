@@ -7,7 +7,7 @@ from telegram.error import Forbidden
 from telegram.constants import MessageEntityType as MET
 
 # project imports
-from config import DELETION_TIMEOUT, DELETION_TEXT, EXPIRE_AFTER
+from config import DELETION_TIMEOUT, DELETION_TEXT, EXPIRE_AFTER, ERROR_CHAT_ID
 from modules.Global.jobs import delete_warning
 from modules.Global.database import DBHandler
 from modules.Global.log import logger
@@ -16,10 +16,16 @@ from modules.Global.decorators import (
     handle_target_send,
 )
 from modules.Global.reply_markups import MSG_BTN as BTN
+from modules.Global.myhelpers import (
+    encode_chevaletid,
+    decode_chevaletid,
+    generate_chevaletid,
+)
 
 # global imports
 import re
 import time
+import warnings
 from typing import Optional, Union, List
 
 # vars
@@ -48,19 +54,29 @@ async def send_msg_template(
     bot: Bot,
     dbh: DBHandler,
 ) -> int:
+    target_chid = decode_chevaletid(context.user_data.get("target_chid"))
     target_cid = context.user_data.get("target_cid")
     target_mid = context.user_data.get("reply_to")  # None when not answer
     was_channel_reply = context.user_data.get("channel_reply")
     external_reply = message.external_reply
     context.user_data.clear()
 
+    # target uid
+    target_uid = dbh.get_uid_by_chevaletid(target_chid)
+    assert bool(target_uid)
+
     # check if replied to another new message to cancel sending to the previous
-    # : is used for when pressed the answer button but replied to another one
+    # -> is used for when pressed the answer button but replied to another one
     if (
         target_mid
-        and (_output := await is_answer(message, bot, False))
+        and (_output := await is_answer(message, bot, dbh, False))
         and (_output != END)
-        and list(_output) != [target_cid, target_mid]
+        and (
+            not (
+                (decode_chevaletid(_output[0]) == target_chid)
+                and (_output[1] == target_mid)
+            )
+        )
     ):
         await message.reply_html(
             "در حال ارسال پیام به یکی دیگه بودی. کنسلش کردم. "
@@ -69,11 +85,8 @@ async def send_msg_template(
         )
         return END
 
-    # get target uid
-    target_uid = dbh.get_uid(target_cid)
-
-    # check if target_cid was indeed valid
-    if target_uid == None:
+    # check if target cid is valid in case of existence
+    if target_cid and dbh.get_uid_by_cid(target_cid) == None:
         await message.reply_html(
             "مخاطبت لینکش رو عوض کرده. باید از نو پیام بفرستی",
             reply_parameters=ReplyParameters(message.message_id),
@@ -88,9 +101,10 @@ async def send_msg_template(
         )
         return END
 
-    # get cid from uid for sender (current user that is sending message)
-    # so the reply markup won't have the uid inside it, for extra privacy
-    sender_cid = dbh.get_cids(userid)[0]
+    # get chevaletid from uid for sender (current user that is sending message)
+    # and encode it
+    # so the reply markup won't have the uid or original chevaletid inside it, for extra privacy
+    sender_enc_chid = encode_chevaletid(dbh.get_chevaletid_by_uid(userid))
 
     ## calculate reply and quote
     reply_to_chat, reply_to_mid, quote_text, quote_position = None, None, None, None
@@ -128,15 +142,15 @@ async def send_msg_template(
         [
             InlineKeyboardButton(
                 BTN.REPLY,
-                callback_data=f"answer|{sender_cid}|{message.message_id}",
+                callback_data=f"answer|{sender_enc_chid}|{message.message_id}",
             ),
         ],
         [
             InlineKeyboardButton(
                 BTN.REPORT,
-                callback_data=f"report|{sender_cid}|{message.message_id}",
+                callback_data=f"report|{sender_enc_chid}|{message.message_id}",
             ),
-            InlineKeyboardButton(BTN.BLOCK, callback_data=f"block|{sender_cid}"),
+            InlineKeyboardButton(BTN.BLOCK, callback_data=f"block|{sender_enc_chid}"),
         ],
     ]
     ## if seen option is activated
@@ -145,7 +159,7 @@ async def send_msg_template(
             0,
             InlineKeyboardButton(
                 BTN.SEEN,
-                callback_data=f"seen|{sender_cid}|{message.message_id}",
+                callback_data=f"seen|{sender_enc_chid}|{message.message_id}",
             ),
         )
 
@@ -199,11 +213,11 @@ async def send_msg_template(
             time.time() + EXPIRE_AFTER
         )  # expire after EXPIRE_AFTER seconds
         # clear on end
-        context.user_data["target_cid"] = None
+        context.user_data["target_chid"] = None
         context.user_data["reply_to"] = None
         context.user_data["channel_reply"] = None
         # specify parameters for media sending
-        context.user_data["group_target_cid"] = target_cid
+        context.user_data["group_target_chid"] = sender_enc_chid
         context.user_data["group_was_channel_reply"] = was_channel_reply
         context.user_data["group_notify_msg"] = notify_msg
         context.user_data["group_reply_markup"] = reply_markup
@@ -252,7 +266,7 @@ async def send_msg_template(
         target_uid,
         userid,
         message,
-        f"{target_cid}|{copied_message_id}|{notify_msg.message_id if notify_msg else None}",
+        f"{encode_chevaletid(target_chid)}|{copied_message_id}|{notify_msg.message_id if notify_msg else None}",
         context,
     )
 
@@ -309,6 +323,7 @@ async def send_msg_template(
 async def is_answer(
     message: Message,
     bot: Bot,
+    dbh: DBHandler,
     _warn_wrong_reply: bool = True,
 ):
     reply = message.reply_to_message
@@ -318,8 +333,50 @@ async def is_answer(
             for row in reply.reply_markup.inline_keyboard:
                 for button in row:
                     if (data := button.callback_data) and data.startswith("answer|"):
-                        _, target_cid, target_mid = data.split("|")
-                        return target_cid, target_mid
+                        _, target_cid_or_chid, target_mid = data.split("|")
+                        # it may be old and be cid instead of chid
+                        target_cid = None
+                        if (target_chid := decode_chevaletid(target_cid_or_chid)) and (
+                            dbh.get_uid_by_chevaletid(target_chid)
+                        ):
+                            # # it's not actually a chevaletid. a normal cid interpreted as chevaletid
+                            target_chid = target_cid_or_chid  # already encoded
+                        else:
+                            # it's a cid
+                            target_uid = dbh.get_uid_by_cid(target_cid_or_chid)
+                            # if not target_uid, then the link is changed and has no match
+                            if target_uid == None:
+                                await message.reply_text(
+                                    "مخاطبت این لینک رو پاک یا عوض کرده. با لینک جدید بهش پیام بده",
+                                    reply_parameters=ReplyParameters(
+                                        message.message_id
+                                    ),
+                                )
+                                return END
+
+                            target_cid = True
+
+                            # add chevaletid for user if not made already
+                            if not (
+                                _target_chid := dbh.get_chevaletid_by_uid(target_uid)
+                            ):
+                                _target_chid = generate_chevaletid()
+                                if not dbh.set_chevaletid(target_uid, target_chid):
+                                    await message.reply_html(
+                                        "به مشکلی در خصوص مخاطب برخوردم. به ادمین خبر دادم ولی دوباره امتحان کن، به امتحانش میارزه :)",
+                                        reply_parameters=ReplyParameters(
+                                            message.message_id
+                                        ),
+                                    )
+                                    await bot.send_message(
+                                        ERROR_CHAT_ID,
+                                        f"COULDNT SET chevaletid FOR USER: {target_uid} ON SEND FROM {userid}",
+                                        parse_mode=PM.HTML,
+                                    )
+                                    return END
+                                target_chid = encode_chevaletid(_target_chid)
+                        return target_cid, target_chid, target_mid
+
         if _warn_wrong_reply:
             await message.reply_text(
                 "اگه میخوای جواب بدی، باید خود پیام ناشناس رو ریپلای کنی. اونی که زیرش دکمه های شیشه ای هست",
@@ -409,7 +466,37 @@ async def is_reply_to_channel(
             )
             return False
 
-        return target_cid, None
+        target_uid = dbh.get_uid_by_cid(target_cid)
+        # if not target_uid, then the link is changed and has no match
+        if target_uid == None:
+            await message.reply_text(
+                "مخاطبت این لینک رو پاک یا عوض کرده. با لینک جدید بهش پیام بده",
+                reply_parameters=ReplyParameters(message.message_id),
+            )
+            return END
+
+        # add chevaletid for user if not made already
+        target_chid = dbh.get_chevaletid_by_uid(target_uid)
+        if not target_chid:
+            target_chid = generate_chevaletid()
+            if not dbh.set_chevaletid(target_uid, target_chid):
+                await message.reply_html(
+                    "به مشکلی در خصوص مخاطب برخوردم. به ادمین خبر دادم. لطفا صبر کن",
+                    reply_parameters=ReplyParameters(message.message_id),
+                )
+                await bot.send_message(
+                    ERROR_CHAT_ID,
+                    f"COULDNT SET chevaletid FOR USER: {target_uid} ON SEND FROM {userid}",
+                    parse_mode=PM.HTML,
+                )
+                return END
+        target_chid = encode_chevaletid(target_chid)
+
+        return (
+            target_cid,
+            target_chid,
+            None,
+        )  # last one is target_mid (used for private replies)
 
     return False
 
@@ -423,11 +510,15 @@ async def check_if_autoreply(
     dbh: DBHandler,
 ):
     # send answer if it's replied to a sent message
-    output = await is_answer(message, bot)
+    output = await is_answer(message, bot, dbh)
     if output == END:
         return END
     if output:
-        context.user_data["target_cid"], context.user_data["reply_to"] = output
+        (
+            context.user_data["target_cid"],
+            context.user_data["target_chid"],
+            context.user_data["reply_to"],
+        ) = output
         context.user_data["channel_reply"] = None
         await send_msg_template(update, context, message, userid, bot, dbh)
         return END
@@ -437,7 +528,11 @@ async def check_if_autoreply(
     if output == END:
         return END
     if output:
-        context.user_data["target_cid"], context.user_data["reply_to"] = output
+        (
+            context.user_data["target_cid"],
+            context.user_data["target_chid"],
+            context.user_data["reply_to"],
+        ) = output
         context.user_data["channel_reply"] = True
         await send_msg_template(update, context, message, userid, bot, dbh)
         context.user_data["channel_reply"] = None

@@ -107,7 +107,7 @@ class DBHandler(DB_Base):
         """
         try:
             self.cur.execute(
-                f"INSERT INTO {self.users_table} VALUES (NULL, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                f"INSERT INTO {self.users_table} VALUES (NULL, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                 (
                     str(uid),
                     str(name)[:MAX_NAME_LENGTH],
@@ -118,6 +118,7 @@ class DBHandler(DB_Base):
                     DEFAULT_CID_LIMIT,
                     None,
                     DEFAULT_AUDIO_TAG,
+                    None,
                 ),
             )
             self.db.commit()
@@ -238,8 +239,46 @@ class DBHandler(DB_Base):
             return None
 
     def get_uid(self, cid: str) -> str | None:
-        """gets the uid based on a cid"""
+        """
+        gets the uid based on a cid
+        """
+        logger.warning(
+            "depricated method: DBHandler.get_uid. use DBHandler.get_uid_by_cid instead"
+        )
         self.cur.execute(f'SELECT uid FROM {self.cids_table} WHERE BINARY cid="{cid}"')
+        output = self.cur.fetchall()
+        if len(output):
+            return output[0][0]
+        else:
+            return None
+
+    def get_uid_by_cid(self, cid: str) -> str | None:
+        """
+        gets the uid based on a cid
+        """
+        self.cur.execute(f'SELECT uid FROM {self.cids_table} WHERE BINARY cid="{cid}"')
+        output = self.cur.fetchall()
+        if len(output):
+            return output[0][0]
+        else:
+            return None
+
+    def get_uid_by_chevaletid(self, chevaletid: str) -> str | None:
+        """gets the uid based on chevaletid"""
+        self.cur.execute(
+            f'SELECT uid FROM {self.users_table} WHERE BINARY chevaletid="{chevaletid}"'
+        )
+        output = self.cur.fetchall()
+        if len(output):
+            return output[0][0]
+        else:
+            return None
+
+    def get_chevaletid_by_uid(self, uid: str) -> str | None:
+        """gets the chevaletid based on uid"""
+        self.cur.execute(
+            f'SELECT chevaletid FROM {self.users_table} WHERE BINARY uid="{uid}"'
+        )
         output = self.cur.fetchall()
         if len(output):
             return output[0][0]
@@ -349,6 +388,19 @@ class DBHandler(DB_Base):
             self.db.commit()
         except IntegrityError:
             pass
+
+    def set_chevaletid(self, uid: str, chevaletid: str) -> None:
+        """sets chevaletid for user"""
+        try:
+            self.cur.execute(
+                f'UPDATE {self.users_table} SET chevaletid=%s WHERE uid="{uid}"',
+                (chevaletid,),
+            )
+            self.db.commit()
+            return True
+        except IntegrityError:
+            pass
+        return False
 
     def user_status(self, uid: str) -> list:
         """gets ban status and cid limit of user"""

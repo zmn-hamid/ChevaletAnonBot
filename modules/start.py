@@ -8,7 +8,7 @@ from telegram.helpers import effective_message_type
 from telegram.error import TelegramError
 
 # project imports
-from config import REPORT_CHAT_ID, SUPPORT_ADMIN, EXPIRE_AFTER
+from config import REPORT_CHAT_ID, SUPPORT_ADMIN, EXPIRE_AFTER, ERROR_CHAT_ID
 from modules.Global.log import logger
 from modules.Global.database import DBHandler
 from modules.Global.get_user import get_username, href_user, get_link_username
@@ -19,6 +19,11 @@ from modules.Global.decorators import (
 )
 from modules.Global.fetch_texts import fetch_text
 from modules.Global.jobs import delete_message
+from modules.Global.myhelpers import (
+    encode_chevaletid,
+    decode_chevaletid,
+    generate_chevaletid,
+)
 from modules.Global.reply_markups import CANCEL_BUTTON, MSG_BTN as BTN
 from modules.Global.handler_templates import (
     FilterMediaGroups,
@@ -85,8 +90,8 @@ async def handle_media(
     context.user_data["group_msgs"].append(message)
 
     # vars
-    target_cid = context.user_data["group_target_cid"]
-    target_uid = dbh.get_uid(target_cid)
+    target_chid = decode_chevaletid(context.user_data["group_target_chid"])
+    target_uid = dbh.get_uid_by_chevaletid(target_chid)
     msgs: List[Message] = context.user_data["group_msgs"]  # it's >2 now so we can go on
     reply_markup = context.user_data["group_reply_markup"]
 
@@ -114,7 +119,7 @@ async def handle_media(
     )
 
     def _mark_all():
-        """marks all of the messages to be add tags to them"""
+        """marks all of the messages to add tags to them"""
         return [{"idx": idx, "msg": msg} for idx, msg in enumerate(msgs)]
 
     if media_type in [MessageType.PHOTO, MessageType.VIDEO]:
@@ -164,7 +169,7 @@ async def handle_media(
         target_uid,
         userid,
         message,
-        f"{target_cid}|{'|'.join(list(map(str, sent_medias)))}|{markup_msg.message_id}|{notify_msg.message_id if notify_msg else None}",
+        f"{encode_chevaletid(target_chid)}|{'|'.join(list(map(str, sent_medias)))}|{markup_msg.message_id}|{notify_msg.message_id if notify_msg else None}",
         context,
     ):
         context.user_data["sent_medias"].append(warning_message.message_id)
@@ -224,7 +229,7 @@ async def start_cmd(
                             [
                                 InlineKeyboardButton(
                                     "پشیمون شدم دوباره بلاکش کن خخ",
-                                    callback_data=f"block|{dbh.get_cids(target_uid)[0]}",
+                                    callback_data=f"block|{encode_chevaletid(dbh.get_chevaletid_by_uid(target_uid))}",
                                 )
                             ]
                         ]
@@ -239,15 +244,32 @@ async def start_cmd(
         else:
             # sending message
             target_cid = split_text[1]
-            target_uid = dbh.get_uid(target_cid)
+            target_uid = dbh.get_uid_by_cid(target_cid)
 
-            # check if target_cid exists
+            # if not target_uid, then the link is changed and has no match
             if target_uid == None:
                 await message.reply_text(
-                    "این لینک اشتباهه و کار نمیکنه",
+                    "مخاطبت این لینک رو پاک یا عوض کرده. با لینک جدید بهش پیام بده",
                     reply_parameters=ReplyParameters(message.message_id),
                 )
                 return END
+
+            # add chevaletid for user if not made already
+            target_chid = dbh.get_chevaletid_by_uid(target_uid)
+            if not target_chid:
+                target_chid = generate_chevaletid()
+                if not dbh.set_chevaletid(target_uid, target_chid):
+                    await message.reply_html(
+                        "به مشکلی در خصوص مخاطب برخوردم. به ادمین خبر دادم. لطفا صبر کن",
+                        reply_parameters=ReplyParameters(message.message_id),
+                    )
+                    await bot.send_message(
+                        ERROR_CHAT_ID,
+                        f"COULDNT SET chevaletid FOR USER: {target_uid} ON SEND FROM {userid}",
+                        parse_mode=PM.HTML,
+                    )
+                    return END
+            target_chid = encode_chevaletid(target_chid)
 
             # check is blocked by user
             if dbh.is_blocked(blocker_uid=target_uid, blocked_uid=userid):
@@ -267,6 +289,7 @@ async def start_cmd(
 
             # save target to context
             context.user_data["target_cid"] = target_cid
+            context.user_data["target_chid"] = target_chid  # already encoded
             context.user_data["reply_to"] = None
 
             await message.reply_html(
@@ -312,14 +335,16 @@ async def answer(
     callback for the answer button under each message
     """
     if (clbk := update.callback_query) and (data := clbk.data):
-        _, target_cid, target_mid = data.split("|")
+        _, target_chid, target_mid = data.split("|")
+        target_chid = decode_chevaletid(target_chid)
+        target_uid = dbh.get_uid_by_chevaletid(target_chid)
 
         # check is blocked by user
-        if dbh.is_blocked(blocker_uid=dbh.get_uid(target_cid), blocked_uid=userid):
+        if dbh.is_blocked(blocker_uid=target_uid, blocked_uid=userid):
             await clbk.answer("این کاربر بلاکت کرده خخ", show_alert=True)
             return END
 
-        context.user_data["target_cid"] = target_cid
+        context.user_data["target_chid"] = target_chid
         context.user_data["reply_to"] = target_mid
 
         await message.reply_html(
@@ -342,10 +367,12 @@ async def seen(
 ) -> int:
     """tells the target that they saw their message (mark as seen)"""
     if (clbk := update.callback_query) and (data := clbk.data):
-        _, target_cid, target_mid = data.split("|")
+        _, target_chid, target_mid = data.split("|")
+        target_chid = decode_chevaletid(target_chid)
+        target_uid = dbh.get_uid_by_chevaletid(target_chid)
 
         # check is blocked by user
-        if dbh.is_blocked(blocker_uid=dbh.get_uid(target_cid), blocked_uid=userid):
+        if dbh.is_blocked(blocker_uid=target_uid, blocked_uid=userid):
             await clbk.answer("این کاربر بلاکت کرده خخ", show_alert=True)
             return END
 
@@ -353,7 +380,7 @@ async def seen(
         @handle_target_send(message=message, external_reply=message.external_reply)
         async def seen_message():
             await bot.send_message(
-                dbh.get_uid(target_cid),
+                target_uid,
                 "این پیامت سین شد",
                 parse_mode=PM.HTML,
                 reply_parameters=ReplyParameters(target_mid),
@@ -405,8 +432,9 @@ async def block(
     # block using message button
     """
     if (clbk := update.callback_query) and (data := clbk.data):
-        _, target_cid = data.split("|")
-        target_uid = dbh.get_uid(target_cid)
+        _, target_chid = data.split("|")
+        target_chid = decode_chevaletid(target_chid)
+        target_uid = dbh.get_uid_by_chevaletid(target_chid)
 
         async def _add_block():
             try:
@@ -472,8 +500,9 @@ async def unblock(
     # unblock using message button
     """
     if (clbk := update.callback_query) and (data := clbk.data):
-        _, target_cid = data.split("|")
-        target_uid = dbh.get_uid(target_cid)
+        _, target_chid = data.split("|")
+        target_chid = decode_chevaletid(target_chid)
+        target_uid = dbh.get_uid_by_chevaletid(target_chid)
 
         async def _remove_block():
             try:
@@ -526,10 +555,9 @@ async def report(
     # reports the message to admins
     """
     if (clbk := update.callback_query) and (data := clbk.data):
-        _, target_cid, target_mid = data.split("|")
-
-        # get uid from cid for sender
-        target_uid = dbh.get_uid(target_cid)
+        _, target_chid, target_mid = data.split("|")
+        target_chid = decode_chevaletid(target_chid)
+        target_uid = dbh.get_uid_by_chevaletid(target_chid)
 
         # report id
         report_id = uuid()
@@ -614,26 +642,30 @@ async def delete_msg_clbk(
 ) -> int:
     """# delete the sent message on undo"""
     if (clbk := update.callback_query) and (data := clbk.data):
-        _, target_cid, *to_be_deleted = data.split("|")
+        _, target_chid, *to_be_deleted = data.split("|")
+        target_chid = decode_chevaletid(target_chid)
+        target_uid = dbh.get_uid_by_chevaletid(target_chid)
+        assert target_uid
+
         # delete the sent message
         for tbd in to_be_deleted:
             try:
-                await bot.delete_message(dbh.get_uid(target_cid), tbd)
+                await bot.delete_message(target_uid, tbd)
             except:
                 pass
+
         # delete the message so it won't fuck up
-        ## save reply_to
-        reply_mid = message.reply_to_message.message_id
-        ### delete
         try:
             await message.delete()
         except:
             pass
-        # the true edit text
+
         try:
             await message.reply_text(
                 "پاکش کردم براش😮‍💨",
-                reply_parameters=ReplyParameters(reply_mid, None, True),
+                reply_parameters=ReplyParameters(
+                    message.reply_to_message.message_id, None, True
+                ),
             )
         except:
             pass

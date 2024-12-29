@@ -1,6 +1,7 @@
 # telegram imports
 from telegram import *
 from telegram.ext import *
+from telegram.constants import ParseMode as PM
 from telegram.error import Forbidden, BadRequest, TimedOut
 
 # project imports
@@ -8,10 +9,11 @@ from config import ERROR_CHAT_ID
 from modules.Global.log import logger
 from modules.Global.database import DBHandler, db_base
 from modules.Global.user_init import init_user
+from modules.Global.myhelpers import generate_chevaletid, get_trace
 
 # global imports
 from typing import Callable
-from mysql.connector.errors import Error as mysql_Error, InterfaceError
+from mysql.connector.errors import Error as mysql_Error
 from mysql.connector.cursor import MySQLCursor
 
 
@@ -71,6 +73,13 @@ def prep_function(func) -> Callable:
                         )
                         context.user_data.clear()
                         return ConversationHandler.END
+                    elif not dbh.get_chevaletid_by_uid(userid):
+                        if dbh.set_chevaletid(userid, generate_chevaletid()) == False:
+                            await message.reply_text(
+                                "مشکلی در ساخت اکانت شما بوجود اومد. دوباره تلاش کن و اگه موفق نشدی، قبل از استفاده از بات با پشتیبانی تماس بگیر"
+                            )
+                            context.user_data.clear()
+                            return ConversationHandler.END
 
                     if dbh.is_banned(userid):
                         # await message.reply_text(
@@ -90,7 +99,9 @@ def prep_function(func) -> Callable:
                 pass
             try:
                 await bot.send_message(
-                    ERROR_CHAT_ID, f"MYSQL ERROR: {e} -> errno: {e.errno}"
+                    ERROR_CHAT_ID,
+                    f"MYSQL ERROR: {e}\n<pre>{get_trace(e)}</pre>",
+                    parse_mode=PM.HTML,
                 )
             except:
                 try:
@@ -100,7 +111,7 @@ def prep_function(func) -> Callable:
                         await bot.send_message(
                             ERROR_CHAT_ID, f"MYSQL ERROR3: COULDN'T EVEN SEND THE ERROR"
                         )
-                        logger.error(f"ERRORRR -> {e}")
+                        logger.error(f"ERRORRR -> {get_trace(e, False)}")
                     except:
                         pass
 
