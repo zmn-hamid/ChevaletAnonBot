@@ -23,6 +23,7 @@ from modules.Global.myhelpers import (
     encode_chevaletid,
     decode_chevaletid,
     generate_chevaletid,
+    handle_cid_or_chid,
 )
 from modules.Global.reply_markups import CANCEL_BUTTON, MSG_BTN as BTN
 from modules.Global.handler_templates import (
@@ -335,12 +336,17 @@ async def answer(
     callback for the answer button under each message
     """
     if (clbk := update.callback_query) and (data := clbk.data):
-        _, target_chid, target_mid = data.split("|")
-        target_chid = decode_chevaletid(target_chid)
-        target_uid = dbh.get_uid_by_chevaletid(target_chid)
+        await clbk.answer()
+        _, target_cid_or_chid, target_mid = data.split("|")
+        target_chid = await handle_cid_or_chid(target_cid_or_chid, dbh, message, bot)
+        if target_chid == END:
+            return END
 
         # check is blocked by user
-        if dbh.is_blocked(blocker_uid=target_uid, blocked_uid=userid):
+        if dbh.is_blocked(
+            blocker_uid=dbh.get_uid_by_chevaletid(decode_chevaletid(target_chid)),
+            blocked_uid=userid,
+        ):
             await clbk.answer("این کاربر بلاکت کرده خخ", show_alert=True)
             return END
 
@@ -367,9 +373,11 @@ async def seen(
 ) -> int:
     """tells the target that they saw their message (mark as seen)"""
     if (clbk := update.callback_query) and (data := clbk.data):
-        _, target_chid, target_mid = data.split("|")
-        target_chid = decode_chevaletid(target_chid)
-        target_uid = dbh.get_uid_by_chevaletid(target_chid)
+        _, target_cid_or_chid, target_mid = data.split("|")
+        target_chid = await handle_cid_or_chid(target_cid_or_chid, dbh, message, bot)
+        if target_chid == END:
+            return END
+        target_uid = dbh.get_uid_by_chevaletid(decode_chevaletid(target_chid))
 
         # check is blocked by user
         if dbh.is_blocked(blocker_uid=target_uid, blocked_uid=userid):
@@ -432,9 +440,11 @@ async def block(
     # block using message button
     """
     if (clbk := update.callback_query) and (data := clbk.data):
-        _, target_chid = data.split("|")
-        target_chid = decode_chevaletid(target_chid)
-        target_uid = dbh.get_uid_by_chevaletid(target_chid)
+        _, target_cid_or_chid = data.split("|")
+        target_chid = await handle_cid_or_chid(target_cid_or_chid, dbh, message, bot)
+        if target_chid == END:
+            return END
+        target_uid = dbh.get_uid_by_chevaletid(decode_chevaletid(target_chid))
 
         async def _add_block():
             try:
@@ -500,9 +510,11 @@ async def unblock(
     # unblock using message button
     """
     if (clbk := update.callback_query) and (data := clbk.data):
-        _, target_chid = data.split("|")
-        target_chid = decode_chevaletid(target_chid)
-        target_uid = dbh.get_uid_by_chevaletid(target_chid)
+        _, target_cid_or_chid = data.split("|")
+        target_chid = await handle_cid_or_chid(target_cid_or_chid, dbh, message, bot)
+        if target_chid == END:
+            return END
+        target_uid = dbh.get_uid_by_chevaletid(decode_chevaletid(target_chid))
 
         async def _remove_block():
             try:
@@ -555,9 +567,11 @@ async def report(
     # reports the message to admins
     """
     if (clbk := update.callback_query) and (data := clbk.data):
-        _, target_chid, target_mid = data.split("|")
-        target_chid = decode_chevaletid(target_chid)
-        target_uid = dbh.get_uid_by_chevaletid(target_chid)
+        _, target_cid_or_chid, target_mid = data.split("|")
+        target_chid = await handle_cid_or_chid(target_cid_or_chid, dbh, message, bot)
+        if target_chid == END:
+            return END
+        target_uid = dbh.get_uid_by_chevaletid(decode_chevaletid(target_chid))
 
         # report id
         report_id = uuid()
@@ -642,10 +656,11 @@ async def delete_msg_clbk(
 ) -> int:
     """# delete the sent message on undo"""
     if (clbk := update.callback_query) and (data := clbk.data):
-        _, target_chid, *to_be_deleted = data.split("|")
-        target_chid = decode_chevaletid(target_chid)
-        target_uid = dbh.get_uid_by_chevaletid(target_chid)
-        assert target_uid
+        _, target_cid_or_chid, *to_be_deleted = data.split("|")
+        target_chid = await handle_cid_or_chid(target_cid_or_chid, dbh, message, bot)
+        if target_chid == END:
+            return END
+        target_uid = dbh.get_uid_by_chevaletid(decode_chevaletid(target_chid))
 
         # delete the sent message
         for tbd in to_be_deleted:

@@ -90,6 +90,11 @@ def prep_function(func) -> Callable:
 
                     context.user_data["no db check"] = False
                     return await func(update, context, message, userid, bot, dbh)
+        except error.BadRequest as e:
+            if str(e).startswith("Query is too old"):
+                logger.debug("old query ignored: %s" % e)
+                return
+            raise e
         except mysql_Error as e:
             try:
                 await message.reply_text(
@@ -114,7 +119,6 @@ def prep_function(func) -> Callable:
                         logger.error(f"ERRORRR -> {get_trace(e, False)}")
                     except:
                         pass
-
         except TimedOut:
             return
         except Forbidden as e:

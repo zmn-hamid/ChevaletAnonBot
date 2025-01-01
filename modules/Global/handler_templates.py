@@ -20,12 +20,13 @@ from modules.Global.myhelpers import (
     encode_chevaletid,
     decode_chevaletid,
     generate_chevaletid,
+    handle_cid_or_chid,
 )
 
 # global imports
 import re
+import html
 import time
-import warnings
 from typing import Optional, Union, List
 
 # vars
@@ -65,6 +66,14 @@ async def send_msg_template(
     target_uid = dbh.get_uid_by_chevaletid(target_chid)
     assert bool(target_uid)
 
+    # check if target cid is valid in case of existence
+    if target_cid and dbh.get_uid_by_cid(target_cid) == None:
+        await message.reply_html(
+            "مخاطبت لینکش رو عوض کرده. باید از نو پیام بفرستی",
+            reply_parameters=ReplyParameters(message.message_id),
+        )
+        return END
+
     # check if replied to another new message to cancel sending to the previous
     # -> is used for when pressed the answer button but replied to another one
     if (
@@ -73,22 +82,14 @@ async def send_msg_template(
         and (_output != END)
         and (
             not (
-                (decode_chevaletid(_output[0]) == target_chid)
-                and (_output[1] == target_mid)
+                (decode_chevaletid(_output[1]) == target_chid)
+                and (_output[2] == target_mid)
             )
         )
     ):
         await message.reply_html(
             "در حال ارسال پیام به یکی دیگه بودی. کنسلش کردم. "
             "دوباره ریپلای بزن به فردی که میخواستی",
-            reply_parameters=ReplyParameters(message.message_id),
-        )
-        return END
-
-    # check if target cid is valid in case of existence
-    if target_cid and dbh.get_uid_by_cid(target_cid) == None:
-        await message.reply_html(
-            "مخاطبت لینکش رو عوض کرده. باید از نو پیام بفرستی",
             reply_parameters=ReplyParameters(message.message_id),
         )
         return END
@@ -334,48 +335,16 @@ async def is_answer(
                 for button in row:
                     if (data := button.callback_data) and data.startswith("answer|"):
                         _, target_cid_or_chid, target_mid = data.split("|")
-                        # it may be old and be cid instead of chid
-                        target_cid = None
-                        if (target_chid := decode_chevaletid(target_cid_or_chid)) and (
-                            dbh.get_uid_by_chevaletid(target_chid)
-                        ):
-                            # # it's not actually a chevaletid. a normal cid interpreted as chevaletid
-                            target_chid = target_cid_or_chid  # already encoded
-                        else:
-                            # it's a cid
-                            target_uid = dbh.get_uid_by_cid(target_cid_or_chid)
-                            # if not target_uid, then the link is changed and has no match
-                            if target_uid == None:
-                                await message.reply_text(
-                                    "مخاطبت این لینک رو پاک یا عوض کرده. با لینک جدید بهش پیام بده",
-                                    reply_parameters=ReplyParameters(
-                                        message.message_id
-                                    ),
-                                )
-                                return END
-
-                            target_cid = True
-
-                            # add chevaletid for user if not made already
-                            if not (
-                                _target_chid := dbh.get_chevaletid_by_uid(target_uid)
-                            ):
-                                _target_chid = generate_chevaletid()
-                                if not dbh.set_chevaletid(target_uid, target_chid):
-                                    await message.reply_html(
-                                        "به مشکلی در خصوص مخاطب برخوردم. به ادمین خبر دادم ولی دوباره امتحان کن، به امتحانش میارزه :)",
-                                        reply_parameters=ReplyParameters(
-                                            message.message_id
-                                        ),
-                                    )
-                                    await bot.send_message(
-                                        ERROR_CHAT_ID,
-                                        f"COULDNT SET chevaletid FOR USER: {target_uid} ON SEND FROM {userid}",
-                                        parse_mode=PM.HTML,
-                                    )
-                                    return END
-                                target_chid = encode_chevaletid(_target_chid)
-                        return target_cid, target_chid, target_mid
+                        target_chid = handle_cid_or_chid(
+                            target_cid_or_chid, dbh, message, bot
+                        )
+                        if target_chid == END:
+                            return END
+                        return (
+                            None,  # target_cid which is not none only for /start
+                            target_chid,  # target_chid
+                            target_mid,
+                        )
 
         if _warn_wrong_reply:
             await message.reply_text(
@@ -551,13 +520,20 @@ async def _warning_handle(
     context: ContextTypes.DEFAULT_TYPE,
 ):
     # handle warning and deletion of it
+    # TODO undo timeout addition when bug fixed
+    deletion_timeout = DELETION_TIMEOUT + 5 if was_channel_reply else 0
     if was_channel_reply:
-        sent_text = f"فرستادم به {dbh.get_name(target_uid)}."
+        sent_text = (
+            f"فرستادم به {dbh.get_name(target_uid)}.\n"
+            # TODO undo text when bug fixed
+            f"<blockquote><b>{html.escape('⚠️به هیچ پیام فوروارد شده ای ریپلای نزن. چرایی: /bug⚠️')}</b></blockquote>\n"
+        )
     else:
         sent_text = f"فرستادم بهش."
-    if dbh.get_warning(userid):
+    # TODO undo condition when bug fixed -> if dbh.get_warning(userid):
+    if was_channel_reply or dbh.get_warning(userid):
         warning_message = await message.reply_html(
-            (f"{sent_text}\n" f"{DELETION_TEXT}"),
+            (f"{sent_text}\n{DELETION_TEXT}" % deletion_timeout),
             reply_markup=InlineKeyboardMarkup(
                 [
                     [
@@ -571,7 +547,9 @@ async def _warning_handle(
             reply_parameters=ReplyParameters(message.message_id),
         )
         context.application.job_queue.run_once(
-            delete_warning, DELETION_TIMEOUT, {"warning_message": warning_message}
+            delete_warning,
+            deletion_timeout,
+            {"warning_message": warning_message},
         )
         return warning_message
     else:

@@ -1,5 +1,10 @@
+# telegram imports
+from telegram import *
+from telegram.ext import *
+from telegram.constants import ParseMode as PM
+
 # project imports
-from config import CHEVALETID_MP, ALLOWED_CID_CHARS, KEY_MAX_INT
+from config import ALLOWED_CID_CHARS, KEY_MAX_INT, ERROR_CHAT_ID
 from modules.Global.cid_gen import generate_cid
 from modules.Global.database import DBHandler
 
@@ -9,6 +14,9 @@ import html
 import string
 import random
 import traceback
+
+
+END = ConversationHandler.END
 
 
 def get_trace(e: Exception, html_escape: bool = True):
@@ -59,3 +67,46 @@ def decode_chevaletid(encoded_chevaletid: str):
             for letter in chevaletid
         ]
     )
+
+
+async def handle_cid_or_chid(
+    target_cid_or_chid: str, dbh: DBHandler, message: Message, bot: Bot
+):
+    """
+    for older messages
+
+    > returns encoded target_chid or `END`
+    """
+    # it may be old and be cid instead of chid
+    if (target_chid := decode_chevaletid(target_cid_or_chid)) and (
+        dbh.get_uid_by_chevaletid(target_chid)
+    ):
+        # it's a chevaletid
+        target_chid = target_cid_or_chid  # already encoded
+    else:
+        # it's a cid
+        target_uid = dbh.get_uid_by_cid(target_cid_or_chid)
+        # if not target_uid, then the link is changed and has no match
+        if target_uid == None:
+            await message.reply_text(
+                "مخاطبت این لینک رو پاک یا عوض کرده. با لینک جدید بهش پیام بده",
+                reply_parameters=ReplyParameters(message.message_id),
+            )
+            return END
+
+        # add chevaletid for user if not made already
+        if not (_target_chid := dbh.get_chevaletid_by_uid(target_uid)):
+            _target_chid = generate_chevaletid()
+            if not dbh.set_chevaletid(target_uid, target_chid):
+                await message.reply_html(
+                    "به مشکلی در خصوص مخاطب برخوردم. به ادمین خبر دادم ولی دوباره امتحان کن، به امتحانش میارزه :)",
+                    reply_parameters=ReplyParameters(message.message_id),
+                )
+                await bot.send_message(
+                    ERROR_CHAT_ID,
+                    f"COULDNT SET chevaletid FOR USER: {target_uid} REPLY",
+                    parse_mode=PM.HTML,
+                )
+                return END
+        target_chid = encode_chevaletid(_target_chid)
+    return target_chid

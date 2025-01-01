@@ -294,8 +294,9 @@ async def update_cid(
             return 0
 
     # check if new cid is repetitive
-    all_the_cids = [item[0] for item in dbh.get_all_cids()]
-    if new_cid in all_the_cids:
+    if new_cid in [item[0] for item in dbh.get_all_cids()] + [
+        item[0] for item in dbh.get_all_chevaletids()
+    ]:
         await message.reply_text(
             "این آیدی برداشته شده. آیدی دیگه ای بفرس",
             reply_parameters=ReplyParameters(message.message_id),

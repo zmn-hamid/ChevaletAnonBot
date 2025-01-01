@@ -285,6 +285,10 @@ class DBHandler(DB_Base):
         else:
             return None
 
+    def get_all_chevaletids(self) -> List[str]:
+        self.cur.execute(f"SELECT chevaletid FROM {self.users_table}")
+        return self.cur.fetchall()
+
     def get_cid_limit(self, uid: str) -> int:
         """gets the cid limit for a user"""
         self.cur.execute(f'SELECT cid_limit FROM {self.users_table} WHERE uid="{uid}"')

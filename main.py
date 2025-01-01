@@ -3,7 +3,6 @@
 # telegram imports
 from telegram import *
 from telegram.ext import *
-from telegram.error import TimedOut
 
 # project imports
 from config import BOT_TOKEN
@@ -15,13 +14,22 @@ from modules.myuid import myuid_handler
 from modules.settings import settings_handler
 from modules.privacy import privacy_handler
 from modules.help import help_handler, more_links_clbk_handler
+from modules.warn_bug import warn_bug_handler
 from modules.other_msgs import other_messages_handler
 
 from modules.Global.jobs import set_commands, log_bot_started, check_connection
 from modules.Global.error_handler import error_handler
+from modules.Global.log import logger
+
+# global imports
+import os
 
 
-application = ApplicationBuilder().token(BOT_TOKEN).build()
+appbuilder = ApplicationBuilder().token(BOT_TOKEN)
+if proxy := os.environ.get("PROXY"):
+    logger.debug("Set proxy: %s" % proxy)
+    appbuilder.proxy(proxy)
+application = appbuilder.build()
 job_queue = application.job_queue
 
 # adding handlers
@@ -42,7 +50,9 @@ for handler in [
     admin_handler,
     # myuid
     myuid_handler,
-    # # other messages
+    # warn bugs
+    warn_bug_handler,
+    # other messages
     other_messages_handler,
 ]:
     application.add_handler(handler)
@@ -60,5 +70,5 @@ job_queue.run_once(check_connection, 60 * 60)
 job_queue.run_once(log_bot_started, 2)
 try:
     application.run_polling(timeout=5)
-except TimedOut:
-    print("connection timed out. closing the bot...")
+except error.TelegramError as e:
+    logger.critical(f"closing the bot because: {e} | {e.__class__.__name__}")

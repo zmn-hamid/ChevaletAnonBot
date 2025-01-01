@@ -19,7 +19,7 @@
 /privacy
 
 
-<blockquote>پشتیبانی: @%s
+<blockquote expandable>پشتیبانی: @%s
 مدیریت: <a href="t.me/chevalet_studio">Chevalet Studio</a>
 برنامه‌نویس: @zmn_hamid
 
