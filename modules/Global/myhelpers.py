@@ -7,7 +7,6 @@ from telegram.constants import ParseMode as PM
 from config import ALLOWED_CID_CHARS, KEY_MAX_INT, ERROR_CHAT_ID
 from modules.Global.cid_gen import generate_cid
 from modules.Global.database import DBHandler
-from modules.Global.log import logger
 
 # global imports
 import time
@@ -44,7 +43,6 @@ def encode_chevaletid(chevaletid: str):
 
 
 def decode_chevaletid(encoded_chevaletid: str):
-    logger.debug(encoded_chevaletid, type(encoded_chevaletid))
     if not encoded_chevaletid:
         return False
     chevaletid, key_patch, key_patch_letter = None, None, None
