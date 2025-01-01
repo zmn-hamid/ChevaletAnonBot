@@ -94,6 +94,9 @@ def prep_function(func) -> Callable:
             if str(e).startswith("Query is too old"):
                 logger.debug("old query ignored: %s" % e)
                 return
+            elif str(e) == "Message to be replied not found":
+                logger.debug("Message to be replied not found")
+                return
             raise e
         except mysql_Error as e:
             try:
