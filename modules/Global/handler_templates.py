@@ -521,7 +521,7 @@ async def _warning_handle(
 ):
     # handle warning and deletion of it
     # TODO undo timeout addition when bug fixed
-    deletion_timeout = DELETION_TIMEOUT + 5 if was_channel_reply else 0
+    deletion_timeout = DELETION_TIMEOUT + (5 if was_channel_reply else 0)
     if was_channel_reply:
         sent_text = (
             f"فرستادم به {dbh.get_name(target_uid)}.\n"
