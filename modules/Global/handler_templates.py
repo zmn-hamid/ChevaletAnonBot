@@ -335,7 +335,7 @@ async def is_answer(
                 for button in row:
                     if (data := button.callback_data) and data.startswith("answer|"):
                         _, target_cid_or_chid, target_mid = data.split("|")
-                        target_chid = handle_cid_or_chid(
+                        target_chid = await handle_cid_or_chid(
                             target_cid_or_chid, dbh, message, bot
                         )
                         if target_chid == END:
