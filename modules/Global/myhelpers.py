@@ -97,7 +97,7 @@ async def handle_cid_or_chid(
         # add chevaletid for user if not made already
         if not (_target_chid := dbh.get_chevaletid_by_uid(target_uid)):
             _target_chid = generate_chevaletid()
-            if not dbh.set_chevaletid(target_uid, target_chid):
+            if not dbh.set_chevaletid(target_uid, _target_chid):
                 await message.reply_html(
                     "به مشکلی در خصوص مخاطب برخوردم. به ادمین خبر دادم ولی دوباره امتحان کن، به امتحانش میارزه :)",
                     reply_parameters=ReplyParameters(message.message_id),
