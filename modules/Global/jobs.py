@@ -1,16 +1,17 @@
 # telegram imports
 from telegram import *
 from telegram.ext import *
+from telegram.constants import ParseMode as PM
 
 # project imports
-from config import DELETION_TEXT
+from config import DELETION_TEXT, HEALTH_PORT, HEALTH_ADDRESS
 from modules.Global.log import logger
 from modules.Global.database import DBHandler, db_base
 from mysql.connector.errors import Error as mysql_Error
-from telegram.constants import ParseMode as PM
 
 # global imports
 import os
+from flask import Flask, jsonify
 
 
 async def log_bot_started(context: CallbackContext) -> None:
@@ -130,3 +131,16 @@ async def send_mass_msg(context: CallbackContext) -> None:
 
             # notify
             await msg.reply_text("sent the message to everyone.")
+
+
+app = Flask(__name__)
+
+
+@app.route(HEALTH_ADDRESS, methods=["GET"])
+def health_check():
+    return jsonify({"status": "ok", "message": "Bot is running"}), 200
+
+
+async def health_check_app(context: CallbackContext):
+    global app
+    app.run(host="0.0.0.0", port=HEALTH_PORT)

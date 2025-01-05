@@ -14,7 +14,8 @@ DEFAULT_CID_LIMIT = int(os.environ.get("DEFAULT_CID_LIMIT"))
 MAX_NAME_LENGTH = int(os.environ.get("MAX_NAME_LENGTH"))
 MAX_CID_LENGTH = int(os.environ.get("MAX_CID_LENGTH"))
 MIN_CID_LENGTH = int(os.environ.get("MIN_CID_LENGTH"))
-CHEVALETID_MP = os.environ.get("CHEVALETID_MP")  # master pswd
+HEALTH_PORT = int(os.environ.get("HEALTH_PORT"))
+HEALTH_ADDRESS = int(os.environ.get("HEALTH_ADDRESS"))
 
 MAX_TRY_ADD_CID = 5
 DELETION_TIMEOUT = 10
