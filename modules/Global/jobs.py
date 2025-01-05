@@ -143,4 +143,8 @@ def health_check():
 
 async def health_check_app(context: CallbackContext):
     global app
-    app.run(host="0.0.0.0", port=HEALTH_PORT)
+    logger.info(f"running health on {HEALTH_ADDRESS} | port:{HEALTH_PORT}")
+    try:
+        app.run(port=HEALTH_PORT)
+    except Exception as e:
+        logger.error(f"error running health | {e.__class__.__name__} | {e}")
