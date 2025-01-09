@@ -26,7 +26,10 @@ def get_trace(e: Exception, html_escape: bool = True):
 
 
 def generate_chevaletid():
-    return generate_cid() + str(time.time()).replace(".", "")
+    _t = str(time.time())
+    if "." in _t:
+        _t = _t.split(".")[-1]
+    return generate_cid() + _t
 
 
 def encode_chevaletid(chevaletid: str):
