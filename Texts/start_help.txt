@@ -21,7 +21,7 @@
 
 <blockquote expandable>پشتیبانی: @%s
 مدیریت: <a href="t.me/chevalet_studio">Chevalet Studio</a>
-برنامه‌نویس: @zmn_hamid
+برنامه‌نویس: @HamidBots
 
 میتونی ناشناس هم بهمون پیام بدی و نظرات و انتقاداتت رو بگی:
 • t.me/Chevalet_bot?start=Chevaletsupport (پشتیبانی)
