@@ -133,18 +133,15 @@ async def send_mass_msg(context: CallbackContext) -> None:
             await msg.reply_text("sent the message to everyone.")
 
 
-app = Flask(__name__)
-
-
-@app.route(HEALTH_ADDRESS, methods=["GET"])
-def health_check():
-    return jsonify({"status": "ok", "message": "Bot is running"}), 200
-
-
 async def health_check_app(context: CallbackContext):
-    global app
-    logger.info(f"running health on {HEALTH_ADDRESS} | port:{HEALTH_PORT}")
     try:
-        app.run(port=HEALTH_PORT)
+        flaskapp = Flask(__name__)
+
+        @flaskapp.route(HEALTH_ADDRESS, methods=["GET"])
+        def health_check():
+            return jsonify({"status": "ok", "message": "Bot is running"}), 200
+
+        logger.info(f"running health on {HEALTH_ADDRESS} | port:{HEALTH_PORT}")
+        flaskapp.run(port=HEALTH_PORT, debug=True)
     except Exception as e:
         logger.error(f"error running health | {e.__class__.__name__} | {e}")
