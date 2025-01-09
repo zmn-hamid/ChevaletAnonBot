@@ -29,7 +29,7 @@ def generate_chevaletid():
     _t = str(time.time())
     if "." in _t:
         _t = _t.split(".")[-1]
-    return generate_cid() + _t
+    return generate_cid(suid_length=8) + _t
 
 
 def encode_chevaletid(chevaletid: str):
