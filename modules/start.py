@@ -91,7 +91,8 @@ async def handle_media(
     context.user_data["group_msgs"].append(message)
 
     # vars
-    target_chid = decode_chevaletid(context.user_data["group_target_chid"])
+    encoded_target_chid = context.user_data["group_target_chid"]
+    target_chid = decode_chevaletid(encoded_target_chid)
     target_uid = dbh.get_uid_by_chevaletid(target_chid)
     msgs: List[Message] = context.user_data["group_msgs"]  # it's >2 now so we can go on
     reply_markup = context.user_data["group_reply_markup"]
@@ -106,7 +107,7 @@ async def handle_media(
     )
     # add for future deletion
     context.user_data["sent_medias"] += [
-        sent_msg.message_id for sent_msg in sent_messages
+        str(sent_msg.message_id) for sent_msg in sent_messages
     ]
 
     # send tags
@@ -159,21 +160,28 @@ async def handle_media(
         reply_parameters=ReplyParameters(sent_messages[0].message_id, target_uid),
         reply_markup=reply_markup,
     )
-    context.user_data["sent_medias"] += [markup_msg.message_id]
+    context.user_data["sent_medias"].append(str(markup_msg.message_id))
 
     # handle warning and deletion of it
-    sent_medias = context.user_data["sent_medias"]
+    tbd_msgs = list(map(str, context.user_data["sent_medias"]))
     notify_msg: Message = context.user_data["group_notify_msg"]
+    if notify_msg:
+        tbd_msgs.append(str(notify_msg.message_id))
+    _tbd_msgs = []
+    for _tbd in tbd_msgs:
+        if _tbd not in _tbd_msgs:
+            _tbd_msgs.append(_tbd)
+    tbd_msgs = _tbd_msgs
     if warning_message := await _warning_handle(
         context.user_data["group_was_channel_reply"],
         dbh,
         target_uid,
         userid,
         message,
-        f"{encode_chevaletid(target_chid)}|{'|'.join(list(map(str, sent_medias)))}|{markup_msg.message_id}|{notify_msg.message_id if notify_msg else None}",
+        f"{encoded_target_chid}|{'|'.join(tbd_msgs)}",
         context,
     ):
-        context.user_data["sent_medias"].append(warning_message.message_id)
+        context.user_data["sent_medias"].append(str(warning_message.message_id))
     context.user_data["group_expiration"] = time.time() + EXPIRE_AFTER
 
 
@@ -656,14 +664,20 @@ async def delete_msg_clbk(
 ) -> int:
     """# delete the sent message on undo"""
     if (clbk := update.callback_query) and (data := clbk.data):
-        _, target_cid_or_chid, *to_be_deleted = data.split("|")
+        _, target_cid_or_chid = data.split("|")[:2]
         target_chid = await handle_cid_or_chid(target_cid_or_chid, dbh, message, bot)
         if target_chid == END:
             return END
         target_uid = dbh.get_uid_by_chevaletid(decode_chevaletid(target_chid))
+        assert target_uid
+
+        to_be_deleted = []
+        for row in update.effective_message.reply_markup.inline_keyboard:
+            for btn in row:
+                to_be_deleted += str(btn.callback_data).split("|")[2:]
 
         # delete the sent message
-        for tbd in to_be_deleted:
+        for tbd in set(to_be_deleted):
             try:
                 await bot.delete_message(target_uid, tbd)
             except:

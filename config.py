@@ -19,6 +19,7 @@ HEALTH_ADDRESS = os.environ["HEALTH_ADDRESS"]
 
 MAX_TRY_ADD_CID = 5
 DELETION_TIMEOUT = 10
+DELETION_TIMEOUT_EXTENDED = DELETION_TIMEOUT + 5
 DEFAULT_AUDIO_TAG = "[ناشناس]"
 ALLOWED_CID_CHARS = string.ascii_letters + string.digits + "_-"  # must NEVER contain |
 DELETION_TEXT = (

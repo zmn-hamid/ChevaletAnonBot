@@ -7,7 +7,12 @@ from telegram.error import Forbidden
 from telegram.constants import MessageEntityType as MET
 
 # project imports
-from config import DELETION_TIMEOUT, DELETION_TEXT, EXPIRE_AFTER, ERROR_CHAT_ID
+from config import (
+    DELETION_TEXT,
+    EXPIRE_AFTER,
+    ERROR_CHAT_ID,
+    DELETION_TIMEOUT_EXTENDED,
+)
 from modules.Global.jobs import delete_warning
 from modules.Global.database import DBHandler
 from modules.Global.log import logger
@@ -521,7 +526,6 @@ async def _warning_handle(
 ):
     # handle warning and deletion of it
     # TODO undo timeout addition when bug fixed
-    deletion_timeout = DELETION_TIMEOUT + (5 if was_channel_reply else 0)
     if was_channel_reply:
         sent_text = (
             f"فرستادم به {dbh.get_name(target_uid)}.\n"
@@ -532,23 +536,47 @@ async def _warning_handle(
         sent_text = f"فرستادم بهش."
     # TODO undo condition when bug fixed -> if dbh.get_warning(userid):
     if was_channel_reply or dbh.get_warning(userid):
+
+        def _is_valid(rm):
+            """checks validity of reply markup button limit"""
+            return len("|".join(rm).encode()) <= 64
+
+        def _kb_template():
+            return ["delete", target_chid]
+
+        target_chid, *mids = deletion_callback_data.split("|")
+        reply_markup_kb = []
+        _temp_kb = _kb_template()
+        for mid in mids:
+            if _is_valid(_temp_kb + [mid]):
+                _temp_kb.append(mid)
+            else:
+                reply_markup_kb.append(
+                    InlineKeyboardButton(
+                        "پاکش کننن",
+                        callback_data="|".join(_temp_kb),
+                    )
+                )
+                _temp_kb = _kb_template() + [mid]
+        if _temp_kb != _kb_template():
+            reply_markup_kb.append(
+                InlineKeyboardButton(
+                    "پاکش کننن",
+                    callback_data="|".join(_temp_kb),
+                )
+            )
+        reply_markup_kb = [
+            reply_markup_kb[idx : idx + 2] for idx in range(0, len(reply_markup_kb), 2)
+        ]
+
         warning_message = await message.reply_html(
-            (f"{sent_text}\n{DELETION_TEXT}" % deletion_timeout),
-            reply_markup=InlineKeyboardMarkup(
-                [
-                    [
-                        InlineKeyboardButton(
-                            "پاکش کننن",
-                            callback_data=f"delete|{deletion_callback_data}",
-                        ),
-                    ],
-                ]
-            ),
+            (f"{sent_text}\n{DELETION_TEXT}" % DELETION_TIMEOUT_EXTENDED),
+            reply_markup=InlineKeyboardMarkup(reply_markup_kb),
             reply_parameters=ReplyParameters(message.message_id),
         )
         context.application.job_queue.run_once(
             delete_warning,
-            deletion_timeout,
+            DELETION_TIMEOUT_EXTENDED,
             {"warning_message": warning_message},
         )
         return warning_message

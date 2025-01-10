@@ -4,7 +4,13 @@ from telegram.ext import *
 from telegram.constants import ParseMode as PM
 
 # project imports
-from config import DELETION_TEXT, HEALTH_PORT, HEALTH_ADDRESS
+from config import (
+    DELETION_TEXT,
+    HEALTH_PORT,
+    HEALTH_ADDRESS,
+    DELETION_TIMEOUT,
+    DELETION_TIMEOUT_EXTENDED,
+)
 from modules.Global.log import logger
 from modules.Global.database import DBHandler, db_base
 from mysql.connector.errors import Error as mysql_Error
@@ -40,7 +46,9 @@ async def delete_warning(context: CallbackContext) -> None:
     try:
         msg: Message = context.job.data.get("warning_message")
         await msg.edit_text(
-            msg.text_html.removesuffix(DELETION_TEXT),
+            msg.text_html.removesuffix(DELETION_TEXT % DELETION_TIMEOUT).removesuffix(
+                DELETION_TEXT % DELETION_TIMEOUT_EXTENDED
+            ),
             parse_mode=PM.HTML,
         )
     except:
@@ -48,7 +56,7 @@ async def delete_warning(context: CallbackContext) -> None:
 
 
 async def delete_message(context: CallbackContext) -> None:
-    """deletes the warning message"""
+    """deletes the messages | used for cancel"""
     try:
         msg: Message = context.job.data.get("message")
         delete_reply = False
