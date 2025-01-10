@@ -69,7 +69,7 @@ application.add_error_handler(error_handler)
 job_queue.run_once(set_commands, 3)
 
 # check if db connection is lost every 1 hour
-# job_queue.run_once(health_check_app, 5)
+job_queue.run_once(health_check_app, 5)
 
 # starting the bot
 job_queue.run_once(log_bot_started, 2)

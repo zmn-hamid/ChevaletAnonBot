@@ -7,17 +7,17 @@ from telegram.constants import ParseMode as PM
 from config import (
     DELETION_TEXT,
     HEALTH_PORT,
-    HEALTH_ADDRESS,
     DELETION_TIMEOUT,
     DELETION_TIMEOUT_EXTENDED,
 )
+from config import DELETION_TEXT, HEALTH_PORT
 from modules.Global.log import logger
 from modules.Global.database import DBHandler, db_base
 from mysql.connector.errors import Error as mysql_Error
 
 # global imports
 import os
-from flask import Flask, jsonify
+import socket
 
 
 async def log_bot_started(context: CallbackContext) -> None:
@@ -143,13 +143,24 @@ async def send_mass_msg(context: CallbackContext) -> None:
 
 async def health_check_app(context: CallbackContext):
     try:
-        flaskapp = Flask(__name__)
 
-        @flaskapp.route(HEALTH_ADDRESS, methods=["GET"])
-        def health_check():
-            return jsonify({"status": "ok", "message": "Bot is running"}), 200
+        def _port_is_open(host, port):
+            _sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            _sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            result = _sock.connect_ex((host, port))
+            _sock.close()
+            return result == 0
 
-        logger.info(f"running health on {HEALTH_ADDRESS} | port:{HEALTH_PORT}")
-        flaskapp.run(port=HEALTH_PORT, debug=True)
+        host, port = "localhost", HEALTH_PORT
+
+        if not _port_is_open(host, port):
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            sock.bind((host, port))
+            sock.listen(1)
+
+            logger.info(f"socket on port {port} is open now...")
+        else:
+            logger.warning(f"Port {port} is not available")
     except Exception as e:
         logger.error(f"error running health | {e.__class__.__name__} | {e}")
