@@ -1,1 +1,0 @@
-this director is used in a seperate application to check the health of bot
