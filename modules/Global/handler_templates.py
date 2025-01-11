@@ -11,6 +11,7 @@ from config import (
     DELETION_TEXT,
     EXPIRE_AFTER,
     ERROR_CHAT_ID,
+    DELETION_TIMEOUT,
     DELETION_TIMEOUT_EXTENDED,
 )
 from modules.Global.jobs import delete_warning
@@ -212,7 +213,6 @@ async def send_msg_template(
 
     # handle group medias
     if media_group_id := message.media_group_id:
-        # if context.user_data.get("media_group_id") != media_group_id:
         context.user_data["media_group_id"] = media_group_id
         context.user_data["group_msgs"] = [message]
         context.user_data["group_expiration"] = (
@@ -512,7 +512,7 @@ async def check_if_autoreply(
         context.user_data["channel_reply"] = None
         return END
 
-    return None
+    return False
 
 
 async def _warning_handle(
@@ -525,8 +525,10 @@ async def _warning_handle(
     context: ContextTypes.DEFAULT_TYPE,
 ):
     # handle warning and deletion of it
-    # TODO undo timeout addition when bug fixed
+    deletion_timeout = DELETION_TIMEOUT
     if was_channel_reply:
+        # TODO undo timeout addition when bug fixed
+        deletion_timeout = DELETION_TIMEOUT_EXTENDED
         sent_text = (
             f"فرستادم به {dbh.get_name(target_uid)}.\n"
             # TODO undo text when bug fixed
@@ -570,13 +572,13 @@ async def _warning_handle(
         ]
 
         warning_message = await message.reply_html(
-            (f"{sent_text}\n{DELETION_TEXT}" % DELETION_TIMEOUT_EXTENDED),
+            (f"{sent_text}\n{DELETION_TEXT}" % deletion_timeout),
             reply_markup=InlineKeyboardMarkup(reply_markup_kb),
             reply_parameters=ReplyParameters(message.message_id),
         )
         context.application.job_queue.run_once(
             delete_warning,
-            DELETION_TIMEOUT_EXTENDED,
+            deletion_timeout,
             {"warning_message": warning_message},
         )
         return warning_message

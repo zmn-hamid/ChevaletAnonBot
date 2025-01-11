@@ -1,20 +1,26 @@
 import os
-import requests
+import socket
 from flask import Flask, Response
 
 BASE_ADDRESS = os.environ["BASE_ADDRESS"]
-BOT_HEALTH_ADDRESS = os.environ["BOT_HEALTH_ADDRESS"]
-BOT_HEALTH_PORT = os.environ["BOT_HEALTH_PORT"]
+BOT_HEALTH_PORT = int(os.environ["BOT_HEALTH_PORT"])
 
 app = Flask(__name__)
+
+
+def bot_is_running(host, port):
+    """port is open meaning the bot is running"""
+    _sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    _sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    result = _sock.connect_ex((host, port))
+    _sock.close()
+    return result == 0
 
 
 @app.route(BASE_ADDRESS, methods=["GET", "HEAD"])
 def health_check():
     try:
-        r = requests.get(f"http://0.0.0.0:{BOT_HEALTH_PORT}{BOT_HEALTH_ADDRESS}")
-        if r.status_code != 200:
-            raise Exception(r.status_code)
+        assert bot_is_running("localhost", BOT_HEALTH_PORT)
         return Response(status=200)
     except Exception as e:
         print(f"HEALTH ERROR: {e.__class__.__name__} | {e}")

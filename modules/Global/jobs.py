@@ -18,6 +18,7 @@ from mysql.connector.errors import Error as mysql_Error
 # global imports
 import os
 import socket
+import asyncio
 
 
 async def log_bot_started(context: CallbackContext) -> None:
@@ -144,10 +145,10 @@ async def send_mass_msg(context: CallbackContext) -> None:
 async def health_check_app(context: CallbackContext):
     try:
 
-        def _port_is_open(host, port):
+        def _port_is_open(_host, _port):
             _sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             _sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            result = _sock.connect_ex((host, port))
+            result = _sock.connect_ex((_host, _port))
             _sock.close()
             return result == 0
 
@@ -160,6 +161,15 @@ async def health_check_app(context: CallbackContext):
             sock.listen(1)
 
             logger.info(f"socket on port {port} is open now...")
+
+            try:
+                while True:
+                    # Simulating bot running
+                    await asyncio.sleep(1)
+            except KeyboardInterrupt:
+                pass
+            finally:
+                sock.close()
         else:
             logger.warning(f"Port {port} is not available")
     except Exception as e:
