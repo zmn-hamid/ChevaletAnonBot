@@ -142,7 +142,7 @@ async def send_mass_msg(context: CallbackContext) -> None:
             await msg.reply_text("sent the message to everyone.")
 
 
-async def health_check_app(context: CallbackContext):
+async def health_check_app():
     try:
 
         def _port_is_open(_host, _port):
@@ -164,13 +164,20 @@ async def health_check_app(context: CallbackContext):
 
             try:
                 while True:
-                    # Simulating bot running
                     await asyncio.sleep(1)
-            except KeyboardInterrupt:
-                pass
             finally:
-                sock.close()
+                try:
+                    sock.close()
+                except:
+                    pass
         else:
             logger.warning(f"Port {port} is not available")
+    except asyncio.CancelledError:
+        logger.warning("health check app was stopped")
     except Exception as e:
         logger.error(f"error running health | {e.__class__.__name__} | {e}")
+    finally:
+        try:
+            sock.close()
+        except:
+            pass
