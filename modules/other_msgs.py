@@ -23,7 +23,7 @@ async def other_messages(
 ) -> None:
     """# for unkown messages + send without link"""
     output = await check_if_autoreply(update, context, message, userid, bot, dbh)
-    if output in [END, False]:
+    if output == END:
         return END
 
     # other messages

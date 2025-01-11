@@ -431,14 +431,14 @@ async def is_reply_to_channel(
                 "چنل مدنظرت لینک ناشناسی توی بایو یا پیام پین شده ش نذاشته",
                 reply_parameters=ReplyParameters(message.message_id),
             )
-            return False
+            return END
 
         if not target_cid:
             await message.reply_text(
                 "لینک ناشناسی توی بایو (یا پیامِ پین شده) ی چنل مدنظرت پیدا نکردم",
                 reply_parameters=ReplyParameters(message.message_id),
             )
-            return False
+            return END
 
         target_uid = dbh.get_uid_by_cid(target_cid)
         # if not target_uid, then the link is changed and has no match
