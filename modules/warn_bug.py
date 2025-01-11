@@ -25,8 +25,12 @@ async def warn_bug_reply_to_channel(
     """
     await message.reply_html(
         fetch_text("warn_reply_to_channel"),
-        disable_web_page_preview=True,
         reply_parameters=ReplyParameters(message.message_id),
+        link_preview_options=LinkPreviewOptions(
+            url="https://bugs.telegram.org/c/47222",
+            prefer_small_media=True,
+            prefer_large_media=False,
+        ),
     )
 
 
