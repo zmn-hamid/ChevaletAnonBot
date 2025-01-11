@@ -11,7 +11,7 @@ app = Flask(__name__)
 def bot_is_running(host, port):
     """port is open meaning the bot is running"""
     _sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    _sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    _sock.settimeout(3)
     result = _sock.connect_ex((host, port))
     _sock.close()
     return result == 0

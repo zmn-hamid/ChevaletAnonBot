@@ -147,7 +147,6 @@ async def health_check_app():
 
         def _port_is_open(_host, _port):
             _sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            _sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             result = _sock.connect_ex((_host, _port))
             _sock.close()
             return result == 0
@@ -156,7 +155,6 @@ async def health_check_app():
 
         if not _port_is_open(host, port):
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             sock.bind((host, port))
             sock.listen(1)
 
