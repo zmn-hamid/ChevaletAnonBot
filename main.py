@@ -21,6 +21,7 @@ from modules.Global.jobs import (
     set_commands,
     log_bot_started,
     check_connection,
+    send_gm_gn,
     health_check_app,
 )
 from modules.Global.error_handler import error_handler
@@ -28,7 +29,9 @@ from modules.Global.log import logger
 
 # global imports
 import os
+import pytz
 import asyncio
+from datetime import time
 
 
 appbuilder = ApplicationBuilder().token(BOT_TOKEN)
@@ -69,6 +72,19 @@ application.add_error_handler(error_handler)
 
 # check if db connection is lost every 1 hour
 job_queue.run_repeating(check_connection, 3600, 5)
+
+
+# say gm gn
+job_queue.run_daily(
+    send_gm_gn,
+    time=time(9, 0, tzinfo=pytz.timezone("Asia/Tehran")),
+    data={"is_morning": True},
+)
+job_queue.run_daily(
+    send_gm_gn,
+    time=time(23, 0, tzinfo=pytz.timezone("Asia/Tehran")),
+    data={"is_morning": False},
+)
 
 
 async def run_ptb():

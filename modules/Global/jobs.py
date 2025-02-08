@@ -9,6 +9,7 @@ from config import (
     HEALTH_PORT,
     DELETION_TIMEOUT,
     DELETION_TIMEOUT_EXTENDED,
+    GM_GROUP_ID,
 )
 from config import DELETION_TEXT, HEALTH_PORT
 from modules.Global.log import logger
@@ -106,40 +107,55 @@ async def check_connection(context: CallbackContext) -> None:
 
 async def send_mass_msg(context: CallbackContext) -> None:
     """sends mass msg"""
-    with db_base.connection_pool.get_connection() as conn:
-        with conn.cursor() as cur:
-            dbh = DBHandler(cur, conn)
-            msg: Message = context.job.data.get("message")
-            failed_to_send = []
+    try:
+        with db_base.connection_pool.get_connection() as conn:
+            with conn.cursor() as cur:
+                dbh = DBHandler(cur, conn)
+                msg: Message = context.job.data.get("message")
+                failed_to_send = []
 
-            # notify
-            await msg.reply_text("starting to send mass msg...")
+                # notify
+                await msg.reply_text("starting to send mass msg...")
 
-            # send to users
-            for item in dbh.get_all_uids():
-                uid = item[0]
-                try:
-                    await msg.reply_to_message.copy(uid)
-                except Exception as e:
-                    failed_to_send.append({"uid": uid, "reason": str(e)})
+                # send to users
+                for item in dbh.get_all_uids():
+                    uid = item[0]
+                    try:
+                        await msg.reply_to_message.copy(uid)
+                    except Exception as e:
+                        failed_to_send.append({"uid": uid, "reason": str(e)})
 
-            # send log
-            if failed_to_send:
-                logfile = "mass-msg-failurs.txt"
-                with open(logfile, "w") as f:
-                    f.write(
-                        "\n".join(
-                            [
-                                f"{item['uid']} | {item.get('reason')}"
-                                for item in failed_to_send
-                            ]
+                # send log
+                if failed_to_send:
+                    logfile = "mass-msg-failurs.txt"
+                    with open(logfile, "w") as f:
+                        f.write(
+                            "\n".join(
+                                [
+                                    f"{item['uid']} | {item.get('reason')}"
+                                    for item in failed_to_send
+                                ]
+                            )
                         )
-                    )
-                await msg.reply_document(open(logfile, "rb"))
-                os.remove(logfile)
+                    await msg.reply_document(open(logfile, "rb"))
+                    os.remove(logfile)
 
-            # notify
-            await msg.reply_text("sent the message to everyone.")
+                # notify
+                await msg.reply_text("sent the message to everyone.")
+    except Exception as e:
+        logger.warning("send_mass_msg faild: " + str(e))
+
+
+async def send_gm_gn(context: CallbackContext) -> None:
+    try:
+        bot: Bot = context.application.bot
+        await bot.send_message(
+            GM_GROUP_ID,
+            "صبح بخیر" if context.job.data.get("is_morning") else "شب بخیر",
+            parse_mode=PM.HTML,
+        )
+    except Exception as e:
+        logger.warning("send_gm_gn faild: " + str(e))
 
 
 async def health_check_app():

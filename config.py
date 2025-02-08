@@ -15,6 +15,7 @@ MAX_NAME_LENGTH = int(os.environ.get("MAX_NAME_LENGTH"))
 MAX_CID_LENGTH = int(os.environ.get("MAX_CID_LENGTH"))
 MIN_CID_LENGTH = int(os.environ.get("MIN_CID_LENGTH"))
 HEALTH_PORT = int(os.environ["HEALTH_PORT"])
+GM_GROUP_ID = os.environ["GM_GROUP_ID"]
 
 MAX_TRY_ADD_CID = 5
 DELETION_TIMEOUT = 10

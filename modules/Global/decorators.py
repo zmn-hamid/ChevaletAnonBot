@@ -5,7 +5,7 @@ from telegram.constants import ParseMode as PM
 from telegram.error import Forbidden, BadRequest, TimedOut
 
 # project imports
-from config import ERROR_CHAT_ID
+from config import ERROR_CHAT_ID, GM_GROUP_ID
 from modules.Global.log import logger
 from modules.Global.database import DBHandler, db_base
 from modules.Global.user_init import init_user
@@ -24,8 +24,14 @@ def prep_function(func) -> Callable:
         # only handle updates from private chats
         if (
             update == None
-            or update.effective_chat.type in ["channel", "group"]
             or update.edited_message
+            or update.effective_chat.type in ["channel", "group"]
+            or update.effective_chat.id in [int(GM_GROUP_ID)]
+            or (
+                update.my_chat_member
+                and update.my_chat_member.chat
+                and (update.my_chat_member.chat.id in [int(GM_GROUP_ID)])
+            )
         ):
             return ConversationHandler.END
         try:
