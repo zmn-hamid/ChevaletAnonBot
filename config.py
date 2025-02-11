@@ -15,6 +15,9 @@ MAX_NAME_LENGTH = int(os.environ.get("MAX_NAME_LENGTH"))
 MAX_CID_LENGTH = int(os.environ.get("MAX_CID_LENGTH"))
 MIN_CID_LENGTH = int(os.environ.get("MIN_CID_LENGTH"))
 HEALTH_PORT = int(os.environ["HEALTH_PORT"])
+SEND_GM_GN = os.environ["SEND_GM_GN"].lower() == "true"
+GM_TIME = [int(item.strip()) for item in os.environ["GM_TIME"].split(":")]
+GN_TIME = [int(item.strip()) for item in os.environ["GN_TIME"].split(":")]
 GM_GROUP_ID = os.environ["GM_GROUP_ID"]
 
 MAX_TRY_ADD_CID = 5

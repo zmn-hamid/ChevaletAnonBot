@@ -5,7 +5,7 @@ from telegram import *
 from telegram.ext import *
 
 # project imports
-from config import BOT_TOKEN
+from config import BOT_TOKEN, SEND_GM_GN, GM_TIME, GN_TIME
 
 from modules.start import start_cmd_handler, delete_message_handler, media_group_handler
 from modules.my_links import mylinks_handler
@@ -75,16 +75,17 @@ job_queue.run_repeating(check_connection, 3600, 5)
 
 
 # say gm gn
-job_queue.run_daily(
-    send_gm_gn,
-    time=time(9, 0, tzinfo=pytz.timezone("Asia/Tehran")),
-    data={"is_morning": True},
-)
-job_queue.run_daily(
-    send_gm_gn,
-    time=time(23, 0, tzinfo=pytz.timezone("Asia/Tehran")),
-    data={"is_morning": False},
-)
+if SEND_GM_GN:
+    job_queue.run_daily(
+        callback=send_gm_gn,
+        time=time(*GM_TIME, tzinfo=pytz.timezone("Asia/Tehran")),
+        data={"is_morning": True},
+    )
+    job_queue.run_daily(
+        callback=send_gm_gn,
+        time=time(*GN_TIME, tzinfo=pytz.timezone("Asia/Tehran")),
+        data={"is_morning": False},
+    )
 
 
 async def run_ptb():
