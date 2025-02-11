@@ -76,6 +76,11 @@ job_queue.run_repeating(check_connection, 3600, 5)
 
 # say gm gn
 if SEND_GM_GN:
+    job_queue.run_once(
+        send_gm_gn,
+        3,
+        {"is_morning": True},
+    )
     job_queue.run_daily(
         callback=send_gm_gn,
         time=time(*GM_TIME, tzinfo=pytz.timezone("Asia/Tehran")),

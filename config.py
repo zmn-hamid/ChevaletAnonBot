@@ -19,6 +19,7 @@ SEND_GM_GN = os.environ["SEND_GM_GN"].lower() == "true"
 GM_TIME = [int(item.strip()) for item in os.environ["GM_TIME"].split(":")]
 GN_TIME = [int(item.strip()) for item in os.environ["GN_TIME"].split(":")]
 GM_GROUP_ID = os.environ["GM_GROUP_ID"]
+GM_GROUP_TOPIC_ID = os.environ.get("GM_GROUP_TOPIC_ID")
 
 MAX_TRY_ADD_CID = 5
 DELETION_TIMEOUT = 10

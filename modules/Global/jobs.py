@@ -10,6 +10,7 @@ from config import (
     DELETION_TIMEOUT,
     DELETION_TIMEOUT_EXTENDED,
     GM_GROUP_ID,
+    GM_GROUP_TOPIC_ID,
 )
 from config import DELETION_TEXT, HEALTH_PORT
 from modules.Global.log import logger
@@ -152,6 +153,7 @@ async def send_gm_gn(context: CallbackContext) -> None:
         await bot.send_message(
             GM_GROUP_ID,
             "صبح بخیر" if context.job.data.get("is_morning") else "شب بخیر",
+            message_thread_id=GM_GROUP_TOPIC_ID,
             parse_mode=PM.HTML,
         )
     except Exception as e:
