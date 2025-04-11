@@ -12,7 +12,14 @@ from config import (
     GM_GROUP_ID,
     GM_GROUP_TOPIC_ID,
 )
-from config import DELETION_TEXT, HEALTH_PORT, REPORT_CHAT_ID, AI_INTERVAL
+from config import (
+    DELETION_TEXT,
+    HEALTH_PORT,
+    REPORT_CHAT_ID,
+    AI_INTERVAL,
+    AI_URL,
+    AI_SESSION_ID,
+)
 from modules.Global.log import logger
 from modules.Global.database import DBHandler, db_base
 from modules.Global.ai_queue import ai_queue_manager
@@ -184,10 +191,10 @@ async def ai_responser(context: CallbackContext) -> None:
     result_text = ""
     try:
         output = requests.post(
-            "http://167.99.37.124:5679/webhook/c41f4a4d-fd01-4992-93f5-35d67cf63f2e/chat",
+            AI_URL,
             headers={"Content-Type": "application/json"},
             json={
-                "sessionId": "123456789",
+                "sessionId": AI_SESSION_ID,
                 "chatInput": text,
             },
         ).json()["output"]
@@ -199,7 +206,7 @@ async def ai_responser(context: CallbackContext) -> None:
             == "Cf"  # Removes "formatting" chars like ZWNJ
         )
     except Exception as e:
-        logger.error("failed to generate ai reposnse: %s" % e)
+        logger.error("failed to generate ai response: %s" % e)
         try:
             await bot.send_message(
                 REPORT_CHAT_ID,
@@ -216,7 +223,7 @@ async def ai_responser(context: CallbackContext) -> None:
                 reply_parameters=ReplyParameters(message_id, GM_GROUP_ID, False),
             )
         except Exception as e:
-            logger.error("failed to send ai reposnse: %s" % e)
+            logger.error("failed to send ai response: %s" % e)
     # run self
     context.application.job_queue.run_once(
         ai_responser,

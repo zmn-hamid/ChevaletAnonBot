@@ -10,7 +10,7 @@ SUPPORT_ADMIN = os.environ.get("SUPPORT_ADMIN")  # username
 DB_NAME = os.environ.get("DB_NAME")
 DB_USER = os.environ.get("DB_USER")
 DB_PASS = os.environ.get("DB_PASS")
-LOG_LEVEL = logging._nameToLevel[os.environ.get("LOG_LEVEL").upper()]
+LOG_LEVEL = logging._nameToLevel[os.environ.get("LOG_LEVEL", "INFO").upper()]
 DEFAULT_CID_LIMIT = int(os.environ.get("DEFAULT_CID_LIMIT"))
 MAX_NAME_LENGTH = int(os.environ.get("MAX_NAME_LENGTH"))
 MAX_CID_LENGTH = int(os.environ.get("MAX_CID_LENGTH"))
@@ -21,6 +21,8 @@ GM_TIME = [int(item.strip()) for item in os.environ["GM_TIME"].split(":")]
 GN_TIME = [int(item.strip()) for item in os.environ["GN_TIME"].split(":")]
 GM_GROUP_ID = os.environ["GM_GROUP_ID"]
 GM_GROUP_TOPIC_ID = os.environ.get("GM_GROUP_TOPIC_ID")
+AI_URL = os.environ.get("AI_URL")
+AI_SESSION_ID = os.environ.get("AI_SESSION_ID")
 AI_INTERVAL = os.environ.get("AI_INTERVAL", 5)
 
 MAX_TRY_ADD_CID = 5
