@@ -3,3 +3,5 @@ __pycache__/
 /temp/
 *.log
 log-mass-msg.txt
+.env
+.vscode
