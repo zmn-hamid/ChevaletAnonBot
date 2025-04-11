@@ -178,6 +178,8 @@ async def ai_responser(context: CallbackContext) -> None:
 
     # get the first item
     message_id, text = queue[0]
+    # delete the first item
+    ai_queue_manager.delete_item(0)
     # get answer and send message
     result_text = ""
     try:
@@ -215,8 +217,6 @@ async def ai_responser(context: CallbackContext) -> None:
             )
         except Exception as e:
             logger.error("failed to send ai reposnse: %s" % e)
-        # delete the first item
-        ai_queue_manager.delete_item(0)
     # run self
     context.application.job_queue.run_once(
         ai_responser,
