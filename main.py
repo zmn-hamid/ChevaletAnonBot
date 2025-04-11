@@ -16,6 +16,7 @@ from modules.privacy import privacy_handler
 from modules.help import help_handler, more_links_clbk_handler
 from modules.warn_bug import warn_bug_handler
 from modules.other_msgs import other_messages_handler
+from modules.ai_chat import ai_input_message_handler
 
 from modules.Global.jobs import (
     set_commands,
@@ -23,6 +24,7 @@ from modules.Global.jobs import (
     check_connection,
     send_gm_gn,
     health_check_app,
+    ai_responser,
 )
 from modules.Global.error_handler import error_handler
 from modules.Global.log import logger
@@ -61,6 +63,8 @@ for handler in [
     myuid_handler,
     # warn bugs
     warn_bug_handler,
+    # ai message queue handler
+    ai_input_message_handler,
     # other messages
     other_messages_handler,
 ]:
@@ -71,25 +75,34 @@ application.add_error_handler(error_handler)
 
 
 # check if db connection is lost every 1 hour
-job_queue.run_repeating(check_connection, 3600, 5)
+job_queue.run_repeating(
+    check_connection,
+    3600,
+    5,
+    job_kwargs={"misfire_grace_time": 10},
+)
+
+# run the ai responser (checks queue and answers via ai)
+job_queue.run_once(
+    ai_responser,
+    3,
+    job_kwargs={"misfire_grace_time": 10},
+)
 
 
 # say gm gn
 if SEND_GM_GN:
-    job_queue.run_once(
-        send_gm_gn,
-        3,
-        {"is_morning": True},
-    )
     job_queue.run_daily(
         callback=send_gm_gn,
         time=time(*GM_TIME, tzinfo=pytz.timezone("Asia/Tehran")),
         data={"is_morning": True},
+        job_kwargs={"misfire_grace_time": 10},
     )
     job_queue.run_daily(
         callback=send_gm_gn,
         time=time(*GN_TIME, tzinfo=pytz.timezone("Asia/Tehran")),
         data={"is_morning": False},
+        job_kwargs={"misfire_grace_time": 10},
     )
 
 

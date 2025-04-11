@@ -12,15 +12,18 @@ from config import (
     GM_GROUP_ID,
     GM_GROUP_TOPIC_ID,
 )
-from config import DELETION_TEXT, HEALTH_PORT
+from config import DELETION_TEXT, HEALTH_PORT, REPORT_CHAT_ID, AI_INTERVAL
 from modules.Global.log import logger
 from modules.Global.database import DBHandler, db_base
-from mysql.connector.errors import Error as mysql_Error
+from modules.Global.ai_queue import ai_queue_manager
 
 # global imports
 import os
 import socket
 import asyncio
+import requests
+import unicodedata
+from mysql.connector.errors import Error as mysql_Error
 
 
 async def log_bot_started(context: CallbackContext) -> None:
@@ -158,6 +161,68 @@ async def send_gm_gn(context: CallbackContext) -> None:
         )
     except Exception as e:
         logger.warning("send_gm_gn faild: " + str(e))
+
+
+async def ai_responser(context: CallbackContext) -> None:
+    """responds to the queued ai messages one by one"""
+    bot: Bot = context.application.bot
+    queue = ai_queue_manager.get_queue()
+
+    if not queue:
+        context.application.job_queue.run_once(
+            ai_responser,
+            5,
+            job_kwargs={"misfire_grace_time": 10},
+        )
+        return
+
+    # get the first item
+    message_id, text = queue[0]
+    # get answer and send message
+    result_text = ""
+    try:
+        output = requests.post(
+            "http://167.99.37.124:5679/webhook/c41f4a4d-fd01-4992-93f5-35d67cf63f2e/chat",
+            headers={"Content-Type": "application/json"},
+            json={
+                "sessionId": "123456789",
+                "chatInput": text,
+            },
+        ).json()["output"]
+        logger.debug("ai output: %s" % output)
+        result_text = "".join(
+            char
+            for char in output
+            if not unicodedata.category(char)
+            == "Cf"  # Removes "formatting" chars like ZWNJ
+        )
+    except Exception as e:
+        logger.error("failed to generate ai reposnse: %s" % e)
+        try:
+            await bot.send_message(
+                REPORT_CHAT_ID,
+                "bot failed to generate response due to: %s\ninput message: %s"
+                % (e, text),
+            )
+        except Exception as e:
+            logger.error("failed to even send the ai gen error to report channel")
+    if result_text:
+        try:
+            await bot.send_message(
+                GM_GROUP_ID,
+                result_text,
+                reply_parameters=ReplyParameters(message_id, GM_GROUP_ID, False),
+            )
+        except Exception as e:
+            logger.error("failed to send ai reposnse: %s" % e)
+        # delete the first item
+        ai_queue_manager.delete_item(0)
+    # run self
+    context.application.job_queue.run_once(
+        ai_responser,
+        AI_INTERVAL,
+        job_kwargs={"misfire_grace_time": 10},
+    )
 
 
 async def health_check_app():

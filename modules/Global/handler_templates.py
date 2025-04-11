@@ -527,16 +527,16 @@ async def _warning_handle(
     # handle warning and deletion of it
     deletion_timeout = DELETION_TIMEOUT
     if was_channel_reply:
-        # TODO undo timeout addition when bug fixed
+        # undo timeout addition when bug fixed
         deletion_timeout = DELETION_TIMEOUT_EXTENDED
         sent_text = (
             f"فرستادم به {dbh.get_name(target_uid)}.\n"
-            # TODO undo text when bug fixed
+            # undo text when bug fixed
             f"<blockquote><b>{html.escape('⚠️به هیچ پیام فوروارد شده ای ریپلای نزن. چرایی: /bug⚠️')}</b></blockquote>\n"
         )
     else:
         sent_text = f"فرستادم بهش."
-    # TODO undo condition when bug fixed -> if dbh.get_warning(userid):
+    # undo condition when bug fixed -> if dbh.get_warning(userid):
     if was_channel_reply or dbh.get_warning(userid):
 
         def _is_valid(rm):

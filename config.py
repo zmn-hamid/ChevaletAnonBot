@@ -1,6 +1,7 @@
 import os, logging, string
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
+BOT_ID = BOT_TOKEN.split(":")[0]
 REPORT_CHAT_ID = os.environ.get("REPORT_CHAT_ID")
 ERROR_CHAT_ID = os.environ.get("ERROR_CHAT_ID")
 ADMINS = os.environ.get("ADMINS").split("|")
@@ -20,6 +21,7 @@ GM_TIME = [int(item.strip()) for item in os.environ["GM_TIME"].split(":")]
 GN_TIME = [int(item.strip()) for item in os.environ["GN_TIME"].split(":")]
 GM_GROUP_ID = os.environ["GM_GROUP_ID"]
 GM_GROUP_TOPIC_ID = os.environ.get("GM_GROUP_TOPIC_ID")
+AI_INTERVAL = os.environ.get("AI_INTERVAL", 5)
 
 MAX_TRY_ADD_CID = 5
 DELETION_TIMEOUT = 10
