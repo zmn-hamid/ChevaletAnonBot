@@ -1,11 +1,12 @@
-from typing import List, Union
+from telegram import Message
+from typing import List
 
 
 class AIQueueManager:
-    queue: List[List[int | str]] = []  # [message_id, text]
+    queue: List[Message] = []
 
-    def add_to_queue(self, message_id: str, text: str):
-        self.queue.append([message_id, text])
+    def add_to_queue(self, message: Message):
+        self.queue.append(message)
 
     def get_queue(self):
         return self.queue

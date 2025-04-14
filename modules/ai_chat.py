@@ -17,7 +17,7 @@ async def ai_input_message(
 ) -> None:
     """handles the messages replied to the bot and queues them for ai to answer"""
     message: Message = update.message
-    ai_queue_manager.add_to_queue(message.message_id, message.text)
+    ai_queue_manager.add_to_queue(message)
     await message.set_reaction(ReactionEmoji.THINKING_FACE)
 
 

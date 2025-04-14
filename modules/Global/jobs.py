@@ -172,64 +172,90 @@ async def send_gm_gn(context: CallbackContext) -> None:
 
 async def ai_responser(context: CallbackContext) -> None:
     """responds to the queued ai messages one by one"""
-    bot: Bot = context.application.bot
-    queue = ai_queue_manager.get_queue()
+    try:
+        bot: Bot = context.application.bot
+        queue = ai_queue_manager.get_queue()
 
-    if not queue:
+        if not queue:
+            context.application.job_queue.run_once(
+                ai_responser,
+                5,
+                job_kwargs={"misfire_grace_time": 10},
+            )
+            return
+
+        # get the first item
+        message_id, text = queue[0].message_id, queue[0].text
+        # delete the first item
+        ai_queue_manager.delete_item(0)
+        # get answer and send message
+        result_text = ""
+        try:
+            output = requests.post(
+                AI_URL,
+                headers={"Content-Type": "application/json"},
+                json={
+                    "sessionId": AI_SESSION_ID,
+                    "chatInput": text,
+                },
+            ).json()["output"]
+            logger.debug("ai output: %s" % output)
+            result_text = "".join(
+                char
+                for char in output
+                if not unicodedata.category(char)
+                == "Cf"  # Removes "formatting" chars like ZWNJ
+            )
+        except Exception as e:
+            logger.error(
+                "failed to generate ai response: %s - %s"
+                % (e.__class__.__name__, str(e))
+            )
+            try:
+                await bot.send_message(
+                    REPORT_CHAT_ID,
+                    "bot failed to generate response due to: %s - %s\ninput message: %s"
+                    % (e.__class__.__name__, str(e), text),
+                )
+            except Exception as e:
+                logger.error(
+                    "failed to even send the ai gen error to report channel: %s - %s"
+                    % (e.__class__.__name__, str(e))
+                )
+        if result_text:
+            try:
+                await bot.send_message(
+                    GM_GROUP_ID,
+                    result_text,
+                    reply_parameters=ReplyParameters(message_id, GM_GROUP_ID, False),
+                )
+            except Exception as e:
+                logger.error(
+                    "failed to send ai response: %s - %s"
+                    % (e.__class__.__name__, str(e))
+                )
+        # run self
         context.application.job_queue.run_once(
             ai_responser,
-            5,
+            AI_INTERVAL,
             job_kwargs={"misfire_grace_time": 10},
         )
-        return
-
-    # get the first item
-    message_id, text = queue[0]
-    # delete the first item
-    ai_queue_manager.delete_item(0)
-    # get answer and send message
-    result_text = ""
-    try:
-        output = requests.post(
-            AI_URL,
-            headers={"Content-Type": "application/json"},
-            json={
-                "sessionId": AI_SESSION_ID,
-                "chatInput": text,
-            },
-        ).json()["output"]
-        logger.debug("ai output: %s" % output)
-        result_text = "".join(
-            char
-            for char in output
-            if not unicodedata.category(char)
-            == "Cf"  # Removes "formatting" chars like ZWNJ
-        )
     except Exception as e:
-        logger.error("failed to generate ai response: %s" % e)
+        logger.debug(
+            "bot failed to generate response due to: %s - %s"
+            % (e.__class__.__name__, str(e))
+        )
         try:
             await bot.send_message(
                 REPORT_CHAT_ID,
-                "bot failed to generate response due to: %s\ninput message: %s"
-                % (e, text),
+                "bot failed to generate response due to: %s - %s"
+                % (e.__class__.__name__, str(e)),
             )
         except Exception as e:
-            logger.error("failed to even send the ai gen error to report channel")
-    if result_text:
-        try:
-            await bot.send_message(
-                GM_GROUP_ID,
-                result_text,
-                reply_parameters=ReplyParameters(message_id, GM_GROUP_ID, False),
+            logger.error(
+                "failed in ai_responser general error catcher: %s - %s"
+                % (e.__class__.__name__, str(e))
             )
-        except Exception as e:
-            logger.error("failed to send ai response: %s" % e)
-    # run self
-    context.application.job_queue.run_once(
-        ai_responser,
-        AI_INTERVAL,
-        job_kwargs={"misfire_grace_time": 10},
-    )
 
 
 async def health_check_app():
