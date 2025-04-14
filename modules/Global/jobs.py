@@ -11,11 +11,7 @@ from config import (
     DELETION_TIMEOUT_EXTENDED,
     GM_GROUP_ID,
     GM_GROUP_TOPIC_ID,
-)
-from config import (
-    DELETION_TEXT,
-    HEALTH_PORT,
-    REPORT_CHAT_ID,
+    ERROR_CHAT_ID,
     AI_INTERVAL,
     AI_URL,
     AI_SESSION_ID,
@@ -213,7 +209,7 @@ async def ai_responser(context: CallbackContext) -> None:
             )
             try:
                 await bot.send_message(
-                    REPORT_CHAT_ID,
+                    ERROR_CHAT_ID,
                     "bot failed to generate response due to: %s - %s\ninput message: %s"
                     % (e.__class__.__name__, str(e), text),
                 )
@@ -247,7 +243,7 @@ async def ai_responser(context: CallbackContext) -> None:
         )
         try:
             await bot.send_message(
-                REPORT_CHAT_ID,
+                ERROR_CHAT_ID,
                 "bot failed to generate response due to: %s - %s"
                 % (e.__class__.__name__, str(e)),
             )
