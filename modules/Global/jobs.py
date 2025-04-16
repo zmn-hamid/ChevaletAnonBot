@@ -223,7 +223,8 @@ async def ai_responser(context: CallbackContext) -> None:
                 await bot.send_message(
                     GM_GROUP_ID,
                     result_text,
-                    reply_parameters=ReplyParameters(message_id, GM_GROUP_ID, False),
+                    parse_mode=PM.MARKDOWN,
+                    reply_parameters=ReplyParameters(message_id, GM_GROUP_ID),
                 )
             except Exception as e:
                 logger.error(
