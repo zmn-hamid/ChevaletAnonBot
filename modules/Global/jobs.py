@@ -22,6 +22,7 @@ from modules.Global.ai_queue import ai_queue_manager
 
 # global imports
 import os
+import json
 import socket
 import asyncio
 import requests
@@ -194,7 +195,11 @@ async def ai_responser(context: CallbackContext) -> None:
                     "sessionId": AI_SESSION_ID,
                     "chatInput": text,
                 },
-            ).json()["output"]
+            )
+            if not output.text:
+                logger.warning("no output")
+                return
+            output = output.json()["output"]
             logger.debug("ai output: %s" % output)
             result_text = "".join(
                 char
@@ -220,12 +225,21 @@ async def ai_responser(context: CallbackContext) -> None:
                 )
         if result_text:
             try:
-                await bot.send_message(
-                    GM_GROUP_ID,
-                    result_text,
-                    parse_mode=PM.MARKDOWN,
-                    reply_parameters=ReplyParameters(message_id, GM_GROUP_ID),
-                )
+                try:
+                    await bot.send_message(
+                        GM_GROUP_ID,
+                        result_text,
+                        parse_mode=PM.MARKDOWN,
+                        reply_parameters=ReplyParameters(message_id, GM_GROUP_ID),
+                    )
+                except error.BadRequest as e:
+                    if not "Can't parse entities".lower() in str(e).lower():
+                        raise
+                    await bot.send_message(
+                        GM_GROUP_ID,
+                        result_text,
+                        reply_parameters=ReplyParameters(message_id, GM_GROUP_ID),
+                    )
             except Exception as e:
                 logger.error(
                     "failed to send ai response: %s - %s"
