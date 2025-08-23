@@ -36,4 +36,15 @@ async def other_messages(
         await other_messages_template(message)
 
 
-other_messages_handler = MessageHandler(filters.ALL, other_messages)
+class IsDirectMessageFilter(filters.MessageFilter):
+    __slots__ = ()
+
+    def filter(self, message: Message) -> bool:  # noqa: ARG002
+        if message.to_dict().get("chat", {}).get("is_direct_messages", False):
+            return True
+        return False
+
+
+other_messages_handler = MessageHandler(
+    filters.ALL & ~IsDirectMessageFilter(), other_messages
+)

@@ -1,6 +1,9 @@
 import os, logging, string
+from dotenv import load_dotenv
 
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
+load_dotenv()
+
+BOT_TOKEN = os.environ["BOT_TOKEN"]
 BOT_ID = BOT_TOKEN.split(":")[0]
 REPORT_CHAT_ID = os.environ.get("REPORT_CHAT_ID")
 ERROR_CHAT_ID = os.environ.get("ERROR_CHAT_ID")
