@@ -9,6 +9,12 @@ SETTINGS_MARKUP = {
             ),
         ],
         [
+            InlineKeyboardButton(
+                "✍️ ارسال به ادمین خاص کانال",
+                callback_data="channel-signature|",
+            ),
+        ],
+        [
             InlineKeyboardButton("🔗 پیشنمایشِ لینک", callback_data="wpp|"),
             InlineKeyboardButton(
                 "👌 ارسال پیامهای پیوسته", callback_data="media-settings|"

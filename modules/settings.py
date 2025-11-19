@@ -272,6 +272,32 @@ async def easier_answer_clbk(
 
 
 @prep_function
+async def channel_signature_clbk(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    message: Message,
+    userid: str,
+    bot: Bot,
+    dbh: DBHandler,
+) -> None:
+    """# channel signature feature explanation"""
+    await update.callback_query.answer()
+    if (clbk := update.callback_query) and (data := clbk.data):
+        await clbk.edit_message_text(
+            fetch_text("settings/channel_signature"),
+            parse_mode=PM.HTML,
+            reply_markup=InlineKeyboardMarkup(
+                [
+                    [
+                        SETTINGS_MARKUP["back-to-menu"],
+                    ],
+                ]
+            ),
+        )
+        return END
+
+
+@prep_function
 async def seen_settings_clbk(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -617,6 +643,7 @@ settings_handler = ConversationHandler(
         CallbackQueryHandler(wpp_clbk, r"^wpp\|"),
         CallbackQueryHandler(warning_clbk, r"^warning\|"),
         CallbackQueryHandler(easier_answer_clbk, r"^easier-answer\|"),
+        CallbackQueryHandler(channel_signature_clbk, r"^channel-signature\|"),
         CallbackQueryHandler(seen_settings_clbk, r"^seen-settings\|"),
         CallbackQueryHandler(unblock_all_clbk, r"^unblock-all\|"),
         CallbackQueryHandler(unblock_me_clbk, r"^unblock-me\|"),
