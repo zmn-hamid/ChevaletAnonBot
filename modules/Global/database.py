@@ -39,6 +39,8 @@ class DB_Base:
             user=DB_USER,
             password=DB_PASS,
             collation="utf8mb4_general_ci",
+            buffered=True,
+            autocommit=True,
         )
 
     def make_tables(self) -> None:
@@ -121,8 +123,6 @@ class DBHandler(DB_Base):
                     None,
                 ),
             )
-            self.db.commit()
-
             return True
         except IntegrityError:
             return False
@@ -137,7 +137,6 @@ class DBHandler(DB_Base):
                     str(blocked_uid),
                 ),
             )
-            self.db.commit()
             return True
         except IntegrityError:
             return False
@@ -150,7 +149,6 @@ class DBHandler(DB_Base):
                 f'WHERE blocker_uid="{blocker_uid}" '
                 f'and blocked_uid="{blocked_uid}"'
             )
-            self.db.commit()
             return True
         except IntegrityError:
             return False
@@ -160,7 +158,6 @@ class DBHandler(DB_Base):
         self.cur.execute(
             f'DELETE FROM {self.blocks_table} WHERE blocker_uid="{userid}"'
         )
-        self.db.commit()
 
     def is_blocked(self, blocker_uid: str, blocked_uid: str) -> bool:
         """checks if a user is blocked"""
@@ -190,7 +187,6 @@ class DBHandler(DB_Base):
             f'UPDATE {self.users_table} SET is_banned=%s WHERE uid="{uid}"',
             (ban,),
         )
-        self.db.commit()
 
     def add_cid(self, uid: int, cid: int, try_counter: int = 0) -> bool:
         """add cid for user"""
@@ -201,7 +197,6 @@ class DBHandler(DB_Base):
                 f"INSERT INTO {self.cids_table} VALUES (NULL, %s, %s)",
                 (str(uid), str(cid)),
             )
-            self.db.commit()
             return True
         except IntegrityError:
             try_counter += 1
@@ -211,7 +206,6 @@ class DBHandler(DB_Base):
         self.cur.execute(
             f'DELETE FROM {self.cids_table} WHERE BINARY cid="{cid}" and uid="{uid}"'
         )
-        self.db.commit()
 
     def get_all_uids(self) -> List[List[str]]:
         """returns all the uids"""
@@ -327,27 +321,23 @@ class DBHandler(DB_Base):
         self.cur.execute(
             f'UPDATE {self.users_table} SET name=%s WHERE uid="{uid}"', (name,)
         )
-        self.db.commit()
 
     def set_cid(self, new_cid: str, cid: str) -> None:
         self.cur.execute(
             f"UPDATE {self.cids_table} SET cid=%s WHERE cid='{cid}'", (new_cid,)
         )
-        self.db.commit()
 
     def set_cid_limit(self, uid: str, cid_limit: int) -> None:
         self.cur.execute(
             f'UPDATE {self.users_table} SET cid_limit=%s WHERE uid="{uid}"',
             (cid_limit,),
         )
-        self.db.commit()
 
     def set_warning(self, uid: str, warning: str) -> None:
         self.cur.execute(
             f'UPDATE {self.users_table} SET warning=%s WHERE uid="{uid}"',
             (warning,),
         )
-        self.db.commit()
 
     def set_seen_option(self, uid: str, seen_option: bool) -> None:
         """sets seen_option for user"""
@@ -356,7 +346,6 @@ class DBHandler(DB_Base):
                 f'UPDATE {self.users_table} SET seen_option=%s WHERE uid="{uid}"',
                 (seen_option,),
             )
-            self.db.commit()
         except IntegrityError:
             pass
 
@@ -367,7 +356,6 @@ class DBHandler(DB_Base):
                 f'UPDATE {self.users_table} SET wpp=%s WHERE uid="{uid}"',
                 (wpp,),
             )
-            self.db.commit()
         except IntegrityError:
             pass
 
@@ -378,7 +366,6 @@ class DBHandler(DB_Base):
                 f'UPDATE {self.users_table} SET custom_tag=%s WHERE uid="{uid}"',
                 (custom_tag,),
             )
-            self.db.commit()
         except IntegrityError:
             pass
 
@@ -389,7 +376,6 @@ class DBHandler(DB_Base):
                 f'UPDATE {self.users_table} SET audio_tag=%s WHERE uid="{uid}"',
                 (audio_tag,),
             )
-            self.db.commit()
         except IntegrityError:
             pass
 
@@ -400,7 +386,6 @@ class DBHandler(DB_Base):
                 f'UPDATE {self.users_table} SET chevaletid=%s WHERE uid="{uid}"',
                 (chevaletid,),
             )
-            self.db.commit()
             return True
         except IntegrityError:
             pass
@@ -421,7 +406,6 @@ class DBHandler(DB_Base):
         self.cur.execute(
             f"INSERT INTO {self.reports_table} VALUES (NULL, %s)", (str(report_id),)
         )
-        self.db.commit()
         return self.get_report_id(report_id)
 
     def del_report_id(self, report_id: str):
@@ -430,7 +414,6 @@ class DBHandler(DB_Base):
             self.cur.execute(
                 f'DELETE FROM {self.reports_table} WHERE reported_id="{report_id}"'
             )
-            self.db.commit()
         return count
 
     def get_report_id(self, report_id: str):
