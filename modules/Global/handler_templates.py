@@ -385,58 +385,103 @@ async def is_reply_to_channel(
             return False
         bio = channel.description
         pin = channel.pinned_message
-        pattern = rf"t.me/{bot.username.lower()}\?start=([A-Za-z0-9_-]+)"
+        pattern = rf"t\.me/{bot.username.lower()}\?start=([A-Za-z0-9_-]+)"
         target_cid: str = None
-        # check if link is in description and if yes, check what's the cid
-        if bio and (match := re.search(pattern, bio.lower())):
-            offset, end = match.span(1)
-            target_cid = bio[offset:end]
 
-        elif pin and (entities := pin.entities):
-            for entt in entities:
-                entt: MessageEntity
-                if entt.type == MET.URL and (
-                    match := re.search(
-                        pattern,
-                        (
-                            url := pin.text[entt.offset : entt.offset + entt.length]
-                        ).lower(),
-                    )
-                ):
-                    offset, end = match.span(1)
-                    target_cid = url[offset:end]
-
-        elif pin and (entities := pin.caption_entities):
-            for entt in entities:
-                entt: MessageEntity
-                if entt.type == MET.URL and (
-                    match := re.search(
-                        pattern,
-                        (
-                            url := pin.caption[entt.offset : entt.offset + entt.length]
-                        ).lower(),
-                    )
-                ):
-                    offset, end = match.span(1)
-                    target_cid = url[offset:end]
-
-        elif (
-            pin
-            and (reply_markup := pin.reply_markup)
-            and (inline_keyboard := reply_markup.inline_keyboard)
-        ):
-            for row in inline_keyboard:
-                for col in row:
-                    if col.url and (match := re.search(pattern, col.url.lower())):
-                        offset, end = match.span(1)
-                        target_cid = col.url[offset:end]
-
-        else:
-            await message.reply_text(
-                "چنل مدنظرت لینک ناشناسی توی بایو یا پیام پین شده ش نذاشته",
-                reply_parameters=ReplyParameters(message.message_id),
+        # check for author_signature to find specific admin's link
+        author_signature = None
+        if external_reply.origin:
+            author_signature = external_reply.origin.to_dict().get(
+                "author_signature", None
             )
-            return END
+
+        # helper function to find author-specific link
+        def find_author_link(text: str, signature: str) -> str | None:
+            """Find the link associated with a specific author signature in text."""
+            if not text or not signature:
+                return None
+            # pattern: "Name: t.me/..." or "Name: https://t.me/..."
+            author_pattern = rf"{re.escape(signature)}\s*:\s*(?:https?://)?t\.me/{bot.username.lower()}\?start=([A-Za-z0-9_-]+)"
+            if match := re.search(author_pattern, text, re.IGNORECASE):
+                # get the cid with original case from text
+                offset, end = match.span(1)
+                return text[offset:end]
+            return None
+
+        # if author_signature exists, try to find their specific link first
+        if author_signature:
+            # check bio for author-specific link
+            if bio and (cid := find_author_link(bio, author_signature)):
+                target_cid = cid
+            # check pin text for author-specific link
+            elif (
+                pin
+                and pin.text
+                and (cid := find_author_link(pin.text, author_signature))
+            ):
+                target_cid = cid
+            # check pin caption for author-specific link
+            elif (
+                pin
+                and pin.caption
+                and (cid := find_author_link(pin.caption, author_signature))
+            ):
+                target_cid = cid
+
+        # fallback to original behavior if no author_signature or no match found
+        if not target_cid:
+            # check if link is in description and if yes, check what's the cid
+            if bio and (match := re.search(pattern, bio.lower())):
+                offset, end = match.span(1)
+                target_cid = bio[offset:end]
+
+            elif pin and (entities := pin.entities):
+                for entt in entities:
+                    entt: MessageEntity
+                    if entt.type == MET.URL and (
+                        match := re.search(
+                            pattern,
+                            (
+                                url := pin.text[entt.offset : entt.offset + entt.length]
+                            ).lower(),
+                        )
+                    ):
+                        offset, end = match.span(1)
+                        target_cid = url[offset:end]
+
+            elif pin and (entities := pin.caption_entities):
+                for entt in entities:
+                    entt: MessageEntity
+                    if entt.type == MET.URL and (
+                        match := re.search(
+                            pattern,
+                            (
+                                url := pin.caption[
+                                    entt.offset : entt.offset + entt.length
+                                ]
+                            ).lower(),
+                        )
+                    ):
+                        offset, end = match.span(1)
+                        target_cid = url[offset:end]
+
+            elif (
+                pin
+                and (reply_markup := pin.reply_markup)
+                and (inline_keyboard := reply_markup.inline_keyboard)
+            ):
+                for row in inline_keyboard:
+                    for col in row:
+                        if col.url and (match := re.search(pattern, col.url.lower())):
+                            offset, end = match.span(1)
+                            target_cid = col.url[offset:end]
+
+            else:
+                await message.reply_text(
+                    "چنل مدنظرت لینک ناشناسی توی بایو یا پیام پین شده ش نذاشته",
+                    reply_parameters=ReplyParameters(message.message_id),
+                )
+                return END
 
         if not target_cid:
             await message.reply_text(
