@@ -5,3 +5,4 @@ __pycache__/
 log-mass-msg.txt
 .env
 .vscode
+dynamic_settings.json

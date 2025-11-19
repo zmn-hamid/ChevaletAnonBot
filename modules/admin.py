@@ -12,6 +12,7 @@ from modules.Global.fetch_texts import fetch_text
 from modules.Global.exceptions import WrongSyntaxErr
 from modules.Global.jobs import send_mass_msg
 from modules.Global.handler_templates import other_messages_template
+from modules.Global.dynamic_settings import dynamic_settings
 
 # global imports
 import os
@@ -129,6 +130,36 @@ async def admin_cmd(
                         await message.reply_text(sep.join(reports))
                 else:
                     await message.reply_text(dbh.get_report_id(report_id))
+
+        # AI URL management
+        elif arg1 == "ai-url":
+            if text[1] == "get":
+                current_url = dynamic_settings.get_ai_url()
+                await message.reply_html(f"Current AI URL:\n<code>{current_url}</code>")
+            elif text[1] == "set":
+                new_url = text[2]
+                dynamic_settings.set_ai_url(new_url)
+                await message.reply_html(f"AI URL updated to:\n<code>{new_url}</code>")
+            elif text[1] == "reset":
+                dynamic_settings.reset_ai_url()
+                await message.reply_text("AI URL reset to config default.")
+            else:
+                raise WrongSyntaxErr
+
+        # AI Session ID management
+        elif arg1 == "ai-session":
+            if text[1] == "get":
+                current_session = dynamic_settings.get_ai_session_id()
+                await message.reply_html(f"Current AI Session ID:\n<code>{current_session}</code>")
+            elif text[1] == "set":
+                new_session = text[2]
+                dynamic_settings.set_ai_session_id(new_session)
+                await message.reply_html(f"AI Session ID updated to:\n<code>{new_session}</code>")
+            elif text[1] == "reset":
+                dynamic_settings.reset_ai_session_id()
+                await message.reply_text("AI Session ID reset to config default.")
+            else:
+                raise WrongSyntaxErr
 
         else:
             raise WrongSyntaxErr

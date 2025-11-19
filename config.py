@@ -24,8 +24,8 @@ GM_TIME = [int(item.strip()) for item in os.environ["GM_TIME"].split(":")]
 GN_TIME = [int(item.strip()) for item in os.environ["GN_TIME"].split(":")]
 GM_GROUP_ID = os.environ["GM_GROUP_ID"]
 GM_GROUP_TOPIC_ID = os.environ.get("GM_GROUP_TOPIC_ID")
-AI_URL = os.environ.get("AI_URL")
-AI_SESSION_ID = os.environ.get("AI_SESSION_ID")
+AI_URL = os.environ.get("AI_URL", "")
+AI_SESSION_ID = os.environ.get("AI_SESSION_ID", "")
 AI_INTERVAL = os.environ.get("AI_INTERVAL", 5)
 
 MAX_TRY_ADD_CID = 5

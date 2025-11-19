@@ -13,12 +13,11 @@ from config import (
     GM_GROUP_TOPIC_ID,
     ERROR_CHAT_ID,
     AI_INTERVAL,
-    AI_URL,
-    AI_SESSION_ID,
 )
 from modules.Global.log import logger
 from modules.Global.database import DBHandler, db_base
 from modules.Global.ai_queue import ai_queue_manager
+from modules.Global.dynamic_settings import dynamic_settings
 
 # global imports
 import os
@@ -189,10 +188,10 @@ async def ai_responser(context: CallbackContext) -> None:
         result_text = ""
         try:
             output = requests.post(
-                AI_URL,
+                dynamic_settings.get_ai_url(),
                 headers={"Content-Type": "application/json"},
                 json={
-                    "sessionId": AI_SESSION_ID,
+                    "sessionId": dynamic_settings.get_ai_session_id(),
                     "chatInput": text,
                 },
             )

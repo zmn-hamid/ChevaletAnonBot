@@ -13,3 +13,9 @@
 <code>/admin report del REPORT_ID</code>: del all the REPORT_ID from database
 <code>/admin report get REPORT_ID</code>: get count of REPORT_ID in database
 <code>/admin report get all</code>: get all the reports in database
+<code>/admin ai-url get</code>: get current AI URL
+<code>/admin ai-url set URL</code>: set new AI URL
+<code>/admin ai-url reset</code>: reset AI URL to config default
+<code>/admin ai-session get</code>: get current AI session ID
+<code>/admin ai-session set SESSION_ID</code>: set new AI session ID
+<code>/admin ai-session reset</code>: reset AI session ID to config default
