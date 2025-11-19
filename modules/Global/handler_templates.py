@@ -70,7 +70,12 @@ async def send_msg_template(
 
     # target uid
     target_uid = dbh.get_uid_by_chevaletid(target_chid)
-    assert bool(target_uid)
+    if not target_uid:
+        await message.reply_html(
+            "نشست شما منقضی شده. لطفاً دوباره از لینک ناشناس استفاده کنید.",
+            reply_parameters=ReplyParameters(message.message_id),
+        )
+        return END
 
     # check if target cid is valid in case of existence
     if target_cid and dbh.get_uid_by_cid(target_cid) == None:
