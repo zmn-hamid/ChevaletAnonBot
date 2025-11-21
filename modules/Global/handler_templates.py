@@ -228,7 +228,7 @@ async def send_msg_template(
         context.user_data["reply_to"] = None
         context.user_data["channel_reply"] = None
         # specify parameters for media sending
-        context.user_data["group_target_chid"] = sender_enc_chid
+        context.user_data["group_target_chid"] = encode_chevaletid(target_chid)
         context.user_data["group_was_channel_reply"] = was_channel_reply
         context.user_data["group_notify_msg"] = notify_msg
         context.user_data["group_reply_markup"] = reply_markup
