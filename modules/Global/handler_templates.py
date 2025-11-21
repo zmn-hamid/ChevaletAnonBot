@@ -232,6 +232,7 @@ async def send_msg_template(
         context.user_data["group_was_channel_reply"] = was_channel_reply
         context.user_data["group_notify_msg"] = notify_msg
         context.user_data["group_reply_markup"] = reply_markup
+        context.user_data["group_warning_msg_id"] = None
         return END
 
     # send message to target

@@ -162,6 +162,13 @@ async def handle_media(
     )
     context.user_data["sent_medias"].append(str(markup_msg.message_id))
 
+    # delete previous warning message sent to sender
+    if prev_warning_id := context.user_data.get("group_warning_msg_id"):
+        try:
+            await bot.delete_message(userid, prev_warning_id)
+        except:
+            pass
+
     # handle warning and deletion of it
     tbd_msgs = list(map(str, context.user_data["sent_medias"]))
     notify_msg: Message = context.user_data["group_notify_msg"]
@@ -181,7 +188,7 @@ async def handle_media(
         f"{encoded_target_chid}|{'|'.join(tbd_msgs)}",
         context,
     ):
-        context.user_data["sent_medias"].append(str(warning_message.message_id))
+        context.user_data["group_warning_msg_id"] = str(warning_message.message_id)
     context.user_data["group_expiration"] = time.time() + EXPIRE_AFTER
 
 
