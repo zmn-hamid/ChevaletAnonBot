@@ -1,9 +1,6 @@
-# project imports
 from typing import List
 
-# global imports
-import psycopg2
-from psycopg2 import IntegrityError, pool
+from psycopg2 import pool
 
 from config import (
     DB_HOST,
@@ -15,6 +12,7 @@ from config import (
     MAX_NAME_LENGTH,
     MAX_TRY_ADD_CID,
 )
+from modules.Global.cid_gen import generate_cid
 from modules.Global.log import logger
 
 
@@ -50,7 +48,7 @@ class DB_Base:
                 cur.execute(
                     f"""CREATE TABLE IF NOT EXISTS {self.users_table} (
                         id SERIAL PRIMARY KEY,
-                        uid VARCHAR(255) NOT NULL,
+                        uid VARCHAR(255) NOT NULL UNIQUE,
                         name VARCHAR(255) NOT NULL,
                         is_banned BOOLEAN NOT NULL DEFAULT FALSE,
                         warning BOOLEAN NOT NULL DEFAULT TRUE,
@@ -98,7 +96,7 @@ class DBHandler(DB_Base):
 
     def add_user(self, uid: str, name: str) -> bool:
         """
-        # adds user to the database
+        # adds user to the database using UPSERT
         the defaults:
         - user id
         - full name
@@ -109,51 +107,52 @@ class DBHandler(DB_Base):
         - 2 max cids
         - no custom tag
         - audio tag: [ناشناس]
+
+        Returns True if user was inserted, False if already exists
         """
-        try:
-            self.cur.execute(
-                f"INSERT INTO {self.users_table} VALUES (NULL, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                (
-                    str(uid),
-                    str(name)[:MAX_NAME_LENGTH],
-                    False,
-                    True,
-                    False,
-                    True,
-                    DEFAULT_CID_LIMIT,
-                    None,
-                    DEFAULT_AUDIO_TAG,
-                    None,
-                ),
-            )
-            return True
-        except IntegrityError:
-            return False
+        self.cur.execute(
+            f"""INSERT INTO {self.users_table}
+                (uid, name, is_banned, warning, seen_option, wpp, cid_limit, custom_tag, audio_tag, chevaletid)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (uid) DO NOTHING""",
+            (
+                str(uid),
+                str(name)[:MAX_NAME_LENGTH],
+                False,
+                True,
+                False,
+                True,
+                DEFAULT_CID_LIMIT,
+                None,
+                DEFAULT_AUDIO_TAG,
+                None,
+            ),
+        )
+        return self.cur.rowcount > 0
 
     def add_block(self, blocker_uid: str, blocked_uid: str) -> bool:
-        """blocks the given user"""
-        try:
-            self.cur.execute(
-                f"INSERT INTO {self.blocks_table} VALUES (NULL, %s, %s)",
-                (
-                    str(blocker_uid),
-                    str(blocked_uid),
-                ),
-            )
-            return True
-        except IntegrityError:
-            return False
+        """
+        Blocks the given user using UPSERT.
+        Returns True if block was created, False if already exists.
+        """
+        self.cur.execute(
+            f"""INSERT INTO {self.blocks_table} (blocker_uid, blocked_uid)
+                VALUES (%s, %s)
+                ON CONFLICT (blocker_uid, blocked_uid) DO NOTHING""",
+            (
+                str(blocker_uid),
+                str(blocked_uid),
+            ),
+        )
+        return self.cur.rowcount > 0
 
     def remove_block(self, blocker_uid: str, blocked_uid: str) -> bool:
         """removes a block"""
-        try:
-            self.cur.execute(
-                f"DELETE FROM {self.blocks_table} WHERE blocker_uid=%s and blocked_uid=%s",
-                (str(blocker_uid), str(blocked_uid)),
-            )
-            return True
-        except IntegrityError:
-            return False
+        self.cur.execute(
+            f"DELETE FROM {self.blocks_table} WHERE blocker_uid=%s and blocked_uid=%s",
+            (str(blocker_uid), str(blocked_uid)),
+        )
+        return True
 
     def unblock_all(self, userid: str) -> None:
         """block or unblock user"""
@@ -193,18 +192,28 @@ class DBHandler(DB_Base):
         )
 
     def add_cid(self, uid: int, cid: int, try_counter: int = 0) -> bool:
-        """add cid for user"""
+        """
+        Adds cid for user using UPSERT with retry logic.
+        If cid collision occurs, automatically generates a new cid and retries.
+        Returns True if successful, False if max retries exceeded.
+        """
         if try_counter >= MAX_TRY_ADD_CID:
             return False
-        try:
-            self.cur.execute(
-                f"INSERT INTO {self.cids_table} VALUES (NULL, %s, %s)",
-                (str(uid), str(cid)),
-            )
+
+        self.cur.execute(
+            f"""INSERT INTO {self.cids_table} (uid, cid)
+                VALUES (%s, %s)
+                ON CONFLICT (cid) DO NOTHING""",
+            (str(uid), str(cid)),
+        )
+
+        if self.cur.rowcount > 0:
+            # Successfully inserted
             return True
-        except IntegrityError:
+        else:
+            # CID collision occurred, retry with new CID
             try_counter += 1
-            return self.add_cid(uid, cid, try_counter)
+            return self.add_cid(uid, generate_cid(), try_counter)
 
     def rm_cid(self, uid: str, cid: str) -> bool:
         self.cur.execute(
@@ -359,55 +368,39 @@ class DBHandler(DB_Base):
 
     def set_seen_option(self, uid: str, seen_option: bool) -> None:
         """sets seen_option for user"""
-        try:
-            self.cur.execute(
-                f"UPDATE {self.users_table} SET seen_option=%s WHERE uid=%s",
-                (seen_option, str(uid)),
-            )
-        except IntegrityError:
-            pass
+        self.cur.execute(
+            f"UPDATE {self.users_table} SET seen_option=%s WHERE uid=%s",
+            (seen_option, str(uid)),
+        )
 
     def set_wpp(self, uid: str, wpp: bool) -> None:
         """sets wpp for user"""
-        try:
-            self.cur.execute(
-                f"UPDATE {self.users_table} SET wpp=%s WHERE uid=%s",
-                (wpp, str(uid)),
-            )
-        except IntegrityError:
-            pass
+        self.cur.execute(
+            f"UPDATE {self.users_table} SET wpp=%s WHERE uid=%s",
+            (wpp, str(uid)),
+        )
 
     def set_custom_tag(self, uid: str, custom_tag: str) -> None:
         """sets custom tag for user"""
-        try:
-            self.cur.execute(
-                f"UPDATE {self.users_table} SET custom_tag=%s WHERE uid=%s",
-                (str(custom_tag), str(uid)),
-            )
-        except IntegrityError:
-            pass
+        self.cur.execute(
+            f"UPDATE {self.users_table} SET custom_tag=%s WHERE uid=%s",
+            (str(custom_tag), str(uid)),
+        )
 
     def set_audio_tag(self, uid: str, audio_tag: str) -> None:
         """sets audio tag for user"""
-        try:
-            self.cur.execute(
-                f"UPDATE {self.users_table} SET audio_tag=%s WHERE uid=%s",
-                (str(audio_tag), str(uid)),
-            )
-        except IntegrityError:
-            pass
+        self.cur.execute(
+            f"UPDATE {self.users_table} SET audio_tag=%s WHERE uid=%s",
+            (str(audio_tag), str(uid)),
+        )
 
     def set_chevaletid(self, uid: str, chevaletid: str) -> None:
         """sets chevaletid for user"""
-        try:
-            self.cur.execute(
-                f"UPDATE {self.users_table} SET chevaletid=%s WHERE uid=%s",
-                (str(chevaletid), str(uid)),
-            )
-            return True
-        except IntegrityError:
-            pass
-        return False
+        self.cur.execute(
+            f"UPDATE {self.users_table} SET chevaletid=%s WHERE uid=%s",
+            (str(chevaletid), str(uid)),
+        )
+        return True
 
     def user_status(self, uid: str) -> list:
         """gets ban status and cid limit of user"""

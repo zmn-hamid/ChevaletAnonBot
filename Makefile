@@ -80,6 +80,16 @@ shell: ## Open bash shell in bot container
 db-shell: ## Open PostgreSQL shell
 	docker compose exec postgres psql -U $${DB_USER:-botuser} -d $${DB_NAME:-mydatabase}
 
+db-drop-tables: ## Drop all tables from database (WARNING: Deletes all data but keeps DB!)
+	@echo "WARNING: This will drop all tables!"
+	@read -p "Are you sure? Type 'yes' to continue: " confirm; \
+	if [ "$$confirm" = "yes" ]; then \
+		docker compose exec postgres psql -U root -d mydatabase -c "DROP TABLE IF EXISTS users, blocks, cids, reports CASCADE;"; \
+		echo "All tables dropped. Restart bot to recreate: make restart"; \
+	else \
+		echo "Cancelled."; \
+	fi
+
 ##@ Database Operations
 
 backup: ## Backup database to ./backups/
