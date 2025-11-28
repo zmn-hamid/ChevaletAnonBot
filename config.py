@@ -13,6 +13,7 @@ SUPPORT_ADMIN = os.environ.get("SUPPORT_ADMIN")  # username
 DB_NAME = os.environ.get("DB_NAME")
 DB_USER = os.environ.get("DB_USER")
 DB_PASS = os.environ.get("DB_PASS")
+DB_HOST = os.environ.get("DB_HOST", "localhost")
 LOG_LEVEL = logging._nameToLevel[os.environ.get("LOG_LEVEL", "INFO").upper()]
 DEFAULT_CID_LIMIT = int(os.environ.get("DEFAULT_CID_LIMIT"))
 MAX_NAME_LENGTH = int(os.environ.get("MAX_NAME_LENGTH"))

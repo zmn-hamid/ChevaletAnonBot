@@ -13,8 +13,7 @@ from modules.Global.myhelpers import generate_chevaletid, get_trace
 
 # global imports
 from typing import Callable
-from mysql.connector.errors import Error as mysql_Error
-from mysql.connector.cursor import MySQLCursor
+import psycopg2
 
 
 def prep_function(func) -> Callable:
@@ -34,68 +33,66 @@ def prep_function(func) -> Callable:
             )
         ):
             return ConversationHandler.END
+        conn = None
         try:
             context.user_data.setdefault("media_msgs", [])
             context.user_data.setdefault("sent_medias", [])
-            with db_base.connection_pool.get_connection() as conn:
-                with conn.cursor() as cur:
-                    cur: MySQLCursor
-                    # get db
-                    dbh = DBHandler(cur, conn)
+            conn = db_base.connection_pool.getconn()
+            with conn.cursor() as cur:
+                # get db
+                dbh = DBHandler(cur, conn)
 
-                    # check connection
-                    if not context.user_data.get("no db check") == True:
+                # check connection
+                if not context.user_data.get("no db check") == True:
+                    try:
+                        dbh.user_count()
+                    except (psycopg2.OperationalError, psycopg2.InterfaceError) as e:
+                        logger.info("Lost connection to PostgreSQL, reconnecting...")
                         try:
-                            dbh.user_count()
-                        except mysql_Error as e:
-                            if e.errno in [2013, 2055]:  # Lost connection error
-                                logger.info("Lost connection to MySQL, reconnecting...")
-                                try:
-                                    db_base.connection_pool._remove_connections()
-                                except:
-                                    pass
-                                try:
-                                    cur.close()
-                                except:
-                                    pass
-                                try:
-                                    db_base.connect_db()
-                                    context.user_data["no db check"] = True
-                                    return await wrapper(update, context)
-                                except:
-                                    pass
-                            else:
-                                raise
+                            cur.close()
+                        except:
+                            pass
+                        try:
+                            conn.close()
+                        except:
+                            pass
+                        try:
+                            db_base.connect_db()
+                            context.user_data["no db check"] = True
+                            return await wrapper(update, context)
+                        except:
+                            pass
 
-                    message: Message = update.effective_message
-                    userid = str(update.effective_user.id)
-                    bot = update.get_bot()
+                message: Message = update.effective_message
+                userid = str(update.effective_user.id)
+                bot = update.get_bot()
 
-                    # initialize user
-                    output = await init_user(userid, bot, dbh)
-                    if output == False:
+                # initialize user
+                output = await init_user(userid, bot, dbh)
+                if output == False:
+                    await message.reply_text(
+                        "مشکلی در ساخت لینک ناشناس بوجود اومد. دوباره تلاش کن و اگه موفق نشدی، قبل از استفاده از بات با پشتیبانی تماس بگیر"
+                    )
+                    context.user_data.clear()
+                    return ConversationHandler.END
+                elif not dbh.get_chevaletid_by_uid(userid):
+                    if dbh.set_chevaletid(userid, generate_chevaletid()) == False:
                         await message.reply_text(
-                            "مشکلی در ساخت لینک ناشناس بوجود اومد. دوباره تلاش کن و اگه موفق نشدی، قبل از استفاده از بات با پشتیبانی تماس بگیر"
+                            "مشکلی در ساخت اکانت شما بوجود اومد. دوباره تلاش کن و اگه موفق نشدی، قبل از استفاده از بات با پشتیبانی تماس بگیر"
                         )
                         context.user_data.clear()
                         return ConversationHandler.END
-                    elif not dbh.get_chevaletid_by_uid(userid):
-                        if dbh.set_chevaletid(userid, generate_chevaletid()) == False:
-                            await message.reply_text(
-                                "مشکلی در ساخت اکانت شما بوجود اومد. دوباره تلاش کن و اگه موفق نشدی، قبل از استفاده از بات با پشتیبانی تماس بگیر"
-                            )
-                            context.user_data.clear()
-                            return ConversationHandler.END
 
-                    if dbh.is_banned(userid):
-                        # await message.reply_text(
-                        #     "از بات بن شدی. اگه فک میکنی این یه اشتباهه با ادمین صحبت کن"
-                        # )
-                        context.user_data.clear()
-                        return ConversationHandler.END
+                if dbh.is_banned(userid):
+                    # await message.reply_text(
+                    #     "از بات بن شدی. اگه فک میکنی این یه اشتباهه با ادمین صحبت کن"
+                    # )
+                    context.user_data.clear()
+                    return ConversationHandler.END
 
-                    context.user_data["no db check"] = False
-                    return await func(update, context, message, userid, bot, dbh)
+                context.user_data["no db check"] = False
+                conn.commit()
+                return await func(update, context, message, userid, bot, dbh)
         except error.BadRequest as e:
             if str(e).startswith("Query is too old"):
                 logger.debug("old query ignored: %s" % e)
@@ -104,7 +101,7 @@ def prep_function(func) -> Callable:
                 logger.debug("Message to be replied not found")
                 return
             raise e
-        except mysql_Error as e:
+        except (psycopg2.Error, psycopg2.DatabaseError) as e:
             try:
                 await message.reply_text(
                     "مشکلی برای دیتابیس به وجود آمده. به پشتیبانی خبردادیم، لطفا صبر کنید و دوباره تلاش کنید"
@@ -114,16 +111,16 @@ def prep_function(func) -> Callable:
             try:
                 await bot.send_message(
                     ERROR_CHAT_ID,
-                    f"MYSQL ERROR: {e}\n<pre>{get_trace(e)}</pre>",
+                    f"PostgreSQL ERROR: {e}\n<pre>{get_trace(e)}</pre>",
                     parse_mode=PM.HTML,
                 )
             except:
                 try:
-                    await bot.send_message(ERROR_CHAT_ID, f"MYSQL ERROR2: {e}")
+                    await bot.send_message(ERROR_CHAT_ID, f"PostgreSQL ERROR2: {e}")
                 except:
                     try:
                         await bot.send_message(
-                            ERROR_CHAT_ID, f"MYSQL ERROR3: COULDN'T EVEN SEND THE ERROR"
+                            ERROR_CHAT_ID, f"PostgreSQL ERROR3: COULDN'T EVEN SEND THE ERROR"
                         )
                         logger.error(f"ERRORRR -> {get_trace(e, False)}")
                     except:
@@ -135,14 +132,11 @@ def prep_function(func) -> Callable:
             logger.debug(str(e))
             return ConversationHandler.END
         finally:
-            try:
-                conn.close()
-            except:
-                pass
-            try:
-                cur.close()
-            except:
-                pass
+            if conn:
+                try:
+                    db_base.connection_pool.putconn(conn)
+                except:
+                    pass
 
     return wrapper
 

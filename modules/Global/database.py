@@ -1,20 +1,21 @@
 # project imports
-from config import (
-    DB_USER,
-    DB_PASS,
-    DB_NAME,
-    MAX_TRY_ADD_CID,
-    DEFAULT_CID_LIMIT,
-    MAX_NAME_LENGTH,
-    DEFAULT_AUDIO_TAG,
-)
-from modules.Global.log import logger
+from typing import List
 
 # global imports
-from mysql.connector.pooling import PooledMySQLConnection, MySQLConnectionPool
-from mysql.connector.cursor import MySQLCursor
-from mysql.connector.errors import IntegrityError
-from typing import List
+import psycopg2
+from psycopg2 import IntegrityError, pool
+
+from config import (
+    DB_HOST,
+    DB_NAME,
+    DB_PASS,
+    DB_USER,
+    DEFAULT_AUDIO_TAG,
+    DEFAULT_CID_LIMIT,
+    MAX_NAME_LENGTH,
+    MAX_TRY_ADD_CID,
+)
+from modules.Global.log import logger
 
 
 class DB_Base:
@@ -27,44 +28,43 @@ class DB_Base:
         self.cids_table = "cids"
         self.reports_table = "reports"
 
-        self.connection_pool: MySQLConnectionPool
+        self.connection_pool: pool.SimpleConnectionPool
 
     def connect_db(self) -> None:
         """connects to database"""
-        self.connection_pool = MySQLConnectionPool(
-            pool_name="mypool",
-            pool_size=30,
-            host="localhost",
+        self.connection_pool = pool.SimpleConnectionPool(
+            minconn=1,
+            maxconn=30,
+            host=DB_HOST,
             database=DB_NAME,
             user=DB_USER,
             password=DB_PASS,
-            collation="utf8mb4_general_ci",
-            buffered=True,
-            autocommit=True,
+            options="-c client_encoding=UTF8",
         )
 
     def make_tables(self) -> None:
         """creates the tables if they don't exist"""
-        with self.connection_pool.get_connection() as conn:
+        conn = self.connection_pool.getconn()
+        try:
             with conn.cursor() as cur:
                 cur.execute(
                     f"""CREATE TABLE IF NOT EXISTS {self.users_table} (
-                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        id SERIAL PRIMARY KEY,
                         uid VARCHAR(255) NOT NULL,
                         name VARCHAR(255) NOT NULL,
-                        is_banned BOOLEAN NOT NULL,
-                        warning BOOLEAN NOT NULL,
-                        seen_option BOOLEAN NOT NULL,
-                        wpp BOOLEAN NOT NULL,
-                        cid_limit INT NOT NULL,
+                        is_banned BOOLEAN NOT NULL DEFAULT FALSE,
+                        warning BOOLEAN NOT NULL DEFAULT TRUE,
+                        seen_option BOOLEAN NOT NULL DEFAULT FALSE,
+                        wpp BOOLEAN NOT NULL DEFAULT TRUE,
+                        cid_limit INTEGER NOT NULL DEFAULT {DEFAULT_CID_LIMIT},
                         custom_tag VARCHAR(255),
-                        audio_tag VARCHAR(255),
+                        audio_tag VARCHAR(255) DEFAULT '{DEFAULT_AUDIO_TAG}',
                         chevaletid VARCHAR(255));
                     """
                 )
                 cur.execute(
                     f"""CREATE TABLE IF NOT EXISTS {self.blocks_table} (
-                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        id SERIAL PRIMARY KEY,
                         blocker_uid VARCHAR(255) NOT NULL,
                         blocked_uid VARCHAR(255) NOT NULL,
                         CONSTRAINT unique_pair UNIQUE (blocker_uid, blocked_uid));
@@ -72,28 +72,31 @@ class DB_Base:
                 )
                 cur.execute(
                     f"""CREATE TABLE IF NOT EXISTS {self.cids_table} (
-                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        id SERIAL PRIMARY KEY,
                         uid VARCHAR(255) NOT NULL,
                         cid VARCHAR(255) NOT NULL UNIQUE);
                     """
                 )
                 cur.execute(
                     f"""CREATE TABLE IF NOT EXISTS {self.reports_table} (
-                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        id SERIAL PRIMARY KEY,
                         reported_id VARCHAR(255) NOT NULL);
                     """
                 )
+                conn.commit()
+        finally:
+            self.connection_pool.putconn(conn)
 
 
 class DBHandler(DB_Base):
     """# handles the database"""
 
-    def __init__(self, cur: MySQLCursor, conn: PooledMySQLConnection) -> None:
+    def __init__(self, cur, conn) -> None:
         super().__init__()
         self.cur = cur
         self.db = conn
 
-    def add_user(self, uid: str, name) -> bool:
+    def add_user(self, uid: str, name: str) -> bool:
         """
         # adds user to the database
         the defaults:
@@ -145,9 +148,8 @@ class DBHandler(DB_Base):
         """removes a block"""
         try:
             self.cur.execute(
-                f"DELETE FROM {self.blocks_table} "
-                f'WHERE blocker_uid="{blocker_uid}" '
-                f'and blocked_uid="{blocked_uid}"'
+                f"DELETE FROM {self.blocks_table} WHERE blocker_uid=%s and blocked_uid=%s",
+                (str(blocker_uid), str(blocked_uid)),
             )
             return True
         except IntegrityError:
@@ -156,14 +158,14 @@ class DBHandler(DB_Base):
     def unblock_all(self, userid: str) -> None:
         """block or unblock user"""
         self.cur.execute(
-            f'DELETE FROM {self.blocks_table} WHERE blocker_uid="{userid}"'
+            f"DELETE FROM {self.blocks_table} WHERE blocker_uid=%s", (str(userid),)
         )
 
     def is_blocked(self, blocker_uid: str, blocked_uid: str) -> bool:
         """checks if a user is blocked"""
         self.cur.execute(
-            f'SELECT * FROM {self.blocks_table} WHERE blocker_uid="{blocker_uid}" '
-            f'and blocked_uid="{blocked_uid}"'
+            f"SELECT * FROM {self.blocks_table} WHERE blocker_uid=%s and blocked_uid=%s",
+            (str(blocker_uid), str(blocked_uid)),
         )
         output = self.cur.fetchall()
         if len(output):
@@ -173,7 +175,9 @@ class DBHandler(DB_Base):
 
     def is_banned(self, uid: str) -> bool:
         """checks if a user is banned"""
-        self.cur.execute(f'SELECT is_banned from {self.users_table} WHERE uid="{uid}"')
+        self.cur.execute(
+            f"SELECT is_banned from {self.users_table} WHERE uid=%s", (str(uid),)
+        )
         return self.cur.fetchall()[0][0]
 
     def ban_action(self, uid: str, ban: bool) -> None:
@@ -184,8 +188,8 @@ class DBHandler(DB_Base):
             pass
 
         self.cur.execute(
-            f'UPDATE {self.users_table} SET is_banned=%s WHERE uid="{uid}"',
-            (ban,),
+            f"UPDATE {self.users_table} SET is_banned=%s WHERE uid=%s",
+            (ban, str(uid)),
         )
 
     def add_cid(self, uid: int, cid: int, try_counter: int = 0) -> bool:
@@ -204,7 +208,8 @@ class DBHandler(DB_Base):
 
     def rm_cid(self, uid: str, cid: str) -> bool:
         self.cur.execute(
-            f'DELETE FROM {self.cids_table} WHERE BINARY cid="{cid}" and uid="{uid}"'
+            f"DELETE FROM {self.cids_table} WHERE cid=%s and uid=%s",
+            (str(cid), str(uid)),
         )
 
     def get_all_uids(self) -> List[List[str]]:
@@ -215,7 +220,8 @@ class DBHandler(DB_Base):
     def get_cids(self, uid: str) -> List[str]:
         """get all the cids of a user"""
         self.cur.execute(
-            f'SELECT cid FROM {self.cids_table} WHERE uid="{uid}" ORDER BY id ASC'
+            f"SELECT cid FROM {self.cids_table} WHERE uid=%s ORDER BY id ASC",
+            (str(uid),),
         )
         return [item[0] for item in self.cur.fetchall()]
 
@@ -225,7 +231,9 @@ class DBHandler(DB_Base):
 
     def get_name(self, uid: str) -> str | None:
         """gets the preview name of a user"""
-        self.cur.execute(f'SELECT name FROM {self.users_table} WHERE uid="{uid}"')
+        self.cur.execute(
+            f"SELECT name FROM {self.users_table} WHERE uid=%s", (str(uid),)
+        )
         output = self.cur.fetchall()
         if len(output):
             return output[0][0]
@@ -239,7 +247,7 @@ class DBHandler(DB_Base):
         logger.warning(
             "depricated method: DBHandler.get_uid. use DBHandler.get_uid_by_cid instead"
         )
-        self.cur.execute(f'SELECT uid FROM {self.cids_table} WHERE BINARY cid="{cid}"')
+        self.cur.execute(f"SELECT uid FROM {self.cids_table} WHERE cid=%s", (str(cid),))
         output = self.cur.fetchall()
         if len(output):
             return output[0][0]
@@ -250,7 +258,7 @@ class DBHandler(DB_Base):
         """
         gets the uid based on a cid
         """
-        self.cur.execute(f'SELECT uid FROM {self.cids_table} WHERE BINARY cid="{cid}"')
+        self.cur.execute(f"SELECT uid FROM {self.cids_table} WHERE cid=%s", (str(cid),))
         output = self.cur.fetchall()
         if len(output):
             return output[0][0]
@@ -260,7 +268,8 @@ class DBHandler(DB_Base):
     def get_uid_by_chevaletid(self, chevaletid: str) -> str | None:
         """gets the uid based on chevaletid"""
         self.cur.execute(
-            f'SELECT uid FROM {self.users_table} WHERE BINARY chevaletid="{chevaletid}"'
+            f"SELECT uid FROM {self.users_table} WHERE chevaletid=%s",
+            (str(chevaletid),),
         )
         output = self.cur.fetchall()
         if len(output):
@@ -271,7 +280,7 @@ class DBHandler(DB_Base):
     def get_chevaletid_by_uid(self, uid: str) -> str | None:
         """gets the chevaletid based on uid"""
         self.cur.execute(
-            f'SELECT chevaletid FROM {self.users_table} WHERE BINARY uid="{uid}"'
+            f"SELECT chevaletid FROM {self.users_table} WHERE uid=%s", (str(uid),)
         )
         output = self.cur.fetchall()
         if len(output):
@@ -285,66 +294,75 @@ class DBHandler(DB_Base):
 
     def get_cid_limit(self, uid: str) -> int:
         """gets the cid limit for a user"""
-        self.cur.execute(f'SELECT cid_limit FROM {self.users_table} WHERE uid="{uid}"')
+        self.cur.execute(
+            f"SELECT cid_limit FROM {self.users_table} WHERE uid=%s", (str(uid),)
+        )
         return self.cur.fetchone()[0]
 
     def get_warning(self, uid: str) -> bool:
         """getes the warning state of user"""
-        self.cur.execute(f'SELECT warning FROM {self.users_table} WHERE uid="{uid}"')
+        self.cur.execute(
+            f"SELECT warning FROM {self.users_table} WHERE uid=%s", (str(uid),)
+        )
         return self.cur.fetchone()[0]
 
     def get_seen_status(self, uid: str) -> bool:
         """getes the seen option state of user"""
         self.cur.execute(
-            f'SELECT seen_option FROM {self.users_table} WHERE uid="{uid}"'
+            f"SELECT seen_option FROM {self.users_table} WHERE uid=%s", (str(uid),)
         )
         return self.cur.fetchone()[0]
 
     def get_wpp(self, uid: str) -> bool:
         """getes the webpage preview state of user"""
-        self.cur.execute(f'SELECT wpp FROM {self.users_table} WHERE uid="{uid}"')
+        self.cur.execute(
+            f"SELECT wpp FROM {self.users_table} WHERE uid=%s", (str(uid),)
+        )
         return self.cur.fetchone()[0]
 
     def get_custom_tag(self, uid: str) -> str | None:
         """gets user's custom tag"""
         self.cur.execute(
-            f"SELECT custom_tag FROM {self.users_table} " f'WHERE uid="{uid}"'
+            f"SELECT custom_tag FROM {self.users_table} WHERE uid=%s", (str(uid),)
         )
         return self.cur.fetchone()[0]
 
     def get_audio_tag(self, uid: str) -> str | None:
         """gets the audio tag of user"""
-        self.cur.execute(f'SELECT audio_tag FROM {self.users_table} WHERE uid="{uid}"')
+        self.cur.execute(
+            f"SELECT audio_tag FROM {self.users_table} WHERE uid=%s", (str(uid),)
+        )
         return self.cur.fetchone()[0]
 
     def set_name(self, uid: str, name: str) -> None:
         self.cur.execute(
-            f'UPDATE {self.users_table} SET name=%s WHERE uid="{uid}"', (name,)
+            f"UPDATE {self.users_table} SET name=%s WHERE uid=%s", (str(name), str(uid))
         )
 
     def set_cid(self, new_cid: str, cid: str) -> None:
         self.cur.execute(
-            f"UPDATE {self.cids_table} SET cid=%s WHERE cid='{cid}'", (new_cid,)
+            f"UPDATE {self.cids_table} SET cid=%s WHERE cid=%s",
+            (str(new_cid), str(cid)),
         )
 
     def set_cid_limit(self, uid: str, cid_limit: int) -> None:
         self.cur.execute(
-            f'UPDATE {self.users_table} SET cid_limit=%s WHERE uid="{uid}"',
-            (cid_limit,),
+            f"UPDATE {self.users_table} SET cid_limit=%s WHERE uid=%s",
+            (str(cid_limit), str(uid)),
         )
 
     def set_warning(self, uid: str, warning: str) -> None:
         self.cur.execute(
-            f'UPDATE {self.users_table} SET warning=%s WHERE uid="{uid}"',
-            (warning,),
+            f"UPDATE {self.users_table} SET warning=%s WHERE uid=%s",
+            (str(warning), str(uid)),
         )
 
     def set_seen_option(self, uid: str, seen_option: bool) -> None:
         """sets seen_option for user"""
         try:
             self.cur.execute(
-                f'UPDATE {self.users_table} SET seen_option=%s WHERE uid="{uid}"',
-                (seen_option,),
+                f"UPDATE {self.users_table} SET seen_option=%s WHERE uid=%s",
+                (seen_option, str(uid)),
             )
         except IntegrityError:
             pass
@@ -353,8 +371,8 @@ class DBHandler(DB_Base):
         """sets wpp for user"""
         try:
             self.cur.execute(
-                f'UPDATE {self.users_table} SET wpp=%s WHERE uid="{uid}"',
-                (wpp,),
+                f"UPDATE {self.users_table} SET wpp=%s WHERE uid=%s",
+                (wpp, str(uid)),
             )
         except IntegrityError:
             pass
@@ -363,8 +381,8 @@ class DBHandler(DB_Base):
         """sets custom tag for user"""
         try:
             self.cur.execute(
-                f'UPDATE {self.users_table} SET custom_tag=%s WHERE uid="{uid}"',
-                (custom_tag,),
+                f"UPDATE {self.users_table} SET custom_tag=%s WHERE uid=%s",
+                (str(custom_tag), str(uid)),
             )
         except IntegrityError:
             pass
@@ -373,8 +391,8 @@ class DBHandler(DB_Base):
         """sets audio tag for user"""
         try:
             self.cur.execute(
-                f'UPDATE {self.users_table} SET audio_tag=%s WHERE uid="{uid}"',
-                (audio_tag,),
+                f"UPDATE {self.users_table} SET audio_tag=%s WHERE uid=%s",
+                (str(audio_tag), str(uid)),
             )
         except IntegrityError:
             pass
@@ -383,8 +401,8 @@ class DBHandler(DB_Base):
         """sets chevaletid for user"""
         try:
             self.cur.execute(
-                f'UPDATE {self.users_table} SET chevaletid=%s WHERE uid="{uid}"',
-                (chevaletid,),
+                f"UPDATE {self.users_table} SET chevaletid=%s WHERE uid=%s",
+                (str(chevaletid), str(uid)),
             )
             return True
         except IntegrityError:
@@ -394,7 +412,8 @@ class DBHandler(DB_Base):
     def user_status(self, uid: str) -> list:
         """gets ban status and cid limit of user"""
         self.cur.execute(
-            f'SELECT is_banned, cid_limit FROM {self.users_table} WHERE uid="{uid}"'
+            f"SELECT is_banned, cid_limit FROM {self.users_table} WHERE uid=%s",
+            (str(uid),),
         )
         return self.cur.fetchone()
 
@@ -404,7 +423,7 @@ class DBHandler(DB_Base):
 
     def add_report_id(self, report_id: str):
         self.cur.execute(
-            f"INSERT INTO {self.reports_table} VALUES (NULL, %s)", (str(report_id),)
+            f"INSERT INTO {self.reports_table} VALUES (DEFAULT, %s)", (str(report_id),)
         )
         return self.get_report_id(report_id)
 
@@ -412,13 +431,15 @@ class DBHandler(DB_Base):
         count = self.get_report_id(report_id)
         if count:
             self.cur.execute(
-                f'DELETE FROM {self.reports_table} WHERE reported_id="{report_id}"'
+                f"DELETE FROM {self.reports_table} WHERE reported_id=%s",
+                (str(report_id),),
             )
         return count
 
     def get_report_id(self, report_id: str):
         self.cur.execute(
-            f'SELECT COUNT(*) FROM {self.reports_table} WHERE reported_id="{report_id}"'
+            f"SELECT COUNT(*) FROM {self.reports_table} WHERE reported_id=%s",
+            (str(report_id),),
         )
         return self.cur.fetchone()[0]
 

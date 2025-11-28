@@ -6,3 +6,12 @@ log-mass-msg.txt
 .env
 .vscode
 dynamic_settings.json
+
+# Docker
+backups/
+*.sql
+*.sql.gz
+
+# OS
+.DS_Store
+Thumbs.db

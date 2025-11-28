@@ -14,7 +14,7 @@ from modules.Global.fetch_texts import fetch_text
 from modules.Global.reply_markups import MYLINKS_MARKUP
 
 # global imports
-from mysql.connector.errors import IntegrityError
+from psycopg2 import IntegrityError
 from warnings import filterwarnings
 
 

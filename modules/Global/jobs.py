@@ -1,32 +1,28 @@
-# telegram imports
-from telegram import *
-from telegram.ext import *
-from telegram.constants import ParseMode as PM
+import asyncio
+import os
+import socket
+import unicodedata
 
-# project imports
+import psycopg2
+import requests
+from telegram import *
+from telegram.constants import ParseMode as PM
+from telegram.ext import *
+
 from config import (
+    AI_INTERVAL,
     DELETION_TEXT,
-    HEALTH_PORT,
     DELETION_TIMEOUT,
     DELETION_TIMEOUT_EXTENDED,
+    ERROR_CHAT_ID,
     GM_GROUP_ID,
     GM_GROUP_TOPIC_ID,
-    ERROR_CHAT_ID,
-    AI_INTERVAL,
+    HEALTH_PORT,
 )
-from modules.Global.log import logger
-from modules.Global.database import DBHandler, db_base
 from modules.Global.ai_queue import ai_queue_manager
+from modules.Global.database import DBHandler, db_base
 from modules.Global.dynamic_settings import dynamic_settings
-
-# global imports
-import os
-import json
-import socket
-import asyncio
-import requests
-import unicodedata
-from mysql.connector.errors import Error as mysql_Error
+from modules.Global.log import logger
 
 
 async def log_bot_started(context: CallbackContext) -> None:
@@ -88,26 +84,31 @@ async def delete_message(context: CallbackContext) -> None:
 async def check_connection(context: CallbackContext) -> None:
     """check connection to db and reconnect if needed"""
     try:
-        with db_base.connection_pool.get_connection() as conn:
+        conn = db_base.connection_pool.getconn()
+        try:
             with conn.cursor() as cur:
                 dbh = DBHandler(cur, conn)
                 try:
                     dbh.user_count()
-                except mysql_Error as e:
-                    if e.errno in [2013, 2055]:  # Lost connection error
-                        logger.info("Lost connection to MySQL, reconnecting...")
-                        try:
-                            db_base.connection_pool._remove_connections()
-                        except:
-                            pass
-                        try:
-                            cur.close()
-                        except:
-                            pass
-                        try:
-                            db_base.connect_db()
-                        except:
-                            pass
+                except (psycopg2.OperationalError, psycopg2.InterfaceError) as e:
+                    logger.info("Lost connection to PostgreSQL, reconnecting...")
+                    try:
+                        cur.close()
+                    except:
+                        pass
+                    try:
+                        conn.close()
+                    except:
+                        pass
+                    try:
+                        db_base.connect_db()
+                    except:
+                        pass
+        finally:
+            try:
+                db_base.connection_pool.putconn(conn)
+            except:
+                pass
     except Exception as e:
         logger.error(f"error while checking connection: {e}")
 
@@ -115,7 +116,8 @@ async def check_connection(context: CallbackContext) -> None:
 async def send_mass_msg(context: CallbackContext) -> None:
     """sends mass msg"""
     try:
-        with db_base.connection_pool.get_connection() as conn:
+        conn = db_base.connection_pool.getconn()
+        try:
             with conn.cursor() as cur:
                 dbh = DBHandler(cur, conn)
                 msg: Message = context.job.data.get("message")
@@ -149,6 +151,9 @@ async def send_mass_msg(context: CallbackContext) -> None:
 
                 # notify
                 await msg.reply_text("sent the message to everyone.")
+                conn.commit()
+        finally:
+            db_base.connection_pool.putconn(conn)
     except Exception as e:
         logger.warning("send_mass_msg faild: " + str(e))
 

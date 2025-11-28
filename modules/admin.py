@@ -16,7 +16,7 @@ from modules.Global.dynamic_settings import dynamic_settings
 
 # global imports
 import os
-from mysql.connector.errors import IntegrityError
+from psycopg2 import IntegrityError
 
 
 @prep_function
