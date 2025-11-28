@@ -1,22 +1,16 @@
-# telegram imports
+from psycopg2 import IntegrityError
 from telegram import *
 from telegram.ext import *
-from telegram.constants import ParseMode as PM
 
-# project imports
 from config import ADMINS
 from modules.Global.database import DBHandler
-from modules.Global.get_user import get_link_username
 from modules.Global.decorators import prep_function
-from modules.Global.fetch_texts import fetch_text
-from modules.Global.exceptions import WrongSyntaxErr
-from modules.Global.jobs import send_mass_msg
-from modules.Global.handler_templates import other_messages_template
 from modules.Global.dynamic_settings import dynamic_settings
-
-# global imports
-import os
-from psycopg2 import IntegrityError
+from modules.Global.exceptions import WrongSyntaxErr
+from modules.Global.fetch_texts import fetch_text
+from modules.Global.get_user import get_link_username
+from modules.Global.handler_templates import other_messages_template
+from modules.Global.jobs import send_mass_msg
 
 
 @prep_function
@@ -150,11 +144,15 @@ async def admin_cmd(
         elif arg1 == "ai-session":
             if text[1] == "get":
                 current_session = dynamic_settings.get_ai_session_id()
-                await message.reply_html(f"Current AI Session ID:\n<code>{current_session}</code>")
+                await message.reply_html(
+                    f"Current AI Session ID:\n<code>{current_session}</code>"
+                )
             elif text[1] == "set":
                 new_session = text[2]
                 dynamic_settings.set_ai_session_id(new_session)
-                await message.reply_html(f"AI Session ID updated to:\n<code>{new_session}</code>")
+                await message.reply_html(
+                    f"AI Session ID updated to:\n<code>{new_session}</code>"
+                )
             elif text[1] == "reset":
                 dynamic_settings.reset_ai_session_id()
                 await message.reply_text("AI Session ID reset to config default.")

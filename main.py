@@ -1,40 +1,32 @@
-"""main file"""
+import asyncio
+import os
+from datetime import time
 
-# telegram imports
+import pytz
 from telegram import *
 from telegram.ext import *
 
-# project imports
-from config import BOT_TOKEN, SEND_GM_GN, GM_TIME, GN_TIME
-
-from modules.start import start_cmd_handler, delete_message_handler, media_group_handler
-from modules.my_links import mylinks_handler
+from config import BOT_TOKEN, GM_TIME, GN_TIME, SEND_GM_GN
 from modules.admin import admin_handler
-from modules.myuid import myuid_handler
-from modules.settings import settings_handler
-from modules.privacy import privacy_handler
-from modules.help import help_handler, more_links_clbk_handler
-from modules.warn_bug import warn_bug_handler
-from modules.other_msgs import other_messages_handler
 from modules.ai_chat import ai_input_message_handler
-
-from modules.Global.jobs import (
-    set_commands,
-    log_bot_started,
-    check_connection,
-    send_gm_gn,
-    health_check_app,
-    ai_responser,
-)
 from modules.Global.error_handler import error_handler
+from modules.Global.jobs import (
+    ai_responser,
+    check_connection,
+    health_check_app,
+    log_bot_started,
+    send_gm_gn,
+    set_commands,
+)
 from modules.Global.log import logger
-
-# global imports
-import os
-import pytz
-import asyncio
-from datetime import time
-
+from modules.help import help_handler, more_links_clbk_handler
+from modules.my_links import mylinks_handler
+from modules.myuid import myuid_handler
+from modules.other_msgs import other_messages_handler
+from modules.privacy import privacy_handler
+from modules.settings import settings_handler
+from modules.start import delete_message_handler, media_group_handler, start_cmd_handler
+from modules.warn_bug import warn_bug_handler
 
 appbuilder = ApplicationBuilder().token(BOT_TOKEN)
 if proxy := os.environ.get("PROXY"):
@@ -151,6 +143,6 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        logger.critical(f"closing the bot because of ctrl+c")
+        logger.critical("closing the bot because of ctrl+c")
     except Exception as e:
         logger.critical(f"closing the bot because: {e} | {e.__class__.__name__}")

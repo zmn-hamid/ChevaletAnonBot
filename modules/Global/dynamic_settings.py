@@ -1,13 +1,13 @@
-# project imports
-from config import AI_URL, AI_SESSION_ID
+import json
+import os
+
+from config import AI_SESSION_ID, AI_URL
 from modules.Global.log import logger
 
-# global imports
-import os
-import json
-
 # Settings file path
-SETTINGS_FILE = os.path.join(os.path.dirname(__file__), "..", "..", "dynamic_settings.json")
+SETTINGS_FILE = os.path.join(
+    os.path.dirname(__file__), "..", "..", "dynamic_settings.json"
+)
 
 
 class DynamicSettings:
@@ -27,7 +27,9 @@ class DynamicSettings:
             else:
                 logger.info("No dynamic settings file found, using config defaults")
         except Exception as e:
-            logger.warning(f"Failed to load dynamic settings: {e}, using config defaults")
+            logger.warning(
+                f"Failed to load dynamic settings: {e}, using config defaults"
+            )
             self._settings = {}
 
     def _save_settings(self) -> None:

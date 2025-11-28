@@ -1,5 +1,6 @@
-from telegram import Message
 from typing import List
+
+from telegram import Message
 
 
 class AIQueueManager:

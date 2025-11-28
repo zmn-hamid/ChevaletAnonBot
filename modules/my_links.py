@@ -1,22 +1,18 @@
-# telegram imports
-from telegram import *
-from telegram.ext import *
-from telegram.constants import ParseMode as PM
-from telegram.warnings import PTBUserWarning
-
-# project imports
-from config import SELLER_ADMIN, MAX_CID_LENGTH, MIN_CID_LENGTH, ALLOWED_CID_CHARS
-from modules.Global.database import DBHandler
-from modules.Global.decorators import prep_function
-from modules.Global.get_user import user_links_text, get_user_links
-from modules.Global.cid_gen import generate_cid
-from modules.Global.fetch_texts import fetch_text
-from modules.Global.reply_markups import MYLINKS_MARKUP
-
-# global imports
-from psycopg2 import IntegrityError
 from warnings import filterwarnings
 
+from psycopg2 import IntegrityError
+from telegram import *
+from telegram.constants import ParseMode as PM
+from telegram.ext import *
+from telegram.warnings import PTBUserWarning
+
+from config import ALLOWED_CID_CHARS, MAX_CID_LENGTH, MIN_CID_LENGTH, SELLER_ADMIN
+from modules.Global.cid_gen import generate_cid
+from modules.Global.database import DBHandler
+from modules.Global.decorators import prep_function
+from modules.Global.fetch_texts import fetch_text
+from modules.Global.get_user import get_user_links, user_links_text
+from modules.Global.reply_markups import MYLINKS_MARKUP
 
 # ignore the per_message error
 filterwarnings(
@@ -114,7 +110,7 @@ async def remove_link_clbk(
                     [
                         [
                             InlineKeyboardButton(
-                                f"حذف لینک {idx+1}",
+                                f"حذف لینک {idx + 1}",
                                 callback_data=f"rm-link|{cid}",
                             )
                         ]
@@ -136,11 +132,11 @@ async def remove_link_clbk(
                     [
                         [
                             InlineKeyboardButton(
-                                f"✅ آره مطمئنم",
+                                "✅ آره مطمئنم",
                                 callback_data=f"rm-link|{chosen_cid}|yes",
                             ),
                             InlineKeyboardButton(
-                                f"نههه پاک نکن",
+                                "نههه پاک نکن",
                                 callback_data=f"rm-link|{chosen_cid}|no",
                             ),
                         ]
@@ -173,7 +169,7 @@ async def remove_link_clbk(
                         [
                             [
                                 InlineKeyboardButton(
-                                    f"حذف لینک {idx+1}",
+                                    f"حذف لینک {idx + 1}",
                                     callback_data=f"rm-link|{cid}",
                                 )
                             ]
@@ -193,7 +189,7 @@ async def remove_link_clbk(
                         [
                             [
                                 InlineKeyboardButton(
-                                    f"حذف لینک {idx+1}",
+                                    f"حذف لینک {idx + 1}",
                                     callback_data=f"rm-link|{cid}",
                                 )
                             ]
@@ -228,7 +224,7 @@ async def change_link_clbk(
                     [
                         [
                             InlineKeyboardButton(
-                                f"شخصی سازی لینک {idx+1}",
+                                f"شخصی سازی لینک {idx + 1}",
                                 callback_data=f"ch-link|{cid}",
                             )
                         ]
@@ -316,7 +312,7 @@ async def update_cid(
                     [
                         [
                             InlineKeyboardButton(
-                                f"شخصی سازی لینک {idx+1}",
+                                f"شخصی سازی لینک {idx + 1}",
                                 callback_data=f"ch-link|{cid}",
                             )
                         ]

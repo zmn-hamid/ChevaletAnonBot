@@ -1,46 +1,43 @@
-# telegram imports
+import time
+from typing import List
+from warnings import filterwarnings
+
+from shortuuid import uuid
 from telegram import *
 from telegram import Update
-from telegram.ext import *
-from telegram.constants import ParseMode as PM, MessageType
-from telegram.warnings import PTBUserWarning
-from telegram.helpers import effective_message_type
+from telegram.constants import MessageType
+from telegram.constants import ParseMode as PM
 from telegram.error import TelegramError
+from telegram.ext import *
+from telegram.helpers import effective_message_type
+from telegram.warnings import PTBUserWarning
 
-# project imports
-from config import REPORT_CHAT_ID, SUPPORT_ADMIN, EXPIRE_AFTER, ERROR_CHAT_ID
-from modules.Global.log import logger
+from config import ERROR_CHAT_ID, EXPIRE_AFTER, REPORT_CHAT_ID, SUPPORT_ADMIN
 from modules.Global.database import DBHandler
-from modules.Global.get_user import get_username, href_user, get_link_username
 from modules.Global.decorators import (
-    prep_function,
     delete_notify_on_END,
     handle_target_send,
+    prep_function,
 )
 from modules.Global.fetch_texts import fetch_text
+from modules.Global.get_user import get_link_username, get_username, href_user
+from modules.Global.handler_templates import (
+    FilterMediaGroups,
+    _warning_handle,
+    add_tag,
+    check_if_autoreply,
+    other_messages_template,
+    send_msg_template,
+)
 from modules.Global.jobs import delete_message
 from modules.Global.myhelpers import (
-    encode_chevaletid,
     decode_chevaletid,
+    encode_chevaletid,
     generate_chevaletid,
     handle_cid_or_chid,
 )
-from modules.Global.reply_markups import CANCEL_BUTTON, MSG_BTN as BTN
-from modules.Global.handler_templates import (
-    FilterMediaGroups,
-    other_messages_template,
-    send_msg_template,
-    check_if_autoreply,
-    _warning_handle,
-    add_tag,
-)
-
-# global imports
-from shortuuid import uuid
-from warnings import filterwarnings
-from typing import List
-import time
-
+from modules.Global.reply_markups import CANCEL_BUTTON
+from modules.Global.reply_markups import MSG_BTN as BTN
 
 # ignore the per_message error
 filterwarnings(
@@ -67,7 +64,7 @@ async def handle_media(
     ):
         context.user_data.clear()
         output = await check_if_autoreply(update, context, message, userid, bot, dbh)
-        if type(output) == int:
+        if type(output) is int:
             return output
         else:
             return await other_messages_template(message)
@@ -263,7 +260,7 @@ async def start_cmd(
             target_uid = dbh.get_uid_by_cid(target_cid)
 
             # if not target_uid, then the link is changed and has no match
-            if target_uid == None:
+            if target_uid is None:
                 await message.reply_text(
                     "مخاطبت این لینک رو پاک یا عوض کرده. با لینک جدید بهش پیام بده",
                     reply_parameters=ReplyParameters(message.message_id),
@@ -310,7 +307,7 @@ async def start_cmd(
 
             await message.reply_html(
                 (
-                    f'{"میخوای با خودت صحبت کنی؟ :) عب نداره راحت باش." if target_uid == userid else ''}\n'
+                    f"{'میخوای با خودت صحبت کنی؟ :) عب نداره راحت باش.' if target_uid == userid else ''}\n"
                     f"به {dbh.get_name(target_uid)} وصل شدی. پیامتو بفرست\n\n"
                     f"<blockquote>میدونستی میتونی بدون استفاده از لینک، فقط با ریپلای کردن به کانال پیام بدی؟ منوی قابلیت ها و تنظیمات رو چک کن ؛)</blockquote>"
                 ),
@@ -369,7 +366,7 @@ async def answer(
         context.user_data["reply_to"] = target_mid
 
         await message.reply_html(
-            f"جوابت به این پیام رو بفرست\n\n"
+            "جوابت به این پیام رو بفرست\n\n"
             "<blockquote>میدونستی ازین به بعد نیاز نیست حتما از دکمه ی ارسال جواب استفاده کنی. فقط کافیه پیام رو ریپلای کنی و جوابتو بهش بنویسی، مث یه چت معمولی :)</blockquote>",
             reply_parameters=ReplyParameters(message.message_id),
             reply_markup=InlineKeyboardMarkup([[CANCEL_BUTTON]]),

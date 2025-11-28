@@ -1,15 +1,12 @@
-# telegram imports
 from telegram import *
-from telegram.ext import *
 from telegram.constants import ParseMode as PM
+from telegram.ext import *
 
-# project imports
 from config import MAX_NAME_LENGTH
 from modules.Global.database import DBHandler
 from modules.Global.decorators import prep_function
 from modules.Global.fetch_texts import fetch_text
 from modules.Global.reply_markups import SETTINGS_MARKUP
-
 
 # end conversation
 END = ConversationHandler.END
@@ -49,7 +46,7 @@ async def media_settings_clbk(
 ) -> None:
     """# unblocks all the blocked users"""
     await update.callback_query.answer()
-    if (clbk := update.callback_query) and (data := clbk.data):
+    if (clbk := update.callback_query) and (clbk.data):
         await clbk.edit_message_text(
             fetch_text("settings/media_settings"),
             parse_mode=PM.HTML,
@@ -76,7 +73,7 @@ async def reply_quote_clbk(
 ) -> None:
     """# unblocks all the blocked users"""
     await update.callback_query.answer()
-    if (clbk := update.callback_query) and (data := clbk.data):
+    if (clbk := update.callback_query) and (clbk.data):
         await clbk.edit_message_text(
             fetch_text("settings/reply_quote"),
             parse_mode=PM.HTML,
@@ -102,7 +99,7 @@ async def change_name(
 ) -> int:
     """# sends changing name help text"""
     await update.callback_query.answer()
-    if (clbk := update.callback_query) and (data := clbk.data):
+    if (clbk := update.callback_query) and (clbk.data):
         msg = await clbk.edit_message_text(
             fetch_text("settings/change_name") % (dbh.get_name(userid)),
             parse_mode=PM.HTML,
@@ -256,7 +253,7 @@ async def easier_answer_clbk(
 ) -> None:
     """# unblocks all the blocked users"""
     await update.callback_query.answer()
-    if (clbk := update.callback_query) and (data := clbk.data):
+    if (clbk := update.callback_query) and (clbk.data):
         await clbk.edit_message_text(
             fetch_text("settings/easier_answer"),
             parse_mode=PM.HTML,
@@ -282,7 +279,7 @@ async def channel_signature_clbk(
 ) -> None:
     """# channel signature feature explanation"""
     await update.callback_query.answer()
-    if (clbk := update.callback_query) and (data := clbk.data):
+    if (clbk := update.callback_query) and (clbk.data):
         await clbk.edit_message_text(
             fetch_text("settings/channel_signature"),
             parse_mode=PM.HTML,
@@ -357,7 +354,7 @@ async def custom_tag(
     # custom tag help text
     """
     await update.callback_query.answer()
-    if (clbk := update.callback_query) and (data := clbk.data):
+    if (clbk := update.callback_query) and (clbk.data):
         user_custom_tag = dbh.get_custom_tag(userid)
         msg = await clbk.edit_message_text(
             fetch_text("settings/custom_tag")
@@ -444,7 +441,7 @@ async def audio_tag(
 ) -> int:
     """# audio tag help text"""
     await update.callback_query.answer()
-    if (clbk := update.callback_query) and (data := clbk.data):
+    if (clbk := update.callback_query) and (clbk.data):
         user_audio_tag = dbh.get_audio_tag(userid)
         msg = await clbk.edit_message_text(
             fetch_text("settings/audio_tag")

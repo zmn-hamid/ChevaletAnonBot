@@ -1,8 +1,6 @@
-# telegram imports
 from telegram import *
 from telegram.ext import *
 
-# project imports
 from modules.Global.database import DBHandler
 from modules.Global.decorators import prep_function
 from modules.Global.fetch_texts import fetch_text

@@ -1,39 +1,36 @@
-# telegram imports
+import html
+import re
+import time
+from typing import Optional, Union
+
 from telegram import *
-from telegram.ext import *
-from telegram.ext._utils.types import FilterDataDict
+from telegram.constants import MessageEntityType as MET
 from telegram.constants import ParseMode as PM
 from telegram.error import Forbidden
-from telegram.constants import MessageEntityType as MET
+from telegram.ext import *
+from telegram.ext._utils.types import FilterDataDict
 
-# project imports
 from config import (
     DELETION_TEXT,
-    EXPIRE_AFTER,
-    ERROR_CHAT_ID,
     DELETION_TIMEOUT,
     DELETION_TIMEOUT_EXTENDED,
+    ERROR_CHAT_ID,
+    EXPIRE_AFTER,
 )
-from modules.Global.jobs import delete_warning
 from modules.Global.database import DBHandler
-from modules.Global.log import logger
 from modules.Global.decorators import (
     delete_notify_on_END,
     handle_target_send,
 )
-from modules.Global.reply_markups import MSG_BTN as BTN
+from modules.Global.jobs import delete_warning
+from modules.Global.log import logger
 from modules.Global.myhelpers import (
-    encode_chevaletid,
     decode_chevaletid,
+    encode_chevaletid,
     generate_chevaletid,
     handle_cid_or_chid,
 )
-
-# global imports
-import re
-import html
-import time
-from typing import Optional, Union, List
+from modules.Global.reply_markups import MSG_BTN as BTN
 
 # vars
 END = ConversationHandler.END
@@ -78,7 +75,7 @@ async def send_msg_template(
         return END
 
     # check if target cid is valid in case of existence
-    if target_cid and dbh.get_uid_by_cid(target_cid) == None:
+    if target_cid and dbh.get_uid_by_cid(target_cid) is None:
         await message.reply_html(
             "مخاطبت لینکش رو عوض کرده. باید از نو پیام بفرستی",
             reply_parameters=ReplyParameters(message.message_id),
@@ -251,7 +248,7 @@ async def send_msg_template(
         )
 
     output: MessageId | str = await copy_msg_to_target()
-    if type(output) == MessageId:
+    if type(output) == MessageId:  # noqa: E721
         copied_message_id: MessageId = output.message_id
     else:
         context.user_data.clear()
@@ -378,7 +375,7 @@ async def is_reply_to_channel(
     if external_reply:
         try:
             channel = await bot.get_chat(external_reply.chat.id)
-        except Forbidden as e:
+        except Forbidden:
             await message.reply_text(
                 "چنل مد نظرت پرایوته و بات بهش اضافه نشده",
                 reply_parameters=ReplyParameters(message.message_id),
@@ -493,7 +490,7 @@ async def is_reply_to_channel(
 
         target_uid = dbh.get_uid_by_cid(target_cid)
         # if not target_uid, then the link is changed and has no match
-        if target_uid == None:
+        if target_uid is None:
             await message.reply_text(
                 "مخاطبت این لینک رو پاک یا عوض کرده. با لینک جدید بهش پیام بده",
                 reply_parameters=ReplyParameters(message.message_id),
@@ -586,7 +583,7 @@ async def _warning_handle(
             f"<blockquote><b>{html.escape('⚠️به هیچ پیام فوروارد شده ای ریپلای نزن. چرایی: /bug⚠️')}</b></blockquote>\n"
         )
     else:
-        sent_text = f"فرستادم بهش."
+        sent_text = "فرستادم بهش."
     # undo condition when bug fixed -> if dbh.get_warning(userid):
     if was_channel_reply or dbh.get_warning(userid):
 

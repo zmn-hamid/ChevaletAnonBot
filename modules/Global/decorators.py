@@ -1,19 +1,16 @@
-# telegram imports
-from telegram import *
-from telegram.ext import *
-from telegram.constants import ParseMode as PM
-from telegram.error import Forbidden, BadRequest, TimedOut
-
-# project imports
-from config import ERROR_CHAT_ID, GM_GROUP_ID
-from modules.Global.log import logger
-from modules.Global.database import DBHandler, db_base
-from modules.Global.user_init import init_user
-from modules.Global.myhelpers import generate_chevaletid, get_trace
-
-# global imports
 from typing import Callable
+
 import psycopg2
+from telegram import *
+from telegram.constants import ParseMode as PM
+from telegram.error import BadRequest, Forbidden, TimedOut
+from telegram.ext import *
+
+from config import ERROR_CHAT_ID, GM_GROUP_ID
+from modules.Global.database import DBHandler, db_base
+from modules.Global.log import logger
+from modules.Global.myhelpers import generate_chevaletid, get_trace
+from modules.Global.user_init import init_user
 
 
 def prep_function(func) -> Callable:
@@ -120,7 +117,8 @@ def prep_function(func) -> Callable:
                 except:
                     try:
                         await bot.send_message(
-                            ERROR_CHAT_ID, f"PostgreSQL ERROR3: COULDN'T EVEN SEND THE ERROR"
+                            ERROR_CHAT_ID,
+                            f"PostgreSQL ERROR3: COULDN'T EVEN SEND THE ERROR",
                         )
                         logger.error(f"ERRORRR -> {get_trace(e, False)}")
                     except:

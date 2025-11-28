@@ -1,17 +1,14 @@
-# telegram imports
-from telegram import *
-from telegram.ext import *
-from telegram.constants import ParseMode as PM
-
-# project imports
-from config import ERROR_CHAT_ID
-from modules.Global.log import logger
-
-# global imports
 import html
 import json
 import traceback
+
 from shortuuid import uuid
+from telegram import *
+from telegram.constants import ParseMode as PM
+from telegram.ext import *
+
+from config import ERROR_CHAT_ID
+from modules.Global.log import logger
 
 
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

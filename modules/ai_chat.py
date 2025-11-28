@@ -1,13 +1,9 @@
-# telegram imports
 from telegram import *
-from telegram.ext import *
 from telegram.constants import ParseMode as PM
 from telegram.constants import ReactionEmoji
+from telegram.ext import *
 
-# project imports
 from config import BOT_ID, GM_GROUP_ID
-from modules.Global.database import DBHandler
-from modules.Global.decorators import prep_function
 from modules.Global.ai_queue import ai_queue_manager
 
 

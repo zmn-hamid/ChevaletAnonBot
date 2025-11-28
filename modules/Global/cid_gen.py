@@ -1,6 +1,7 @@
-# global imports
+import random
+import string
+
 from shortuuid import ShortUUID as suid
-import random, string
 
 
 def generate_cid(suid_length: int = 10) -> str:

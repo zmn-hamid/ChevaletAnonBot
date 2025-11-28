@@ -1,4 +1,7 @@
-import os, logging, string
+import logging
+import os
+import string
+
 from dotenv import load_dotenv
 
 load_dotenv()

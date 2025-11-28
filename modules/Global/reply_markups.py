@@ -81,37 +81,37 @@ MYLINKS_MARKUP = {
         [
             InlineKeyboardButton(
                 "➕ اضافه کردن لینک جدید",
-                callback_data=f"add-link",
+                callback_data="add-link",
             ),
         ],
         [
             InlineKeyboardButton(
                 "🔧 شخصی سازی لینک",
-                callback_data=f"ch-link",
+                callback_data="ch-link",
             ),
             InlineKeyboardButton(
                 "❌ حذف کردن لینک",
-                callback_data=f"rm-link",
+                callback_data="rm-link",
             ),
         ],
         [
             InlineKeyboardButton(
                 "❔چرا چندتا لینک داشته باشم",
-                callback_data=f"more-links",
+                callback_data="more-links",
             ),
         ],
     ],
     "back-to-menu": InlineKeyboardButton(
         "↪️ برگشت به منوی اصلی",
-        callback_data=f"mylinks-menu",
+        callback_data="mylinks-menu",
     ),
     "what-is-cid": InlineKeyboardButton(
-        f"❔آیدی لینک چیه",
-        callback_data=f"what-is-cid|",
+        "❔آیدی لینک چیه",
+        callback_data="what-is-cid|",
     ),
     "what-is-customize": InlineKeyboardButton(
-        f"❔شخصی سازی لینک چیه",
-        callback_data=f"what-is-cid|",
+        "❔شخصی سازی لینک چیه",
+        callback_data="what-is-cid|",
     ),
 }
 

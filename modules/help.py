@@ -1,9 +1,6 @@
-# telegram imports
 from telegram import *
 from telegram.ext import *
-from telegram.constants import ParseMode as PM
 
-# project imports
 from config import SUPPORT_ADMIN
 from modules.Global.database import DBHandler
 from modules.Global.decorators import prep_function
@@ -39,7 +36,7 @@ async def more_links_clbk(
     """sends more links help text"""
     if clbk := update.callback_query:
         await clbk.answer()
-        if data := clbk.data:
+        if clbk.data:
             await message.reply_html(
                 fetch_text("more_links"),
                 reply_parameters=ReplyParameters(message.message_id),

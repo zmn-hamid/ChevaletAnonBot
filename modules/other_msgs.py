@@ -1,12 +1,9 @@
-# telegram imports
 from telegram import *
 from telegram.ext import *
 
-# project imports
-from modules.Global.decorators import prep_function
 from modules.Global.database import DBHandler
-from modules.Global.handler_templates import other_messages_template, check_if_autoreply
-from modules.Global.log import logger
+from modules.Global.decorators import prep_function
+from modules.Global.handler_templates import check_if_autoreply, other_messages_template
 
 # vars
 END = ConversationHandler.END

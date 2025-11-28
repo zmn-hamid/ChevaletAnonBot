@@ -1,20 +1,16 @@
-# telegram imports
-from telegram import *
-from telegram.ext import *
-from telegram.constants import ParseMode as PM
-
-# project imports
-from config import ALLOWED_CID_CHARS, KEY_MAX_INT, ERROR_CHAT_ID
-from modules.Global.cid_gen import generate_cid
-from modules.Global.database import DBHandler
-
-# global imports
-import time
 import html
-import string
 import random
+import string
+import time
 import traceback
 
+from telegram import *
+from telegram.constants import ParseMode as PM
+from telegram.ext import *
+
+from config import ALLOWED_CID_CHARS, ERROR_CHAT_ID, KEY_MAX_INT
+from modules.Global.cid_gen import generate_cid
+from modules.Global.database import DBHandler
 
 END = ConversationHandler.END
 
@@ -90,7 +86,7 @@ async def handle_cid_or_chid(
         # it's a cid
         target_uid = dbh.get_uid_by_cid(target_cid_or_chid)
         # if not target_uid, then the link is changed and has no match
-        if target_uid == None:
+        if target_uid is None:
             await message.reply_text(
                 "مخاطبت این لینک رو پاک یا عوض کرده. با لینک جدید بهش پیام بده",
                 reply_parameters=ReplyParameters(message.message_id),

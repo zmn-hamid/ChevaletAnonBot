@@ -90,7 +90,7 @@ async def check_connection(context: CallbackContext) -> None:
                 dbh = DBHandler(cur, conn)
                 try:
                     dbh.user_count()
-                except (psycopg2.OperationalError, psycopg2.InterfaceError) as e:
+                except (psycopg2.OperationalError, psycopg2.InterfaceError):
                     logger.info("Lost connection to PostgreSQL, reconnecting...")
                     try:
                         cur.close()
@@ -237,7 +237,7 @@ async def ai_responser(context: CallbackContext) -> None:
                         reply_parameters=ReplyParameters(message_id, GM_GROUP_ID),
                     )
                 except error.BadRequest as e:
-                    if not "Can't parse entities".lower() in str(e).lower():
+                    if "Can't parse entities".lower() not in str(e).lower():
                         raise
                     await bot.send_message(
                         GM_GROUP_ID,
