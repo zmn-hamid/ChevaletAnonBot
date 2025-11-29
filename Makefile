@@ -67,7 +67,7 @@ shell: ## Open bash shell in bot container
 	docker-compose exec bot bash
 
 db-shell: ## Open PostgreSQL shell
-	docker-compose exec postgres psql -U $${DB_USER:-botuser} -d $${DB_NAME:-mydatabase}
+	docker-compose exec postgres psql -U root -d mydatabase
 
 db-drop-tables: ## Drop all tables from database (WARNING: Deletes all data but keeps DB!)
 	@echo "WARNING: This will drop all tables!"
