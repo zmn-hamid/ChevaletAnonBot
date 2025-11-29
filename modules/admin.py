@@ -1,6 +1,6 @@
 from psycopg2 import IntegrityError
-from telegram import *
-from telegram.ext import *
+from telegram import Bot, Message, Update
+from telegram.ext import CommandHandler, ContextTypes
 
 from config import ADMINS
 from modules.Global.database import DBHandler

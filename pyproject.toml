@@ -1,2 +1,2 @@
-[tool.ruff.lint.per-file-ignores]
-"*.py" = ["E722", "F403", "F405"]
+# [tool.ruff.lint.per-file-ignores]
+# "*.py" = ["E722", "F403", "F405"]

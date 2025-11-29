@@ -1,6 +1,7 @@
 from telegram import Bot
-from modules.Global.database import DBHandler
+
 from modules.Global.cid_gen import generate_cid
+from modules.Global.database import DBHandler
 
 
 async def init_user(uid, bot: Bot, dbh: DBHandler) -> None:

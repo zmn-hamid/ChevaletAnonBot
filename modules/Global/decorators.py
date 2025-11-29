@@ -1,10 +1,10 @@
 from typing import Callable
 
 import psycopg2
-from telegram import *
+from telegram import Message, ReplyParameters, Update
 from telegram.constants import ParseMode as PM
 from telegram.error import BadRequest, Forbidden, TimedOut
-from telegram.ext import *
+from telegram.ext import ContextTypes, ConversationHandler
 
 from config import ERROR_CHAT_ID, GM_GROUP_ID
 from modules.Global.database import DBHandler, db_base
@@ -90,7 +90,7 @@ def prep_function(func) -> Callable:
                 context.user_data["no db check"] = False
                 conn.commit()
                 return await func(update, context, message, userid, bot, dbh)
-        except error.BadRequest as e:
+        except BadRequest as e:
             if str(e).startswith("Query is too old"):
                 logger.debug("old query ignored: %s" % e)
                 return

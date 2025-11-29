@@ -1,5 +1,5 @@
-from telegram import *
-from telegram.ext import *
+from telegram import Bot, Message, ReplyParameters, Update
+from telegram.ext import CommandHandler, ContextTypes, ConversationHandler
 
 from modules.Global.database import DBHandler
 from modules.Global.decorators import prep_function

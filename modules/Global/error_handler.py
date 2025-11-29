@@ -3,9 +3,9 @@ import json
 import traceback
 
 from shortuuid import uuid
-from telegram import *
+from telegram import ReplyParameters, Update
 from telegram.constants import ParseMode as PM
-from telegram.ext import *
+from telegram.ext import ContextTypes, ConversationHandler
 
 from config import ERROR_CHAT_ID
 from modules.Global.log import logger

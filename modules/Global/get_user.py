@@ -1,8 +1,6 @@
-# telegram imports
-from telegram import Bot
-
-# Global imports
 from typing import List
+
+from telegram import Bot
 
 
 def href_user(userid: str, pre_text: str = "u") -> str:

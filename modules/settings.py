@@ -1,6 +1,20 @@
-from telegram import *
+from telegram import (
+    Bot,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    Message,
+    ReplyParameters,
+    Update,
+)
 from telegram.constants import ParseMode as PM
-from telegram.ext import *
+from telegram.ext import (
+    CallbackQueryHandler,
+    CommandHandler,
+    ContextTypes,
+    ConversationHandler,
+    MessageHandler,
+    filters,
+)
 
 from config import MAX_NAME_LENGTH
 from modules.Global.database import DBHandler

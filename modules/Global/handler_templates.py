@@ -3,11 +3,11 @@ import re
 import time
 from typing import Optional, Union
 
-from telegram import *
+from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup, Message, MessageEntity, MessageId, ReplyKeyboardMarkup, ReplyParameters, Update
 from telegram.constants import MessageEntityType as MET
 from telegram.constants import ParseMode as PM
 from telegram.error import Forbidden
-from telegram.ext import *
+from telegram.ext import ContextTypes, ConversationHandler, filters
 from telegram.ext._utils.types import FilterDataDict
 
 from config import (

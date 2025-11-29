@@ -3,8 +3,7 @@ import os
 from datetime import time
 
 import pytz
-from telegram import *
-from telegram.ext import *
+from telegram.ext import ApplicationBuilder
 
 from config import BOT_TOKEN, GM_TIME, GN_TIME, SEND_GM_GN
 from modules.admin import admin_handler

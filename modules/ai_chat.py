@@ -1,7 +1,6 @@
-from telegram import *
-from telegram.constants import ParseMode as PM
+from telegram import Message, Update
 from telegram.constants import ReactionEmoji
-from telegram.ext import *
+from telegram.ext import ContextTypes, MessageHandler, filters
 
 from config import BOT_ID, GM_GROUP_ID
 from modules.Global.ai_queue import ai_queue_manager

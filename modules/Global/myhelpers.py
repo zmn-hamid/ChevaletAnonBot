@@ -4,9 +4,9 @@ import string
 import time
 import traceback
 
-from telegram import *
+from telegram import Bot, Message, ReplyParameters
 from telegram.constants import ParseMode as PM
-from telegram.ext import *
+from telegram.ext import ConversationHandler
 
 from config import ALLOWED_CID_CHARS, ERROR_CHAT_ID, KEY_MAX_INT
 from modules.Global.cid_gen import generate_cid

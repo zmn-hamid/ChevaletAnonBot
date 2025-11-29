@@ -5,9 +5,10 @@ import unicodedata
 
 import psycopg2
 import requests
-from telegram import *
+from telegram import Bot, Message, ReplyParameters
 from telegram.constants import ParseMode as PM
-from telegram.ext import *
+from telegram.error import BadRequest
+from telegram.ext import CallbackContext
 
 from config import (
     AI_INTERVAL,
@@ -236,7 +237,7 @@ async def ai_responser(context: CallbackContext) -> None:
                         parse_mode=PM.MARKDOWN,
                         reply_parameters=ReplyParameters(message_id, GM_GROUP_ID),
                     )
-                except error.BadRequest as e:
+                except BadRequest as e:
                     if "Can't parse entities".lower() not in str(e).lower():
                         raise
                     await bot.send_message(
