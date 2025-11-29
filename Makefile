@@ -20,60 +20,60 @@ help: ## Show this help message
 
 up: ## Start all services (production)
 	@echo "Starting services..."
-	docker compose up -d
+	docker-compose up -d
 	@echo "Services started! Check logs with: make logs"
 
 down: ## Stop all services
 	@echo "Stopping services..."
-	docker compose down
+	docker-compose down
 	@echo "Services stopped."
 
 restart: ## Restart all services
 	@echo "Restarting services..."
-	docker compose restart
+	docker-compose restart
 	@echo "Services restarted."
 
 build: ## Build Docker images
 	@echo "Building images..."
-	docker compose build
+	docker-compose build
 	@echo "Build complete."
 
 rebuild: ## Rebuild and restart services (use after code changes)
 	@echo "Rebuilding and restarting..."
-	docker compose down
-	docker compose up -d --build
+	docker-compose down
+	docker-compose up -d --build
 	@echo "Rebuild complete! Check logs with: make logs"
 
 ##@ Logs & Monitoring
 
 logs: ## Show logs from all services (follow mode)
-	docker compose logs -f
+	docker-compose logs -f
 
 logs-bot: ## Show logs from bot only (follow mode)
-	docker compose logs -f bot
+	docker-compose logs -f bot
 
 logs-db: ## Show logs from database only (follow mode)
-	docker compose logs -f postgres
+	docker-compose logs -f postgres
 
 logs-tail: ## Show last 100 lines from bot
-	docker compose logs --tail=100 bot
+	docker-compose logs --tail=100 bot
 
 status: ## Show status of all containers
-	docker compose ps
+	docker-compose ps
 
 ##@ Development
 
 shell: ## Open bash shell in bot container
-	docker compose exec bot bash
+	docker-compose exec bot bash
 
 db-shell: ## Open PostgreSQL shell
-	docker compose exec postgres psql -U $${DB_USER:-botuser} -d $${DB_NAME:-mydatabase}
+	docker-compose exec postgres psql -U $${DB_USER:-botuser} -d $${DB_NAME:-mydatabase}
 
 db-drop-tables: ## Drop all tables from database (WARNING: Deletes all data but keeps DB!)
 	@echo "WARNING: This will drop all tables!"
 	@read -p "Are you sure? Type 'yes' to continue: " confirm; \
 	if [ "$$confirm" = "yes" ]; then \
-		docker compose exec postgres psql -U root -d mydatabase -c "DROP TABLE IF EXISTS users, blocks, cids, reports CASCADE;"; \
+		docker-compose exec postgres psql -U root -d mydatabase -c "DROP TABLE IF EXISTS users, blocks, cids, reports CASCADE;"; \
 		echo "All tables dropped. Restart bot to recreate: make restart"; \
 	else \
 		echo "Cancelled."; \
@@ -111,10 +111,10 @@ db-reset: ## Reset database (WARNING: Deletes all data!)
 	@echo "WARNING: This will delete all data!"
 	@read -p "Are you sure? Type 'yes' to continue: " confirm; \
 	if [ "$$confirm" = "yes" ]; then \
-		docker compose down -v; \
-		docker compose up -d postgres; \
+		docker-compose down -v; \
+		docker-compose up -d postgres; \
 		sleep 5; \
-		docker compose up -d bot; \
+		docker-compose up -d bot; \
 		echo "Database reset complete."; \
 	else \
 		echo "Cancelled."; \
@@ -124,7 +124,7 @@ db-reset: ## Reset database (WARNING: Deletes all data!)
 
 clean: ## Remove stopped containers and unused images
 	@echo "Cleaning up Docker resources..."
-	docker compose down --remove-orphans
+	docker-compose down --remove-orphans
 	docker system prune -f
 	@echo "Cleanup complete."
 
@@ -132,7 +132,7 @@ clean-all: ## Remove everything including volumes (WARNING: Deletes database!)
 	@echo "WARNING: This will delete the database!"
 	@read -p "Are you sure? Type 'yes' to continue: " confirm; \
 	if [ "$$confirm" = "yes" ]; then \
-		docker compose down -v --remove-orphans; \
+		docker-compose down -v --remove-orphans; \
 		docker system prune -af; \
 		echo "All Docker resources removed."; \
 	else \
@@ -148,13 +148,13 @@ logs-clean: ## Remove old log files (older than 30 days)
 update: ## Pull latest code and rebuild
 	@echo "Updating application..."
 	git pull
-	docker compose up -d --build
+	docker-compose up -d --build
 	@echo "Update complete!"
 
 ##@ Testing & Debugging
 
 check-health: ## Check health status of all containers
-	@docker compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Health}}"
+	@docker-compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Health}}"
 
 ##@ Quick Actions
 
@@ -164,6 +164,6 @@ deploy: rebuild logs-tail ## Deploy: rebuild and show logs
 
 emergency-stop: ## Emergency stop (force stop all containers)
 	@echo "Emergency stop initiated..."
-	docker compose kill
-	docker compose down
+	docker-compose kill
+	docker-compose down
 	@echo "All services forcefully stopped."
