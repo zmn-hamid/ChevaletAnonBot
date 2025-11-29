@@ -148,6 +148,7 @@ logs-clean: ## Remove old log files (older than 30 days)
 update: ## Pull latest code and rebuild
 	@echo "Updating application..."
 	git pull
+	docker-compose down
 	docker-compose up -d --build
 	@echo "Update complete!"
 
