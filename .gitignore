@@ -7,6 +7,9 @@ log-mass-msg.txt
 .vscode
 dynamic_settings.json
 
+# AI
+.claude/settings.local.json
+
 # Docker
 backups/
 *.sql
@@ -16,3 +19,6 @@ setup-backup-windows.txt
 # OS
 .DS_Store
 Thumbs.db
+
+# others
+radioatu_mydatabase.csv
