@@ -12,6 +12,8 @@
 help: ## Show this help message
 	@echo "Chevalet Anonymous Telegram Bot - Available Commands:"
 	@echo ""
+	@echo "When updated the project, do \"make deploy\""
+	@echo ""
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 ##@ Docker Operations
@@ -151,18 +153,8 @@ update: ## Pull latest code and rebuild
 
 ##@ Testing & Debugging
 
-test-db: ## Test database connection
-	@echo "Testing database connection..."
-	docker compose exec bot python -c "from modules.Global.database import db_base; print('✓ Database connection OK')"
-
-test-env: ## Show environment variables in bot container
-	docker compose exec bot printenv | grep -E "DB_|BOT_|ADMIN"
-
 check-health: ## Check health status of all containers
 	@docker compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Health}}"
-
-inspect: ## Show detailed container information
-	docker compose exec bot python -c "import sys; print(f'Python: {sys.version}'); from config import *; print(f'DB Host: {DB_HOST}'); print(f'DB Name: {DB_NAME}')"
 
 ##@ Quick Actions
 
