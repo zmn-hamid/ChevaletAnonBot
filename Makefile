@@ -61,19 +61,6 @@ status: ## Show status of all containers
 
 ##@ Development
 
-dev-up: ## Start development environment
-	@echo "Starting development environment..."
-	docker compose -f docker-compose.dev.yml up -d --build
-	@echo "Dev environment started! Check logs with: make dev-logs"
-
-dev-down: ## Stop development environment
-	@echo "Stopping development environment..."
-	docker compose -f docker-compose.dev.yml down
-	@echo "Dev environment stopped."
-
-dev-logs: ## Show development logs
-	docker compose -f docker-compose.dev.yml logs -f
-
 shell: ## Open bash shell in bot container
 	docker compose exec bot bash
 
