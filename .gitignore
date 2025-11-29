@@ -11,6 +11,7 @@ dynamic_settings.json
 backups/
 *.sql
 *.sql.gz
+setup-backup-windows.txt
 
 # OS
 .DS_Store

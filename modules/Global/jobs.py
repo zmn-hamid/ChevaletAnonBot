@@ -84,7 +84,7 @@ async def delete_message(context: CallbackContext) -> None:
 async def check_connection(context: CallbackContext) -> None:
     """check connection to db and reconnect if needed"""
     try:
-        conn = db_base.connection_pool.getconn()
+        conn = db_base.get_connection()
         try:
             with conn.cursor() as cur:
                 dbh = DBHandler(cur, conn)
@@ -106,7 +106,7 @@ async def check_connection(context: CallbackContext) -> None:
                         pass
         finally:
             try:
-                db_base.connection_pool.putconn(conn)
+                db_base.put_connection(conn)
             except:
                 pass
     except Exception as e:
@@ -116,7 +116,7 @@ async def check_connection(context: CallbackContext) -> None:
 async def send_mass_msg(context: CallbackContext) -> None:
     """sends mass msg"""
     try:
-        conn = db_base.connection_pool.getconn()
+        conn = db_base.get_connection()
         try:
             with conn.cursor() as cur:
                 dbh = DBHandler(cur, conn)
@@ -153,7 +153,7 @@ async def send_mass_msg(context: CallbackContext) -> None:
                 await msg.reply_text("sent the message to everyone.")
                 conn.commit()
         finally:
-            db_base.connection_pool.putconn(conn)
+            db_base.put_connection(conn)
     except Exception as e:
         logger.warning("send_mass_msg faild: " + str(e))
 

@@ -19,7 +19,7 @@ def prep_function(func) -> Callable:
     async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # only handle updates from private chats
         if (
-            update == None
+            update is None
             or update.edited_message
             or update.effective_chat.type in ["channel", "group"]
             or update.effective_chat.id in [int(GM_GROUP_ID)]
@@ -34,16 +34,16 @@ def prep_function(func) -> Callable:
         try:
             context.user_data.setdefault("media_msgs", [])
             context.user_data.setdefault("sent_medias", [])
-            conn = db_base.connection_pool.getconn()
+            conn = db_base.get_connection()
             with conn.cursor() as cur:
                 # get db
                 dbh = DBHandler(cur, conn)
 
                 # check connection
-                if not context.user_data.get("no db check") == True:
+                if not context.user_data.get("no db check"):
                     try:
                         dbh.user_count()
-                    except (psycopg2.OperationalError, psycopg2.InterfaceError) as e:
+                    except (psycopg2.OperationalError, psycopg2.InterfaceError):
                         logger.info("Lost connection to PostgreSQL, reconnecting...")
                         try:
                             cur.close()
@@ -66,14 +66,14 @@ def prep_function(func) -> Callable:
 
                 # initialize user
                 output = await init_user(userid, bot, dbh)
-                if output == False:
+                if output is False:
                     await message.reply_text(
                         "مشکلی در ساخت لینک ناشناس بوجود اومد. دوباره تلاش کن و اگه موفق نشدی، قبل از استفاده از بات با پشتیبانی تماس بگیر"
                     )
                     context.user_data.clear()
                     return ConversationHandler.END
                 elif not dbh.get_chevaletid_by_uid(userid):
-                    if dbh.set_chevaletid(userid, generate_chevaletid()) == False:
+                    if dbh.set_chevaletid(userid, generate_chevaletid()) is False:
                         await message.reply_text(
                             "مشکلی در ساخت اکانت شما بوجود اومد. دوباره تلاش کن و اگه موفق نشدی، قبل از استفاده از بات با پشتیبانی تماس بگیر"
                         )
@@ -118,7 +118,7 @@ def prep_function(func) -> Callable:
                     try:
                         await bot.send_message(
                             ERROR_CHAT_ID,
-                            f"PostgreSQL ERROR3: COULDN'T EVEN SEND THE ERROR",
+                            "PostgreSQL ERROR3: COULDN'T EVEN SEND THE ERROR",
                         )
                         logger.error(f"ERRORRR -> {get_trace(e, False)}")
                     except:
@@ -132,7 +132,7 @@ def prep_function(func) -> Callable:
         finally:
             if conn:
                 try:
-                    db_base.connection_pool.putconn(conn)
+                    db_base.put_connection(conn)
                 except:
                     pass
 

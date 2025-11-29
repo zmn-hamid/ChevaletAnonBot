@@ -1,6 +1,13 @@
 #!/bin/bash
 # Restore PostgreSQL database
 
+# Load environment variables from .env
+if [ -f .env ]; then
+    set -a
+    source <(grep -v '^#' .env | grep -v '^$' | sed 's/#.*//')
+    set +a
+fi
+
 set -e
 
 if [ -z "$1" ]; then

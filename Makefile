@@ -79,10 +79,19 @@ db-drop-tables: ## Drop all tables from database (WARNING: Deletes all data but 
 
 ##@ Database Operations
 
-backup: ## Backup database to ./backups/
+backup: ## Backup database to ./backups/ (simple, 30-day retention)
 	@echo "Creating backup..."
 	@bash backup.sh
 	@echo "Backup complete!"
+
+backup-tiered: ## Backup database with tiered retention (hourly/daily/weekly)
+	@echo "Creating backup with tiered retention..."
+	@bash backup-tiered.sh
+	@echo "Backup complete!"
+
+backup-setup-auto: ## Setup automated hourly backups (Linux/WSL)
+	@echo "Setting up automated hourly backups..."
+	@bash setup-backup-cron.sh
 
 restore: ## Restore database from backup (Usage: make restore FILE=backups/backup_file.sql.gz)
 	@if [ -z "$(FILE)" ]; then \

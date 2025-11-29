@@ -26,11 +26,11 @@ class DB_Base:
         self.cids_table = "cids"
         self.reports_table = "reports"
 
-        self.connection_pool: pool.SimpleConnectionPool
+        self._connection_pool: pool.SimpleConnectionPool
 
     def connect_db(self) -> None:
         """connects to database"""
-        self.connection_pool = pool.SimpleConnectionPool(
+        self._connection_pool = pool.SimpleConnectionPool(
             minconn=1,
             maxconn=30,
             host=DB_HOST,
@@ -40,9 +40,18 @@ class DB_Base:
             options="-c client_encoding=UTF8",
         )
 
+    def get_connection(self):
+        conn = self._connection_pool.getconn()
+        conn.autocommit = True  # Enable autocommit
+        return conn
+
+    def put_connection(self, conn):
+        self._connection_pool.putconn(conn)
+
     def make_tables(self) -> None:
         """creates the tables if they don't exist"""
-        conn = self.connection_pool.getconn()
+        conn = self.get_connection()
+        conn.autocommit = True
         try:
             with conn.cursor() as cur:
                 cur.execute(
@@ -83,7 +92,7 @@ class DB_Base:
                 )
                 conn.commit()
         finally:
-            self.connection_pool.putconn(conn)
+            self.put_connection(conn)
 
 
 class DBHandler(DB_Base):
