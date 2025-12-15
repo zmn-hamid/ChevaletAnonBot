@@ -1,5 +1,6 @@
 from telegram import Bot, Message, ReplyParameters, Update
 from telegram.ext import ContextTypes, ConversationHandler, MessageHandler, filters
+from telegram.ext._handlers.callbackqueryhandler import CallbackQueryHandler
 
 from modules.Global.database import DBHandler
 from modules.Global.decorators import prep_function
@@ -33,6 +34,19 @@ async def other_messages(
         await other_messages_template(message)
 
 
+@prep_function
+async def no_callback(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    message: Message,
+    userid: str,
+    bot: Bot,
+    dbh: DBHandler,
+) -> None:
+    if update.callback_query:
+        await update.callback_query.answer()
+
+
 class IsDirectMessageFilter(filters.MessageFilter):
     __slots__ = ()
 
@@ -45,3 +59,4 @@ class IsDirectMessageFilter(filters.MessageFilter):
 other_messages_handler = MessageHandler(
     filters.ALL & ~IsDirectMessageFilter(), other_messages
 )
+no_callback_handler = CallbackQueryHandler(no_callback, r"^no-callback")

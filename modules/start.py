@@ -589,14 +589,58 @@ async def report(
     dbh: DBHandler,
 ) -> int:
     """
-    # reports the message to admins
+    # shows confirmation before reporting the message to admins
     """
     if (clbk := update.callback_query) and (data := clbk.data):
+        await clbk.answer()
+        _, target_cid_or_chid, target_mid = data.split("|")
+        target_chid = await handle_cid_or_chid(target_cid_or_chid, dbh, message, bot)
+        if target_chid == END:
+            return END
+
+        # Send confirmation message
+        await message.reply_html(
+            "آیا واقعا میخواهید این پیام را گزارش کنید؟",
+            reply_parameters=ReplyParameters(message.message_id),
+            reply_markup=InlineKeyboardMarkup(
+                [
+                    [
+                        InlineKeyboardButton(
+                            "✅ آره ریپورتش کن",
+                            callback_data=f"report_yes|{target_cid_or_chid}|{target_mid}",
+                        ),
+                        InlineKeyboardButton("❌ نهههه", callback_data=f"report_no"),
+                    ]
+                ]
+            ),
+        )
+
+
+@prep_function
+async def report_confirm_yes(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    message: Message,
+    userid: str,
+    bot: Bot,
+    dbh: DBHandler,
+) -> int:
+    """
+    # reports the message to admins after confirmation
+    """
+    if (clbk := update.callback_query) and (data := clbk.data):
+        await clbk.answer()
         _, target_cid_or_chid, target_mid = data.split("|")
         target_chid = await handle_cid_or_chid(target_cid_or_chid, dbh, message, bot)
         if target_chid == END:
             return END
         target_uid = dbh.get_uid_by_chevaletid(decode_chevaletid(target_chid))
+
+        # Delete confirmation message
+        try:
+            await message.delete()
+        except:
+            pass
 
         # report id
         report_id = uuid()
@@ -619,19 +663,50 @@ async def report(
                 reply_parameters=ReplyParameters(first_message.message_id, None, True),
             )
         except TelegramError:
-            second_message = await message.copy(
-                REPORT_CHAT_ID,
-                reply_parameters=ReplyParameters(first_message.message_id),
-            )
-            await bot.send_message(
-                REPORT_CHAT_ID,
-                "این پیام از چت گیرنده کپی شد. ممکنه تهش تگ دلخواه داشته باشه",
-                reply_parameters=ReplyParameters(second_message.message_id),
-            )
-        await message.reply_html(
+            # Get the original message that was reported
+            try:
+                original_msg = await bot.forward_message(
+                    REPORT_CHAT_ID,
+                    userid,
+                    message.reply_to_message.message_id
+                    if message.reply_to_message
+                    else message.message_id,
+                )
+                await bot.send_message(
+                    REPORT_CHAT_ID,
+                    "این پیام از چت گیرنده کپی شد. ممکنه تهش تگ دلخواه داشته باشه",
+                    reply_parameters=ReplyParameters(original_msg.message_id),
+                )
+            except:
+                pass
+        await bot.send_message(
+            userid,
             f"ریپورت شد.\nکد پیگیری: <code>{report_id}</code>",
-            reply_parameters=ReplyParameters(message.message_id),
+            parse_mode=PM.HTML,
         )
+        return END
+
+
+@prep_function
+async def report_confirm_no(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    message: Message,
+    userid: str,
+    bot: Bot,
+    dbh: DBHandler,
+) -> int:
+    """
+    # cancels the report and deletes confirmation message
+    """
+    if (clbk := update.callback_query) and (data := clbk.data):
+        await clbk.answer("لغو شد")
+        # Delete the confirmation message
+        try:
+            await message.delete()
+        except:
+            pass
+        return END
 
 
 @prep_function
@@ -740,6 +815,8 @@ answer_clbk = CallbackQueryHandler(answer, r"^answer\|")
 seen_clbk = CallbackQueryHandler(seen, r"^seen\|")
 already_seen_clbk = CallbackQueryHandler(alread_seen, r"alread-seen")
 report_clbk = CallbackQueryHandler(report, r"^report\|")
+report_confirm_yes_clbk = CallbackQueryHandler(report_confirm_yes, r"^report_yes\|")
+report_confirm_no_clbk = CallbackQueryHandler(report_confirm_no, r"^report_no")
 block_clbk = CallbackQueryHandler(block, r"^block\|")
 unblock_clbk = CallbackQueryHandler(unblock, r"^unblock\|")
 cancel_clbk = CallbackQueryHandler(cancel, r"cancel")
@@ -751,6 +828,8 @@ start_cmd_handler = ConversationHandler(
         seen_clbk,
         already_seen_clbk,
         report_clbk,
+        report_confirm_yes_clbk,
+        report_confirm_no_clbk,
         block_clbk,
         unblock_clbk,
     ],
@@ -761,6 +840,8 @@ start_cmd_handler = ConversationHandler(
             seen_clbk,
             already_seen_clbk,
             report_clbk,
+            report_confirm_yes_clbk,
+            report_confirm_no_clbk,
             block_clbk,
             unblock_clbk,
             MessageHandler(filters.ALL & (~filters.COMMAND), send_msg),

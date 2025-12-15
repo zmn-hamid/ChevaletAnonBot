@@ -159,6 +159,7 @@ async def send_msg_template(
                 BTN.REPORT,
                 callback_data=f"report|{sender_enc_chid}|{message.message_id}",
             ),
+            InlineKeyboardButton(" ", callback_data="no-callback"),
             InlineKeyboardButton(BTN.BLOCK, callback_data=f"block|{sender_enc_chid}"),
         ],
     ]

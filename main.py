@@ -21,7 +21,7 @@ from modules.Global.log import logger
 from modules.help import help_handler, more_links_clbk_handler
 from modules.my_links import mylinks_handler
 from modules.myuid import myuid_handler
-from modules.other_msgs import other_messages_handler
+from modules.other_msgs import no_callback_handler, other_messages_handler
 from modules.privacy import privacy_handler
 from modules.settings import settings_handler
 from modules.start import delete_message_handler, media_group_handler, start_cmd_handler
@@ -36,6 +36,8 @@ job_queue = application.job_queue
 
 # adding handlers
 for handler in [
+    # no callback handler
+    no_callback_handler,
     # start help
     start_cmd_handler,
     media_group_handler,
@@ -76,6 +78,13 @@ job_queue.run_repeating(
 # run the ai responser (checks queue and answers via ai)
 job_queue.run_once(
     ai_responser,
+    3,
+    job_kwargs={"misfire_grace_time": 10},
+)
+
+# run the ai responser (checks queue and answers via ai)
+job_queue.run_once(
+    set_commands,
     3,
     job_kwargs={"misfire_grace_time": 10},
 )

@@ -59,8 +59,8 @@ async def media_settings_clbk(
     dbh: DBHandler,
 ) -> None:
     """# unblocks all the blocked users"""
-    await update.callback_query.answer()
     if (clbk := update.callback_query) and (clbk.data):
+        await update.callback_query.answer()
         await clbk.edit_message_text(
             fetch_text("settings/media_settings"),
             parse_mode=PM.HTML,
@@ -86,8 +86,8 @@ async def reply_quote_clbk(
     dbh: DBHandler,
 ) -> None:
     """# unblocks all the blocked users"""
-    await update.callback_query.answer()
     if (clbk := update.callback_query) and (clbk.data):
+        await update.callback_query.answer()
         await clbk.edit_message_text(
             fetch_text("settings/reply_quote"),
             parse_mode=PM.HTML,
@@ -112,8 +112,8 @@ async def change_name(
     dbh: DBHandler,
 ) -> int:
     """# sends changing name help text"""
-    await update.callback_query.answer()
     if (clbk := update.callback_query) and (clbk.data):
+        await update.callback_query.answer()
         msg = await clbk.edit_message_text(
             fetch_text("settings/change_name") % (dbh.get_name(userid)),
             parse_mode=PM.HTML,
@@ -172,8 +172,8 @@ async def wpp_clbk(
     dbh: DBHandler,
 ) -> None:
     """# warning settings for user"""
-    await update.callback_query.answer()
     if (clbk := update.callback_query) and (data := clbk.data):
+        await update.callback_query.answer()
 
         async def _wpp_text():
             wpp = dbh.get_wpp(userid)
@@ -219,8 +219,8 @@ async def warning_clbk(
     dbh: DBHandler,
 ) -> None:
     """# warning settings for user"""
-    await update.callback_query.answer()
     if (clbk := update.callback_query) and (data := clbk.data):
+        await update.callback_query.answer()
 
         async def _warning_text():
             current = dbh.get_warning(userid)
@@ -266,8 +266,8 @@ async def easier_answer_clbk(
     dbh: DBHandler,
 ) -> None:
     """# unblocks all the blocked users"""
-    await update.callback_query.answer()
     if (clbk := update.callback_query) and (clbk.data):
+        await update.callback_query.answer()
         await clbk.edit_message_text(
             fetch_text("settings/easier_answer"),
             parse_mode=PM.HTML,
@@ -292,8 +292,8 @@ async def channel_signature_clbk(
     dbh: DBHandler,
 ) -> None:
     """# channel signature feature explanation"""
-    await update.callback_query.answer()
     if (clbk := update.callback_query) and (clbk.data):
+        await update.callback_query.answer()
         await clbk.edit_message_text(
             fetch_text("settings/channel_signature"),
             parse_mode=PM.HTML,
@@ -318,8 +318,8 @@ async def seen_settings_clbk(
     dbh: DBHandler,
 ) -> None:
     """# warning settings for user"""
-    await update.callback_query.answer()
     if (clbk := update.callback_query) and (data := clbk.data):
+        await update.callback_query.answer()
 
         async def _seen_text():
             current = dbh.get_seen_status(userid)
@@ -367,8 +367,8 @@ async def custom_tag(
     """
     # custom tag help text
     """
-    await update.callback_query.answer()
     if (clbk := update.callback_query) and (clbk.data):
+        await update.callback_query.answer()
         user_custom_tag = dbh.get_custom_tag(userid)
         msg = await clbk.edit_message_text(
             fetch_text("settings/custom_tag")
@@ -454,8 +454,8 @@ async def audio_tag(
     dbh: DBHandler,
 ) -> int:
     """# audio tag help text"""
-    await update.callback_query.answer()
     if (clbk := update.callback_query) and (clbk.data):
+        await update.callback_query.answer()
         user_audio_tag = dbh.get_audio_tag(userid)
         msg = await clbk.edit_message_text(
             fetch_text("settings/audio_tag")
@@ -541,8 +541,8 @@ async def unblock_all_clbk(
     dbh: DBHandler,
 ) -> None:
     """# unblocks all the blocked users"""
-    await update.callback_query.answer()
     if (clbk := update.callback_query) and (data := clbk.data):
+        await update.callback_query.answer()
         _, activation_text = data.split("|", 1)
         if activation_text:
             dbh.unblock_all(userid)

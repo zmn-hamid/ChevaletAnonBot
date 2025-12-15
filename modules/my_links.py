@@ -85,8 +85,8 @@ async def add_link_clbk(
     dbh: DBHandler,
 ) -> None:
     """# adds a cid"""
-    await update.callback_query.answer()
     if clbk := update.callback_query:
+        await update.callback_query.answer()
         # check if user has reached limit
         cid_limit = dbh.get_cid_limit(userid)
         current_cid_count = len(dbh.get_cids(userid))
@@ -112,8 +112,8 @@ async def remove_link_clbk(
     dbh: DBHandler,
 ) -> None:
     """# removes a cid"""
-    await update.callback_query.answer()
     if (clbk := update.callback_query) and (data := clbk.data):
+        await update.callback_query.answer()
         data_split = data.split("|")
         cids = dbh.get_cids(userid)
         if len(data_split) == 1:
@@ -226,8 +226,8 @@ async def change_link_clbk(
     dbh: DBHandler,
 ) -> int:
     """# change cid selection"""
-    await update.callback_query.answer()
     if (clbk := update.callback_query) and (data := clbk.data):
+        await update.callback_query.answer()
         data_split = data.split("|")
         cids = dbh.get_cids(userid)
         if len(data_split) == 1:
@@ -360,8 +360,9 @@ async def what_is_cid(
     dbh: DBHandler,
 ) -> int:
     """# explanation for cid"""
-    await update.callback_query.answer()
-    await message.reply_html(fetch_text("cid_explanation"))
+    if update.callback_query:
+        await update.callback_query.answer()
+        await message.reply_html(fetch_text("cid_explanation"))
 
 
 @prep_function
