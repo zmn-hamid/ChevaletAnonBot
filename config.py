@@ -10,7 +10,7 @@ BOT_TOKEN = os.environ["BOT_TOKEN"]
 BOT_ID = BOT_TOKEN.split(":")[0]
 REPORT_CHAT_ID = os.environ.get("REPORT_CHAT_ID")
 ERROR_CHAT_ID = os.environ.get("ERROR_CHAT_ID")
-ADMINS = os.environ.get("ADMINS").split("|")
+ADMINS = admins.split("") if (admins := os.environ.get("ADMINS")) else []
 SELLER_ADMIN = os.environ.get("SELLER_ADMIN")  # username
 SUPPORT_ADMIN = os.environ.get("SUPPORT_ADMIN")  # username
 DB_NAME = os.environ.get("DB_NAME")
