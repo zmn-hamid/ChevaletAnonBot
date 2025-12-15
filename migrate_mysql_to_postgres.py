@@ -114,6 +114,10 @@ def migrate_all_tables():
             blocks_data = [
                 (row["blocker_uid"], row["blocked_uid"])
                 for row in tables_data["blocks"]
+                if row.get("blocker_uid")
+                and row.get("blocker_uid") != "NULL"
+                and row.get("blocked_uid")
+                and row.get("blocked_uid") != "NULL"
             ]
 
             cur.executemany(
@@ -134,7 +138,14 @@ def migrate_all_tables():
         # Migrate cids table
         if tables_data["cids"]:
             logger.info(f"Migrating {len(tables_data['cids'])} cids...")
-            cids_data = [(row["uid"], row["cid"]) for row in tables_data["cids"]]
+            cids_data = [
+                (row["uid"], row["cid"])
+                for row in tables_data["cids"]
+                if row.get("uid")
+                and row.get("uid") != "NULL"
+                and row.get("cid")
+                and row.get("cid") != "NULL"
+            ]
 
             cur.executemany(
                 """
@@ -157,6 +168,29 @@ def migrate_all_tables():
             users_data = []
 
             for row in tables_data["users"]:
+                # Skip rows with NULL or missing required fields
+                if not row.get("uid") or row.get("uid") == "NULL":
+                    continue
+                if not row.get("name") or row.get("name") == "NULL":
+                    continue
+
+                # Helper function to convert "NULL" strings to None
+                def get_value_or_none(key):
+                    val = row.get(key)
+                    return None if not val or val == "NULL" else val
+
+                # Get cid_limit with NULL handling
+                cid_limit_val = row.get("cid_limit", "2")
+                if not cid_limit_val or cid_limit_val == "NULL":
+                    cid_limit_val = 2
+                else:
+                    cid_limit_val = int(cid_limit_val)
+
+                # Get audio_tag with NULL handling
+                audio_tag_val = row.get("audio_tag")
+                if not audio_tag_val or audio_tag_val == "NULL":
+                    audio_tag_val = "[ناشناس]"
+
                 users_data.append(
                     (
                         row["uid"],
@@ -165,10 +199,10 @@ def migrate_all_tables():
                         row.get("warning", "TRUE").upper() in ("TRUE", "1", "t"),
                         row.get("seen_option", "FALSE").upper() in ("TRUE", "1", "t"),
                         row.get("wpp", "TRUE").upper() in ("TRUE", "1", "t"),
-                        int(row.get("cid_limit", 2)),
-                        row.get("custom_tag") if row.get("custom_tag") else None,
-                        row.get("audio_tag", "[ناشناس]"),
-                        row.get("chevaletid") if row.get("chevaletid") else None,
+                        cid_limit_val,
+                        get_value_or_none("custom_tag"),
+                        audio_tag_val,
+                        get_value_or_none("chevaletid"),
                     )
                 )
 
@@ -191,7 +225,11 @@ def migrate_all_tables():
         # Migrate reports table
         if tables_data["reports"]:
             logger.info(f"Migrating {len(tables_data['reports'])} reports...")
-            reports_data = [(row["reported_id"],) for row in tables_data["reports"]]
+            reports_data = [
+                (row["reported_id"],)
+                for row in tables_data["reports"]
+                if row.get("reported_id") and row.get("reported_id") != "NULL"
+            ]
 
             cur.executemany(
                 """
