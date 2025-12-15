@@ -501,11 +501,11 @@ async def block(
         if dbh.add_block(userid, target_uid):
             await _add_block()
             if userid == target_uid:
-                await clbk.answer("یه تراپی برو💀👍")
+                await clbk.answer("یه تراپی برو💀👍", show_alert=True)
             else:
-                await clbk.answer("با موفقیت بلاک شد.")
+                await clbk.answer("با موفقیت بلاک شد.", show_alert=True)
         else:
-            await clbk.answer("همین الانش بلاک هست")
+            await clbk.answer("همین الانش بلاک هست", show_alert=True)
             await _add_block()
 
 
