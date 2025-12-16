@@ -3,7 +3,17 @@ import re
 import time
 from typing import Optional, Union
 
-from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup, Message, MessageEntity, MessageId, ReplyKeyboardMarkup, ReplyParameters, Update
+from telegram import (
+    Bot,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    Message,
+    MessageEntity,
+    MessageId,
+    ReplyKeyboardMarkup,
+    ReplyParameters,
+    Update,
+)
 from telegram.constants import MessageEntityType as MET
 from telegram.constants import ParseMode as PM
 from telegram.error import Forbidden
@@ -292,6 +302,13 @@ async def send_msg_template(
         reply_markup=reply_markup,
     )
     if message.audio and not custom_tag:
+        logger.info(
+            (
+                "audio_tag",
+                dbh.get_audio_tag(target_uid),
+                type(dbh.get_audio_tag(target_uid)),
+            )
+        )
         await add_tag(
             dbh.get_audio_tag(target_uid) + "\n" + replied_to_link,
             "caption",
