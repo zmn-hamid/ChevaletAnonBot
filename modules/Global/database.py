@@ -354,7 +354,7 @@ class DBHandler(DB_Base):
 
     def set_name(self, uid: str, name: str) -> None:
         self.cur.execute(
-            f"UPDATE {self.users_table} SET name=%s WHERE uid=%s", (str(name), str(uid))
+            f"UPDATE {self.users_table} SET name=%s WHERE uid=%s", (name, str(uid))
         )
 
     def set_cid(self, new_cid: str, cid: str) -> None:
@@ -369,10 +369,10 @@ class DBHandler(DB_Base):
             (str(cid_limit), str(uid)),
         )
 
-    def set_warning(self, uid: str, warning: str) -> None:
+    def set_warning(self, uid: str, warning: bool) -> None:
         self.cur.execute(
             f"UPDATE {self.users_table} SET warning=%s WHERE uid=%s",
-            (str(warning), str(uid)),
+            (warning, str(uid)),
         )
 
     def set_seen_option(self, uid: str, seen_option: bool) -> None:
@@ -389,18 +389,18 @@ class DBHandler(DB_Base):
             (wpp, str(uid)),
         )
 
-    def set_custom_tag(self, uid: str, custom_tag: str) -> None:
+    def set_custom_tag(self, uid: str, custom_tag: str | None) -> None:
         """sets custom tag for user"""
         self.cur.execute(
             f"UPDATE {self.users_table} SET custom_tag=%s WHERE uid=%s",
-            (str(custom_tag), str(uid)),
+            (custom_tag, str(uid)),
         )
 
-    def set_audio_tag(self, uid: str, audio_tag: str) -> None:
+    def set_audio_tag(self, uid: str, audio_tag: str | None) -> None:
         """sets audio tag for user"""
         self.cur.execute(
             f"UPDATE {self.users_table} SET audio_tag=%s WHERE uid=%s",
-            (str(audio_tag), str(uid)),
+            (audio_tag, str(uid)),
         )
 
     def set_chevaletid(self, uid: str, chevaletid: str) -> None:
