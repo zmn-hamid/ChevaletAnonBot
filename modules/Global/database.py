@@ -222,9 +222,9 @@ class DBHandler(DB_Base):
         else:
             # CID collision occurred, retry with new CID
             try_counter += 1
-            return self.add_cid(uid, generate_cid(), try_counter)
+            return self.add_cid(uid, int(generate_cid()), try_counter)
 
-    def rm_cid(self, uid: str, cid: str) -> bool:
+    def rm_cid(self, uid: str, cid: str):
         self.cur.execute(
             f"DELETE FROM {self.cids_table} WHERE cid=%s and uid=%s",
             (str(cid), str(uid)),
@@ -403,7 +403,7 @@ class DBHandler(DB_Base):
             (audio_tag, str(uid)),
         )
 
-    def set_chevaletid(self, uid: str, chevaletid: str) -> None:
+    def set_chevaletid(self, uid: str, chevaletid: str) -> bool:
         """sets chevaletid for user"""
         self.cur.execute(
             f"UPDATE {self.users_table} SET chevaletid=%s WHERE uid=%s",
