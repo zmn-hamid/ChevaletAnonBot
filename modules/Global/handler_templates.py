@@ -316,6 +316,13 @@ async def send_msg_template(
             show_caption_above_media=message.show_caption_above_media,
         )
     elif custom_tag:
+        logger.info(
+            (
+                "custom_tag",
+                custom_tag,
+                type(custom_tag),
+            )
+        )
         # edit text
         if not await add_tag(
             custom_tag + "\n" + replied_to_link,
