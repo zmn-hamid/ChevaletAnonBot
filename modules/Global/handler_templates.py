@@ -134,8 +134,11 @@ async def send_msg_template(
         reply_to_chat = target_uid
         reply_to_mid = target_mid
     if quote := message.quote:
-        quote_text = quote.text
-        quote_position = quote.position
+        # Only use quote if it has no entities (no formatting)
+        # If it has entities, Telegram will throw Quote_text_invalid
+        if not quote.entities:
+            quote_text = quote.text
+            quote_position = quote.position
 
     ## check if bot is not added then just use inline button
     replied_to_link = ""

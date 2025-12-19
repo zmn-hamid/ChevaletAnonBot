@@ -212,12 +212,12 @@ def handle_target_send(message: Message, external_reply: Message):
                         return "del+e"
                 elif str(e) == "MESSAGE_ID_INVALID":
                     return "del+e"
-                elif str(e) == "Quote_text_invalid":
-                    await message.reply_text(
-                        "پیام اشتباهی رو ریپلای کردی. دوباره امتحان کن",
-                        reply_parameters=ReplyParameters(message.message_id),
-                    )
-                    return "del+0"
+                # elif str(e) == "Quote_text_invalid":
+                #     await message.reply_text(
+                #         "پیام اشتباهی رو ریپلای کردی. دوباره امتحان کن",
+                #         reply_parameters=ReplyParameters(message.message_id),
+                #     )
+                #     return "del+0"
                 else:
                     raise
 
