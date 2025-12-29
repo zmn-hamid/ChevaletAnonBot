@@ -3,7 +3,7 @@ from typing import Callable
 import psycopg2
 from telegram import Message, ReplyParameters, Update
 from telegram.constants import ParseMode as PM
-from telegram.error import BadRequest, Forbidden, TimedOut
+from telegram.error import BadRequest, Forbidden, NetworkError, TimedOut
 from telegram.ext import ContextTypes, ConversationHandler
 
 from config import ERROR_CHAT_ID, GM_GROUP_ID
@@ -125,6 +125,16 @@ def prep_function(func) -> Callable:
                         pass
         except TimedOut:
             return
+        except NetworkError as e:
+            # network/connection errors
+            logger.debug(f"Network error: {e}")
+            try:
+                await message.reply_text(
+                    "به مشکل اینترنتی برخوردیم. لطفاً دوباره تلاش کنید."
+                )
+            except:
+                pass
+            return ConversationHandler.END
         except Forbidden as e:
             # bot is blocked by the user
             logger.debug(str(e))

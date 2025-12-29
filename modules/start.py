@@ -227,7 +227,7 @@ async def start_cmd(
     if len(split_text) == 1:
         # send start/help text
         await message.reply_html(
-            fetch_text("start_help") % (SUPPORT_ADMIN),
+            fetch_text("start_help"),
             disable_web_page_preview=True,
             reply_parameters=ReplyParameters(message.message_id),
         )

@@ -19,10 +19,6 @@
 /privacy
 
 
-<blockquote expandable>پشتیبانی: @%s
-مدیریت: <a href="t.me/chevalet_studio">Chevalet Studio</a>
-برنامه‌نویس: @HamidBots
-
-میتونی ناشناس هم بهمون پیام بدی و نظرات و انتقاداتت رو بگی:
+<blockquote expandable>ارتباط با ما:
 • t.me/Chevalet_bot?start=Chevaletsupport (پشتیبانی)
 • t.me/Chevalet_bot?start=Programmer (برنامه‌نویس)</blockquote>

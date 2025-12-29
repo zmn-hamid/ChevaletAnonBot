@@ -305,13 +305,6 @@ async def send_msg_template(
         reply_markup=reply_markup,
     )
     if message.audio and not custom_tag:
-        logger.info(
-            (
-                "audio_tag",
-                dbh.get_audio_tag(target_uid),
-                type(dbh.get_audio_tag(target_uid)),
-            )
-        )
         await add_tag(
             dbh.get_audio_tag(target_uid) + "\n" + replied_to_link,
             "caption",
@@ -319,13 +312,6 @@ async def send_msg_template(
             show_caption_above_media=message.show_caption_above_media,
         )
     elif custom_tag:
-        logger.info(
-            (
-                "custom_tag",
-                custom_tag,
-                type(custom_tag),
-            )
-        )
         # edit text
         if not await add_tag(
             custom_tag + "\n" + replied_to_link,

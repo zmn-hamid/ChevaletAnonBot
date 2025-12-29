@@ -18,7 +18,7 @@ async def help_cmd(
 ) -> None:
     """# sends priacy and security help text"""
     await message.reply_html(
-        fetch_text("start_help") % (SUPPORT_ADMIN),
+        fetch_text("start_help"),
         disable_web_page_preview=True,
         reply_parameters=ReplyParameters(message.message_id),
     )

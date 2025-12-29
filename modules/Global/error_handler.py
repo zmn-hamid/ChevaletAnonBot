@@ -36,24 +36,48 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             update_str = update.to_dict() if isinstance(update, Update) else str(update)
 
             # send the message to devs
-            msg = await context.bot.send_message(
-                chat_id=ERROR_CHAT_ID,
-                text=(
-                    "An exception was raised while handling an update\n"
-                    f"Error code: <code>{code}</code>"
-                    f"<pre>update = {html.escape(json.dumps(update_str, indent=2, ensure_ascii=False))}"
-                    "</pre>\n\n"
-                    f"<pre>context.chat_data = {html.escape(str(context.chat_data))}</pre>\n\n"
-                    f"<pre>context.user_data = {html.escape(str(context.user_data))}</pre>\n\n"
-                ),
-                parse_mode=PM.HTML,
-            )
-            await context.bot.send_message(
-                chat_id=ERROR_CHAT_ID,
-                text=f"<pre>{html.escape(tb_string)}</pre>",
-                parse_mode=PM.HTML,
-                reply_parameters=ReplyParameters(msg.message_id, None, True),
-            )
+            msg = None
+            try:
+                msg = await context.bot.send_message(
+                    chat_id=ERROR_CHAT_ID,
+                    text=(
+                        "An exception was raised while handling an update\n"
+                        f"Error code: <code>{code}</code>\n\n"
+                        f"<pre>update = {html.escape(json.dumps(update_str, indent=2, ensure_ascii=False))}"
+                        "</pre>\n\n"
+                        f"<pre>context.chat_data = {html.escape(str(context.chat_data))}</pre>\n\n"
+                        f"<pre>context.user_data = {html.escape(str(context.user_data))}</pre>"
+                    ),
+                    parse_mode=PM.HTML,
+                )
+            except Exception as e:
+                logger.error(f"Failed to send error report: {e}")
+
+            # Split traceback into chunks to avoid "Message is too long" error
+            # Max length per message is 4050 characters (accounting for <pre></pre> tags)
+            MAX_LENGTH = 4050
+            escaped_tb = html.escape(tb_string)
+
+            # Calculate how much space we have for the actual traceback
+            pre_tag_length = len("<pre></pre>")
+            max_tb_length = MAX_LENGTH - pre_tag_length
+
+            # Split the traceback into chunks
+            tb_chunks = []
+            for i in range(0, len(escaped_tb), max_tb_length):
+                tb_chunks.append(escaped_tb[i:i + max_tb_length])
+
+            # Send each chunk
+            for idx, chunk in enumerate(tb_chunks):
+                try:
+                    await context.bot.send_message(
+                        chat_id=ERROR_CHAT_ID,
+                        text=f"<pre>{chunk}</pre>",
+                        parse_mode=PM.HTML,
+                        reply_parameters=ReplyParameters(msg.message_id, None, True) if msg else None,
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to send traceback part {idx + 1}: {e}")
 
             # send report back to user
             try:
