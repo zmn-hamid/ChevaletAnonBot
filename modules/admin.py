@@ -164,7 +164,9 @@ async def admin_cmd(
         elif arg1 == "backup":
             backups = os.listdir("backups")
             backups.sort()
-            await message.reply_document(open(backups[-1], "rb"), caption="#backup")
+            await message.reply_document(
+                open("backups/" + backups[-1], "rb"), caption="#backup"
+            )
 
         else:
             raise WrongSyntaxErr
