@@ -1,3 +1,5 @@
+import os
+
 from psycopg2 import IntegrityError
 from telegram import Bot, Message, Update
 from telegram.ext import CommandHandler, ContextTypes
@@ -158,6 +160,11 @@ async def admin_cmd(
                 await message.reply_text("AI Session ID reset to config default.")
             else:
                 raise WrongSyntaxErr
+
+        elif arg1 == "backup":
+            backups = os.listdir("backups")
+            backups.sort()
+            await message.reply_document(open(backups[-1], "rb"), caption="#backup")
 
         else:
             raise WrongSyntaxErr
