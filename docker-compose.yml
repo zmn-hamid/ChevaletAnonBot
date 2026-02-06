@@ -61,6 +61,7 @@ services:
       - ./logs:/app/logs
       - ./dynamic_settings.json:/app/dynamic_settings.json
       - ./Texts:/app/Texts:ro
+      - ./backups:/app/backups
     networks:
       - bot-network
     healthcheck:
