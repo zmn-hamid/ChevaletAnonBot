@@ -1,7 +1,7 @@
 from telegram import Bot, Message, ReplyParameters, Update
 from telegram.ext import CallbackQueryHandler, CommandHandler, ContextTypes
 
-from config import SUPPORT_ADMIN
+from config import DONATION_LINK, SUPPORT_ADMIN
 from modules.Global.database import DBHandler
 from modules.Global.decorators import prep_function
 from modules.Global.fetch_texts import fetch_text
@@ -18,7 +18,7 @@ async def help_cmd(
 ) -> None:
     """# sends priacy and security help text"""
     await message.reply_html(
-        fetch_text("start_help"),
+        fetch_text("start_help") % (DONATION_LINK),
         disable_web_page_preview=True,
         reply_parameters=ReplyParameters(message.message_id),
     )

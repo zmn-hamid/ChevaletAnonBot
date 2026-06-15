@@ -57,6 +57,7 @@ services:
       - AI_URL=${AI_URL}
       - AI_SESSION_ID=${AI_SESSION_ID}
       - AI_INTERVAL=${AI_INTERVAL}
+      - DONATION_LINK=${DONATION_LINK}
     volumes:
       - ./logs:/app/logs
       - ./dynamic_settings.json:/app/dynamic_settings.json

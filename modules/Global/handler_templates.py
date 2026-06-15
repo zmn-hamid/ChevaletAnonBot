@@ -24,6 +24,7 @@ from config import (
     DELETION_TEXT,
     DELETION_TIMEOUT,
     DELETION_TIMEOUT_EXTENDED,
+    DONATION_LINK,
     ERROR_CHAT_ID,
     EXPIRE_AFTER,
 )
@@ -223,6 +224,16 @@ async def send_msg_template(
             None,
         )
         context.user_data.get("wrapper_list", []).append(notify_msg)
+
+    # add donation link to keyboard markup
+    reply_markup_keyboard.append(
+        [
+            InlineKeyboardButton(
+                "با دونیشن از ما حمایت کنید ♥",
+                url=DONATION_LINK,
+            )
+        ]
+    )
 
     # making reply_markup and parameters
     reply_markup = InlineKeyboardMarkup(reply_markup_keyboard)

@@ -38,6 +38,7 @@ async def set_commands(context: CallbackContext) -> None:
     """updates the bot's command menu"""
     await context.application.bot.set_my_commands(
         [
+            ("donate", "کمک مالی 🙏"),
             ("help", "🆘 کمک!"),
             ("my_links", "🔗 لینک های من"),
             ("settings", "⚙️ تنظیمات و قابلیت ها"),

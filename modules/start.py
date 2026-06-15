@@ -25,7 +25,13 @@ from telegram.ext import (
 from telegram.helpers import effective_message_type
 from telegram.warnings import PTBUserWarning
 
-from config import ERROR_CHAT_ID, EXPIRE_AFTER, REPORT_CHAT_ID, SUPPORT_ADMIN
+from config import (
+    DONATION_LINK,
+    ERROR_CHAT_ID,
+    EXPIRE_AFTER,
+    REPORT_CHAT_ID,
+    SUPPORT_ADMIN,
+)
 from modules.Global.database import DBHandler
 from modules.Global.decorators import (
     delete_notify_on_END,
@@ -227,7 +233,7 @@ async def start_cmd(
     if len(split_text) == 1:
         # send start/help text
         await message.reply_html(
-            fetch_text("start_help"),
+            fetch_text("start_help") % (DONATION_LINK),
             disable_web_page_preview=True,
             reply_parameters=ReplyParameters(message.message_id),
         )

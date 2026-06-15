@@ -31,6 +31,8 @@ GM_GROUP_TOPIC_ID = os.environ.get("GM_GROUP_TOPIC_ID")
 AI_URL = os.environ.get("AI_URL", "")
 AI_SESSION_ID = os.environ.get("AI_SESSION_ID", "")
 AI_INTERVAL = os.environ.get("AI_INTERVAL", 5)
+DONATION_LINK = os.environ.get("DONATION_LINK")
+assert DONATION_LINK is not None
 
 MAX_TRY_ADD_CID = 5
 DELETION_TIMEOUT = 10

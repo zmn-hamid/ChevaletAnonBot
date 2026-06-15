@@ -8,6 +8,7 @@ from telegram.ext import ApplicationBuilder
 from config import BOT_TOKEN, GM_TIME, GN_TIME, SEND_GM_GN
 from modules.admin import admin_handler
 from modules.ai_chat import ai_input_message_handler
+from modules.donate import donate_cmd_handler
 from modules.Global.error_handler import error_handler
 from modules.Global.jobs import (
     ai_responser,
@@ -50,6 +51,8 @@ for handler in [
     settings_handler,
     # privacy
     privacy_handler,
+    # donate
+    donate_cmd_handler,
     # admin
     admin_handler,
     # myuid
