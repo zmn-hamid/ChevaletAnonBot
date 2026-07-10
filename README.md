@@ -1,6 +1,6 @@
 # Chevalet Anon Bot (Original)
 
-The most awesome telegram bot to send messages to other users anonymously written in Python.
+The most awesome python telegram bot to send messages to other users anonymously.
 
 ## A Word About How and Why I Made this project
 
