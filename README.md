@@ -82,3 +82,9 @@ can follow these conventions:
     - `fix` for fixing bugs only
     - `maint` for any maintenance stuff. including refactoring code, updating requirements
         or basically anything
+
+## License
+
+CC BY-SA 4.0  
+Creative Commons Attribution-ShareAlike 4.0 International  
+Hamidreza Zamanian, 2026
